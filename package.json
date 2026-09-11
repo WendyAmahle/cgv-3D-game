@@ -12,6 +12,7 @@
     "vite": "^8.3.0"
   },
   "dependencies": {
+    "lightningcss-win32-x64-msvc": "^1.33.0",
     "three": "^0.186.0"
   }
 }

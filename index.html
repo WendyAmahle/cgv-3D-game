@@ -1,11 +1,38 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CGV 3D Game</title>
-</head>
-<body>
-  <script type="module" src="/src/main.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bistro Rush: Culinary Mayhem</title>
+  </head>
+  <body>
+    <div id="game-shell">
+      <div id="hud">
+        <div class="hud-panel">
+          <span class="label">Score</span>
+          <strong id="scoreValue">0</strong>
+        </div>
+        <div class="hud-panel">
+          <span class="label">Earnings</span>
+          <strong id="moneyValue">$0</strong>
+        </div>
+        <div class="hud-panel">
+          <span class="label">Customers left</span>
+          <strong id="livesValue">3</strong>
+        </div>
+      </div>
+
+      <div id="orderPanel">
+        <div class="order-title">Current Order</div>
+        <div id="orderText">BURGER ORDER</div>
+        <div class="meter">
+          <div id="orderMeterFill"></div>
+        </div>
+      </div>
+
+      <div id="message">Use 1, 2, and 3 to switch camera views.</div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
 </html>
