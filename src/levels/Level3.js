@@ -1,0 +1,38 @@
+// Level 3 — Cyberpunk Diner: every station, fast customers, power-surge events.
+export default {
+  id: 3,
+  name: 'Neon Diner',
+  tagline: 'Rain-soaked cyberpunk diner, open all night.',
+  mechanic: 'Every station at once, impatient android customers and random power surges that overclock a cooker, cooking twice as fast and burning twice as fast.',
+  theme: 'cyber',
+  lighting: 'neon',
+  weather: 'rain',
+  post: { bloom: 0.55, threshold: 0.85, bloomRadius: 0.35, saturation: 1.2, vignette: 0.45, tint: 0xf0e6ff },
+  music: { tempo: 128, root: 50, scale: [0, 3, 7, 10, 12, 15], progression: [0, -2, -4, -5], wave: 'sawtooth' },
+
+  duration: 180,
+  targetMoney: 170,
+  maxMisses: 5,
+  customerSlots: 4,
+  spawnInterval: [6, 9],
+  patience: [38, 48],
+  overclock: { interval: [18, 26], duration: 8 },
+  recipes: ['megaStack', 'neonCombo', 'cyberRamen', 'fries', 'neonCombo'],
+
+  stations: [
+    { type: 'crate', item: 'bun', row: 'back', x: -5.4 },
+    { type: 'crate', item: 'patty', row: 'back', x: -3.6 },
+    { type: 'crate', item: 'cheese', row: 'back', x: -1.8 },
+    { type: 'crate', item: 'lettuce', row: 'back', x: 0 },
+    { type: 'crate', item: 'potato', row: 'back', x: 1.8 },
+    { type: 'crate', item: 'noodles', row: 'back', x: 3.6 },
+    { type: 'crate', item: 'egg', row: 'back', x: 5.4 },
+    { type: 'grill', row: 'front', x: -5.4 },
+    { type: 'fryer', row: 'front', x: -3.6 },
+    { type: 'pot', row: 'front', x: -1.8 },
+    { type: 'board', row: 'front', x: 0 },
+    { type: 'dispenser', item: 'broth', row: 'front', x: 1.8 },
+    { type: 'dispenser', item: 'neonSoda', row: 'front', x: 3.6 },
+    { type: 'trash', row: 'front', x: 5.4 },
+  ],
+};

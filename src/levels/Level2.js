@@ -1,0 +1,34 @@
+// Level 2 — Ramen Izakaya: boiling + broth, three customers at once, rush hour.
+export default {
+  id: 2,
+  name: 'Ramen Izakaya',
+  tagline: 'Late-night noodle bar under paper lanterns.',
+  mechanic: 'Boil noodles in the pot, ladle broth into bowls and juggle three customers at once. Halfway through, rush hour hits.',
+  theme: 'izakaya',
+  lighting: 'night',
+  weather: 'fireflies',
+  post: { bloom: 0.45, threshold: 0.8, saturation: 1.05, vignette: 0.4, tint: 0xffe8d0 },
+  music: { tempo: 92, root: 57, scale: [0, 3, 5, 7, 10, 12], progression: [0, -4, -2, 0], wave: 'sine' },
+
+  duration: 165,
+  targetMoney: 120,
+  maxMisses: 5,
+  customerSlots: 3,
+  spawnInterval: [7, 10],
+  patience: [50, 62],
+  rushHour: { at: 0.55, spawnScale: 0.65 },
+  recipes: ['shoyuRamen', 'chashuRamen', 'chashuRamen', 'greenTea', 'shoyuRamen'],
+
+  stations: [
+    { type: 'crate', item: 'noodles', row: 'back', x: -4.5 },
+    { type: 'crate', item: 'egg', row: 'back', x: -1.5 },
+    { type: 'crate', item: 'pork', row: 'back', x: 1.5 },
+    { type: 'crate', item: 'nori', row: 'back', x: 4.5 },
+    { type: 'pot', row: 'front', x: -5.3 },
+    { type: 'grill', row: 'front', x: -3.2 },
+    { type: 'dispenser', item: 'broth', row: 'front', x: -1.05 },
+    { type: 'board', row: 'front', x: 1.1 },
+    { type: 'dispenser', item: 'tea', row: 'front', x: 3.2 },
+    { type: 'trash', row: 'front', x: 5.3 },
+  ],
+};
