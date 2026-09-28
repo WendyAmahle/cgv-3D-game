@@ -1,0 +1,67 @@
+# Bistro Rush: Culinary Mayhem
+
+A 3D cooking game for the browser (COMS3006A / COMS3025A CGV project), built with three.js and Vite.
+Grab ingredients, cook them before they burn, assemble dishes on the board, and serve customers before they walk out, across three levels.
+
+```bash
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # production build in dist/ (upload to the LAMP server)
+```
+
+In dev builds the game object is available in the browser console as `window.game`.
+
+## Controls
+
+| Input | Action |
+| --- | --- |
+| Mouse | Point at and click stations and customers |
+| A/D · W/S (or arrows) | Move the selection · switch between the back counter, front counter and customers |
+| Space / Enter | Use the selected station / serve the selected customer |
+| X | Throw away the held item |
+| 1–4 / C | Camera: overview, chef view, station focus, top-down |
+| Q / E · mouse wheel | Orbit · zoom the overview camera |
+| Esc / P · M | Pause · mute |
+
+## Levels
+
+| Level | Theme | What it adds |
+| --- | --- | --- |
+| 1 Burger Truck | Daylight park | Core loop: grill → assemble → serve, plus drinks |
+| 2 Ramen Izakaya | Night, lanterns, fireflies | Boiling pot and broth, 3 customers at once, rush hour halfway through |
+| 3 Neon Diner | Cyberpunk, rain, bloom | Every station, fast android customers, random "power surge" overclock events |
+
+Each level is a plain config file in `src/levels/`: stations, recipes, timings, theme, lighting, post-processing and music.
+
+## Code map and who owns what
+
+Everything talks through the event bus in `src/core/Events.js` (see the list of events at the top of that file), so, for example, audio and effects react to gameplay without editing gameplay code.
+
+| Area | Files | Owner |
+| --- | --- | --- |
+| Game loop, state machine, level flow | `src/core/Game.js`, `GameState.js`, `LevelManager.js`, `Events.js` | Shared (coordinate changes) |
+| Gameplay: items, recipes, stations, customers, scoring | `src/gameplay/*`, `src/player/Player.js`, `src/player/PlayerController.js` | Member 1 |
+| World, models, lighting, cameras | `src/world/*`, `src/player/CameraController.js`, `src/graphics/Materials.js` | Member 2 |
+| Shaders and effects | `src/graphics/shaders/*.glsl`, `src/graphics/Shaders.js`, `Effects.js`, `PostProcessing.js` | Member 3 |
+| UI, levels, audio, credits | `src/ui/*`, `src/levels/*`, `src/audio/AudioManager.js`, `index.html`, `src/style.css` | Member 4 |
+
+### Custom shaders (`src/graphics/shaders/`)
+
+- **cooking**: `uCook` (0 raw → 1 cooked → 2 burnt) drives uneven browning, grill marks and embers. The vertex stage shrinks/puffs the food and sizzles it while `uHeat` is on.
+- **liquid**: `uFill` sets a sloshing liquid level inside cups and bowls, with foam and bubbles.
+- **steam**: a noise-driven column above active cookers.
+- **particle**: soft point sprites for steam, smoke, sparks, rain, fireflies and the serve burst.
+- **sky**: gradient dome with twinkling stars.
+- **grade** (post-processing): screen-space heat haze above cookers, colour grade, vignette and a red flash on mistakes.
+
+## Common changes
+
+- **New recipe**: add it to `RECIPES` in `src/gameplay/Recipes.js` (new ingredients go in `ITEMS`), then list its id in a level's `recipes`.
+- **New ingredient model**: add a builder in `BUILDERS` in `src/world/Models.js`.
+- **New station type**: add the logic class in `src/gameplay/Stations.js` and the mesh in `src/world/Stations.js`.
+- **Real audio file**: see the comment at the top of `src/audio/AudioManager.js`.
+- **Any external asset, library or code sample**: add it to `CREDITS` in `src/ui/Credits.js`. The brief requires every one to be credited in-game.
+
+## Performance
+
+Pause → **Graphics: Low** turns off post-processing and shadows and renders at 1× pixel ratio, for weaker lab machines. Levels dispose their GPU resources when unloaded, so restarting repeatedly doesn't leak memory.
