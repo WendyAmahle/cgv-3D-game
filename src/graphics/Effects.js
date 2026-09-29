@@ -218,7 +218,7 @@ export class Effects {
       const overclocked = station.overclock > 0;
 
       fx.heat += ((station.item ? 1 : 0) - fx.heat) * Math.min(1, dt * 3);
-      fx.steam.rate = stage === 'raw' || stage === 'cooked' ? (fx.type === 'pot' ? 22 : 10) : 0;
+      fx.steam.rate = stage === 'raw' || stage === 'cooked' ? (fx.type === 'pot' ? 12 : 10) : 0;
       fx.smoke.rate = stage === 'burnt' ? 18 : 0;
       fx.sparks.rate = overclocked ? 40 : 0;
       fx.column.material.uniforms.uIntensity.value = fx.heat * (stage === 'burnt' ? 0.4 : 1);

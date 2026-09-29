@@ -183,7 +183,7 @@ const BUILDERS = {
 
   pot() {
     const glow = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, emissive: 0x3b82f6, emissiveIntensity: 0.25 });
-    const result = view('Boiling Pot', 0.5, { glow });
+    const result = view('Boiling Pot', 0.47, { glow });
     const steel = surfaces.steel();
     result.root.add(box(1.0, 0.16, 0.9, surfaces.darkSteel(), [0, 0.08, 0]));
     const flames = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.025, 8, 32), glow);
@@ -195,7 +195,7 @@ const BUILDERS = {
       steel
     );
     result.root.add(pot);
-    const water = cylinder(0.37, 0.37, 0.01, physical(0xa5c9d4, { roughness: 0.03, transmission: 0.6, thickness: 0.3, transparent: true, opacity: 0.9 }), [0, 0.52, 0], 40);
+    const water = cylinder(0.37, 0.37, 0.01, physical(0x51646b, { roughness: 0.25, transparent: true, opacity: 0.75 }), [0, 0.45, 0], 40);
     result.root.add(water);
     result.parts.water = water;
     for (const side of [-1, 1]) {
