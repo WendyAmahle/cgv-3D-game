@@ -5,7 +5,7 @@ export const LAYOUT = {
   frontRowZ: 1.2, // cooking / assembly stations (customer side)
   backRowZ: -1.0, // ingredient crates (chef side)
   backWallZ: -4.4,
-  customerZ: 4.2,
+  customerZ: 2.9,
 };
 
 export const STORAGE_KEY = 'bistro-rush-progress-v1';

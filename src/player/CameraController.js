@@ -89,8 +89,9 @@ export class CameraController {
         break;
       case 3:
         if (this.focusKind === 'customer') {
-          position.copy(this.focus).add({ x: 0, y: 2.5, z: -2.6 });
-          look.copy(this.focus).add({ x: 0, y: 1.4, z: 0 });
+          // From the kitchen side, so you see the customer's face.
+          position.copy(this.focus).add({ x: 0, y: 2.6, z: -2.4 });
+          look.copy(this.focus).add({ x: 0, y: 1.45, z: 0 });
         } else {
           position.copy(this.focus).add({ x: 0, y: 2.2, z: 2.8 });
           look.copy(this.focus).add({ x: 0, y: 0.3, z: 0 });

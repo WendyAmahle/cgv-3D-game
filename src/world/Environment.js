@@ -1,37 +1,35 @@
 import * as THREE from 'three';
 import { LAYOUT } from '../utils/Constants.js';
-import { checkerTexture, gridTexture, mat, stripeTexture, windowsTexture, woodTexture } from '../graphics/Materials.js';
+import { assets } from '../utils/AssetLoader.js';
+import { canvasTexture, mat, noiseNormalMap, pbr, physical, surfaces, windowsTexture } from '../graphics/Materials.js';
+import { RECIPES } from '../gameplay/Recipes.js';
 import { createSky } from './Sky.js';
 import { buildStationView } from './Stations.js';
 import { createTextSprite } from './Models.js';
 
-// Per-level visual identity.
+// Per-level visual identity. `sky` is only used if the HDRI fails to load.
 export const THEMES = {
   truck: {
-    palette: {
-      ground: 0x7cbf6a, floor: [0xe8e2d4, 0xd4ccba], counter: 0xcfd6de, counterTop: 0xeef2f6,
-      wood: 0xb07a4a, wall: 0xf4efe6, accent: 0xe63946, machine: 0xe5e7eb,
-    },
+    palette: { accent: 0xc1121f, trim: 0xf8fafc },
     sky: { top: 0x4a9dff, bottom: 0xdff1ff, glow: 0xfff2c4, stars: 0 },
     fog: { color: 0xcfe6ff, near: 30, far: 90 },
+    skybox: { height: 12, radius: 70 },
   },
   izakaya: {
-    palette: {
-      ground: 0x3a3a44, floor: [0x4a3322, 0x3e2a1c], counter: 0x5a3a24, counterTop: 0x8a5a36,
-      wood: 0x7a4d2c, wall: 0x3b2618, accent: 0xc0392b, machine: 0x44403c,
-    },
+    palette: { accent: 0x1e2a44, trim: 0x2a1a10 },
     sky: { top: 0x050818, bottom: 0x1a2240, glow: 0x3b2a5a, stars: 1 },
     fog: { color: 0x0e1224, near: 20, far: 60 },
+    skybox: { height: 10, radius: 60 },
   },
   cyber: {
-    palette: {
-      ground: 0x0b0c14, floor: [0x14151f, 0x1b1c2a], counter: 0x1b1d2b, counterTop: 0x2a2d40,
-      wood: 0x33364a, wall: 0x12131d, accent: 0xff2bd6, machine: 0x2a2d40, neonA: 0x00f0ff, neonB: 0xff2bd6,
-    },
+    palette: { accent: 0xff2bd6, trim: 0x00f0ff },
     sky: { top: 0x05010f, bottom: 0x2a0b3d, glow: 0xff2bd6, stars: 0.3 },
     fog: { color: 0x1a0a2a, near: 16, far: 50 },
+    skybox: { height: 14, radius: 70 },
   },
 };
+
+// ---------------------------------------------------------------- helpers
 
 function box(w, h, d, material, [x, y, z], { cast = true, receive = true } = {}) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
@@ -41,53 +39,135 @@ function box(w, h, d, material, [x, y, z], { cast = true, receive = true } = {})
   return mesh;
 }
 
+function plane(w, d, material, [x, y, z]) {
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), material);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.set(x, y, z);
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function place(root, key, [x, y, z], { rotation = 0, scale = 1 } = {}) {
+  const model = assets.model(key);
+  if (!model) return null;
+  model.position.set(x, y, z);
+  model.rotation.y = rotation;
+  model.scale.setScalar(scale);
+  root.add(model);
+  return model;
+}
+
 function neon(color, intensity = 3) {
-  const material = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: color, emissiveIntensity: intensity });
-  return material;
+  return new THREE.MeshStandardMaterial({ color: 0x000000, emissive: color, emissiveIntensity: intensity });
 }
 
-// Floor, counters and back wall shared by every level.
-function buildShell(root, palette) {
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), mat(palette.ground, { roughness: 0.95 }));
-  ground.rotation.x = -Math.PI / 2;
-  ground.receiveShadow = true;
-  root.add(ground);
+// Round ground patch whose edge fades into the HDRI ground around it.
+function groundPatch(material, radius) {
+  const fade = canvasTexture('ground-fade', 256, (ctx, size) => {
+    const c = size / 2;
+    const gradient = ctx.createRadialGradient(c, c, c * 0.6, c, c, c);
+    gradient.addColorStop(0, '#ffffff');
+    gradient.addColorStop(1, '#000000');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+  }, [1, 1], THREE.NoColorSpace);
+  const patchMaterial = material.clone();
+  patchMaterial.userData.shared = false;
+  patchMaterial.alphaMap = fade;
+  patchMaterial.transparent = true;
+  patchMaterial.depthWrite = false;
+  const mesh = new THREE.Mesh(new THREE.CircleGeometry(radius, 64), patchMaterial);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.y = 0.002;
+  mesh.receiveShadow = true;
+  mesh.renderOrder = -1;
+  return mesh;
+}
 
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(14.4, 6.2),
-    mat(0xffffff, { map: checkerTexture(palette.floor[0], palette.floor[1], [14, 6]), roughness: 0.6 })
-  );
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.set(0, 0.01, -1.3);
-  floor.receiveShadow = true;
-  root.add(floor);
+// Chalkboard menu listing the level's dishes and prices.
+function menuBoard(level, [x, y, z], { width = 3.2, height = 1.5 } = {}) {
+  const names = [...new Set(level.recipes)].map((id) => RECIPES[id]);
+  const texture = canvasTexture(`menu-${level.id}`, 512, (ctx, size) => {
+    ctx.fillStyle = '#1d2521';
+    ctx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 4000; i += 1) {
+      ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.04})`;
+      ctx.fillRect(Math.random() * size, Math.random() * size, 2, 2);
+    }
+    ctx.fillStyle = '#fef3c7';
+    ctx.font = '700 64px "Segoe Print", "Comic Sans MS", cursive';
+    ctx.textAlign = 'center';
+    ctx.fillText(level.name.toUpperCase(), size / 2, 90);
+    ctx.font = '400 38px "Segoe Print", "Comic Sans MS", cursive';
+    ctx.textAlign = 'left';
+    names.forEach((recipe, index) => {
+      const rowY = 170 + index * 62;
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillText(recipe.name, 40, rowY);
+      ctx.fillStyle = '#fcd34d';
+      ctx.textAlign = 'right';
+      ctx.fillText(`$${recipe.price}`, size - 40, rowY);
+      ctx.textAlign = 'left';
+    });
+  });
+  texture.repeat.set(1, height / width);
+  texture.offset.set(0, (1 - height / width) / 2);
+  const group = new THREE.Group();
+  group.add(box(width + 0.12, height + 0.12, 0.05, physical(0x3b2616, { roughness: 0.6 }), [0, 0, 0]));
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(width, height), mat(0xffffff, { map: texture, roughness: 0.95 }));
+  board.position.z = 0.03;
+  group.add(board);
+  group.position.set(x, y, z);
+  return group;
+}
 
-  const bodyHeight = LAYOUT.counterTopY - 0.06;
+// "Please wait here" floor sticker for each customer spot.
+function spotDecal() {
+  const texture = canvasTexture('spot-decal', 256, (ctx, size) => {
+    const c = size / 2;
+    ctx.clearRect(0, 0, size, size);
+    ctx.strokeStyle = 'rgba(250,204,21,0.85)';
+    ctx.lineWidth = 14;
+    ctx.setLineDash([26, 16]);
+    ctx.beginPath();
+    ctx.arc(c, c, c - 12, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(250,204,21,0.85)';
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      ctx.ellipse(c + side * 26, c + 10, 16, 34, side * 0.1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+  const mesh = new THREE.Mesh(new THREE.CircleGeometry(0.55, 40), new THREE.MeshStandardMaterial({ map: texture, transparent: true, roughness: 0.8, depthWrite: false }));
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.y = 0.012;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+// ---------------------------------------------------------------- shell
+
+// Floor, two counters and back wall; materials come from the theme.
+function buildShell(root, { floor, counterBody, counterTop, counterFront, wall }) {
+  root.add(plane(14.4, 6.4, floor, [0, 0.01, -1.3]));
+
+  const bodyHeight = LAYOUT.counterTopY - 0.05;
   for (const z of [LAYOUT.frontRowZ, LAYOUT.backRowZ]) {
-    root.add(box(LAYOUT.counterLength, bodyHeight, 1.1, mat(palette.counter, { roughness: 0.6, metalness: 0.3 }), [0, bodyHeight / 2, z]));
-    root.add(box(LAYOUT.counterLength + 0.3, 0.06, 1.25, mat(palette.counterTop, { roughness: 0.3, metalness: 0.2 }), [0, LAYOUT.counterTopY - 0.03, z]));
+    root.add(box(LAYOUT.counterLength, bodyHeight, 1.1, counterBody, [0, bodyHeight / 2, z]));
+    root.add(box(LAYOUT.counterLength + 0.2, 0.05, 1.22, counterTop, [0, LAYOUT.counterTopY - 0.025, z]));
   }
-  root.add(box(LAYOUT.counterLength, 0.16, 0.02, mat(palette.accent), [0, 0.85, LAYOUT.frontRowZ + 0.56]));
-
-  root.add(box(15, 5, 0.3, mat(palette.wall, { roughness: 0.9 }), [0, 2.5, LAYOUT.backWallZ]));
+  root.add(box(LAYOUT.counterLength, bodyHeight - 0.1, 0.02, counterFront, [0, bodyHeight / 2, LAYOUT.frontRowZ + 0.56]));
+  root.add(box(15, 4.3, 0.3, wall, [0, 2.15, LAYOUT.backWallZ]));
 }
 
-function sideWalls(root, material, height = 4.2) {
-  for (const side of [-1, 1]) {
-    root.add(box(0.2, height, 6.4, material, [side * 7.2, height / 2, -1.2]));
-  }
-}
-
-function buildCustomerSlots(root, count, palette) {
+function buildCustomerSlots(root, count) {
   const spacing = count <= 2 ? 3.6 : count === 3 ? 3.2 : 2.8;
   return Array.from({ length: count }, (_, index) => {
     const x = (index - (count - 1) / 2) * spacing;
     const slotRoot = new THREE.Group();
     slotRoot.position.set(x, 0, LAYOUT.customerZ);
-    const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.03, 32), mat(palette.accent, { roughness: 0.6 }));
-    pad.position.y = 0.015;
-    pad.receiveShadow = true;
-    slotRoot.add(pad);
+    slotRoot.add(spotDecal());
     const focus = new THREE.Object3D();
     slotRoot.add(focus);
     root.add(slotRoot);
@@ -97,167 +177,246 @@ function buildCustomerSlots(root, count, palette) {
 
 // ------------------------------------------------------------------ decor
 
-function tree(x, z, scale = 1) {
-  const result = new THREE.Group();
-  const trunk = box(0.3, 1.6, 0.3, mat(0x6b4423), [0, 0.8, 0]);
-  const leaves = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2, 0), mat(0x4f9d4a, { flatShading: true }));
-  leaves.position.y = 2.2;
-  leaves.castShadow = true;
-  result.add(trunk, leaves);
-  result.position.set(x, 0, z);
-  result.scale.setScalar(scale);
-  return result;
-}
-
 const DECOR = {
-  truck(root, palette, cutaway) {
-    const body = mat(0xffffff, { map: stripeTexture(palette.accent, 0xf8fafc, 2, [1, 1]) });
-    sideWalls(root, body, 4.8);
-    const roof = box(14.6, 0.25, 6.8, mat(palette.accent), [0, 4.9, -1.2]);
-    const awning = box(14.6, 0.06, 1.6, mat(0xffffff, { map: stripeTexture(palette.accent, 0xfff7ed, 16) }), [0, 4.75, 2.9]);
-    awning.rotation.x = -0.12;
-    root.add(roof, awning);
-    cutaway.push(roof, awning);
+  truck(root, level, cutaway) {
+    buildShell(root, {
+      floor: pbr('metal_plate', [7, 3], 0x9ca3af, { metalness: 0.9 }),
+      counterBody: surfaces.steel(),
+      counterTop: surfaces.steel(),
+      counterFront: surfaces.paint(0xc1121f),
+      wall: pbr('long_white_tiles', [5, 2], 0xf4f4f5),
+    });
 
-    const tyre = mat(0x111111, { roughness: 0.9 });
+    const paving = pbr('patterned_paving', [14, 14], 0xcfc6b4);
+    root.add(groundPatch(paving, 26));
+    root.add(plane(9, 60, pbr('leafy_grass', [4, 24], 0x6a9c4a), [-18, 0.004, 0]));
+
+    // Truck body.
+    const paint = surfaces.paint(0xc1121f);
+    const white = surfaces.paint(0xf8fafc);
+    const chrome = surfaces.chrome();
     for (const side of [-1, 1]) {
-      for (const z of [-3.2, 0.8]) {
-        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.35, 24), tyre);
-        wheel.rotation.z = Math.PI / 2;
-        wheel.position.set(side * 7.4, 0.55, z);
-        wheel.castShadow = true;
-        root.add(wheel);
+      root.add(box(0.12, 4.2, 6.4, paint, [side * 7.2, 2.1, -1.2]));
+      root.add(box(0.14, 0.14, 6.4, chrome, [side * 7.2, 1.2, -1.2]));
+      root.add(box(0.14, 0.5, 6.4, white, [side * 7.2, 3.6, -1.2]));
+    }
+    const roof = box(14.6, 0.2, 6.8, white, [0, 4.3, -1.2]);
+    root.add(roof);
+    cutaway.push(roof);
+    root.add(box(14.6, 0.5, 0.12, paint, [0, 0.25, 2.05])); // skirt under the hatch
+
+    // Striped awning over the serving hatch.
+    const stripes = canvasTexture('awning', 256, (ctx, size) => {
+      for (let i = 0; i < 8; i += 1) {
+        ctx.fillStyle = i % 2 ? '#fdf6e3' : '#c1121f';
+        ctx.fillRect((i * size) / 8, 0, size / 8, size);
       }
+    }, [6, 1]);
+    const awning = box(14.8, 0.04, 1.8, physical(0xffffff, { map: stripes, normalMap: noiseNormalMap('fabric', { scale: 64, strength: 0.6 }), roughness: 0.85, sheen: 0.5 }), [0, 4.05, 2.85]);
+    awning.rotation.x = 0.16;
+    root.add(awning);
+    cutaway.push(awning);
+
+    // Cab at the left end.
+    const cab = new THREE.Group();
+    cab.add(box(2.4, 2.4, 5.2, paint, [0, 1.6, 0]));
+    cab.add(box(0.05, 1.0, 4.4, physical(0x0b1220, { roughness: 0.05, metalness: 0.2, clearcoat: 1 }), [-1.21, 2.2, 0]));
+    cab.add(box(0.1, 0.35, 5.3, chrome, [-1.22, 0.55, 0]));
+    for (const z of [-2.1, 2.1]) {
+      const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.08, 20), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff3c4, emissiveIntensity: 1.5 }));
+      lamp.rotation.z = Math.PI / 2;
+      lamp.position.set(-1.25, 0.95, z);
+      cab.add(lamp);
+    }
+    cab.position.set(-8.6, 0, -1.2);
+    root.add(cab);
+
+    // Wheels: under the truck body and the cab.
+    const tyre = surfaces.rubber();
+    const wheels = [[-4.5, 2.12], [4.5, 2.12], [-4.5, -4.55], [4.5, -4.55], [-8.6, 1.45], [-8.6, -3.85]];
+    for (const [x, z] of wheels) {
+      const wheel = new THREE.Group();
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.24, 24), chrome);
+      hub.rotation.x = Math.PI / 2;
+      wheel.add(new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.16, 16, 32), tyre), hub);
+      wheel.position.set(x, 0.58, z);
+      wheel.traverse((object) => (object.castShadow = true));
+      root.add(wheel);
     }
 
-    root.add(box(5, 1.3, 0.1, mat(0x1d2430), [0, 3.2, LAYOUT.backWallZ + 0.2]));
-    const title = createTextSprite('BISTRO RUSH', { fontSize: 90, color: '#fbbf24', height: 0.6 });
-    title.position.set(0, 3.35, LAYOUT.backWallZ + 0.35);
-    const subtitle = createTextSprite('BURGER TRUCK', { fontSize: 50, color: '#f8fafc', height: 0.3 });
-    subtitle.position.set(0, 2.85, LAYOUT.backWallZ + 0.35);
-    root.add(title, subtitle);
+    root.add(menuBoard(level, [0, 2.8, LAYOUT.backWallZ + 0.18]));
+    place(root, 'register', [-6.1, LAYOUT.counterTopY, LAYOUT.frontRowZ], { rotation: Math.PI, scale: 1.2 });
 
-    const path = new THREE.Mesh(new THREE.PlaneGeometry(20, 9), mat(0xd6cfbf, { roughness: 0.95 }));
-    path.rotation.x = -Math.PI / 2;
-    path.position.set(0, 0.005, 6.5);
-    path.receiveShadow = true;
-    root.add(path);
-
-    [[-12, -6, 1.2], [-15, 4, 1], [13, -5, 1.3], [16, 6, 0.9], [-20, 12, 1.4], [21, -12, 1.5], [-9, 14, 1]].forEach(
-      ([x, z, s]) => root.add(tree(x, z, s))
-    );
-
-    const tableWood = mat(0xffffff, { map: woodTexture(0x9c6b3f) });
-    for (const x of [-6, 6]) {
-      root.add(box(2.2, 0.08, 0.9, tableWood, [x, 0.75, 8.5]));
-      root.add(box(2.2, 0.06, 0.3, tableWood, [x, 0.45, 7.8]));
-      root.add(box(2.2, 0.06, 0.3, tableWood, [x, 0.45, 9.2]));
-      root.add(box(0.1, 0.75, 0.8, tableWood, [x - 0.9, 0.37, 8.5]));
-      root.add(box(0.1, 0.75, 0.8, tableWood, [x + 0.9, 0.37, 8.5]));
-    }
+    // Park furniture.
+    place(root, 'picnicTable', [-5.5, 0, 8], { rotation: Math.PI / 2 });
+    place(root, 'picnicTable', [5.5, 0, 8.5], { rotation: Math.PI / 2 + 0.2 });
+    place(root, 'streetLamp', [-10, 0, 4.5]);
+    place(root, 'streetLamp', [10, 0, 4.5]);
+    place(root, 'trashCan', [9.3, 0, 7], { rotation: -0.5 });
+    place(root, 'shrub', [-3, 0, -6.6], { scale: 1.2 });
+    place(root, 'shrub', [5, 0, -6.4], { rotation: 2.5, scale: 1.1 });
+    place(root, 'shrub', [12, 0, -3], { rotation: 1.2 });
+    place(root, 'pottedPlant', [-7.8, 0, 3.4], { scale: 1.3 });
+    place(root, 'pottedPlant', [7.8, 0, 3.4], { rotation: 1.4, scale: 1.3 });
     return null;
   },
 
-  izakaya(root, palette, cutaway) {
-    const wood = mat(0xffffff, { map: woodTexture(palette.wood) });
-    sideWalls(root, wood);
-    const roof = box(15.6, 0.3, 7.6, mat(0x1c1917, { roughness: 0.8 }), [0, 4.35, -1.0]);
-    const eave = box(15.6, 0.25, 0.5, mat(0x292524), [0, 4.1, 2.7]);
+  izakaya(root, level, cutaway) {
+    const cedar = pbr('japanese_cedar_planks', [4, 2], 0x8a5a36);
+    const counterWood = pbr('wood_table', [4, 1], 0x6b4423, { roughness: 0.6 });
+    buildShell(root, {
+      floor: pbr('dark_wooden_planks', [6, 3], 0x3e2a1c),
+      counterBody: cedar,
+      counterTop: counterWood,
+      counterFront: cedar,
+      wall: cedar,
+    });
+    root.add(groundPatch(pbr('cobblestone_pavement', [16, 16], 0x55555f), 26));
+
+    for (const side of [-1, 1]) root.add(box(0.25, 4.2, 6.6, cedar, [side * 7.2, 2.1, -1.1]));
+    const roofTiles = physical(0x1c1c22, { roughness: 0.55, normalMap: noiseNormalMap('tiles', { scale: 12, strength: 2 }) });
+    const roof = box(16, 0.3, 8, roofTiles, [0, 4.4, -1.0]);
+    roof.rotation.x = -0.08;
+    const eave = box(16, 0.18, 0.6, mat(0x2a1a10), [0, 4.05, 2.8]);
     root.add(roof, eave);
     cutaway.push(roof, eave);
 
     // Noren curtain strips that sway.
+    const norenTexture = canvasTexture('noren', 256, (ctx, size) => {
+      ctx.fillStyle = '#1e2a44';
+      ctx.fillRect(0, 0, size, size);
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '700 150px "Yu Mincho", "MS Mincho", serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('麺', size / 2, size / 2 + 10);
+    });
+    const cloth = physical(0xffffff, { map: norenTexture, side: THREE.DoubleSide, roughness: 0.9, sheen: 0.6, normalMap: noiseNormalMap('fabric', { scale: 64, strength: 0.6 }) });
     const noren = [];
-    const cloth = new THREE.MeshStandardMaterial({ color: palette.accent, side: THREE.DoubleSide, roughness: 0.9 });
     for (let index = 0; index < 7; index += 1) {
-      const strip = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.9), cloth);
-      strip.geometry.translate(0, -0.45, 0);
-      strip.position.set(-5.7 + index * 1.9, 3.95, 2.6);
+      const strip = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.95, 1, 6), cloth);
+      strip.geometry.translate(0, -0.47, 0);
+      strip.position.set(-5.7 + index * 1.9, 3.95, 2.75);
       strip.castShadow = true;
       root.add(strip);
       noren.push(strip);
       cutaway.push(strip);
     }
 
-    // Paper lanterns (the night preset puts point lights next to them).
-    for (const x of [-3.5, 3.5, -6.5, 6.5]) {
-      const lantern = new THREE.Mesh(
-        new THREE.SphereGeometry(0.32, 20, 14),
-        new THREE.MeshStandardMaterial({ color: 0xff5a36, emissive: 0xff5a1f, emissiveIntensity: 1.8 })
-      );
-      lantern.scale.y = 1.3;
-      lantern.position.set(x, 3.2, 2.9);
+    // Paper lanterns (the night preset puts point lights beside them).
+    const paper = canvasTexture('lantern-paper', 256, (ctx, size) => {
+      ctx.fillStyle = '#d7261e';
+      ctx.fillRect(0, 0, size, size);
+      ctx.strokeStyle = 'rgba(40,0,0,0.5)';
+      ctx.lineWidth = 3;
+      for (let y = 0; y < size; y += 16) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(size, y);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#111';
+      ctx.font = '700 110px "Yu Mincho", "MS Mincho", serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('酒', size / 4, size / 2);
+      ctx.fillText('酒', (size * 3) / 4, size / 2);
+    });
+    const lanternMaterial = new THREE.MeshStandardMaterial({ map: paper, emissive: 0xffffff, emissiveMap: paper, emissiveIntensity: 1.6, roughness: 0.9 });
+    const profile = [];
+    for (let i = 0; i <= 12; i += 1) {
+      const t = i / 12;
+      profile.push(new THREE.Vector2(0.12 + Math.sin(t * Math.PI) * 0.22, t * 0.75));
+    }
+    const lanternGeometry = new THREE.LatheGeometry(profile, 32);
+    for (const x of [-3.5, 3.5, -6.4, 6.4]) {
+      const lantern = new THREE.Mesh(lanternGeometry, lanternMaterial);
+      lantern.position.set(x, 2.75, 3.0);
       root.add(lantern);
-      root.add(box(0.02, 0.4, 0.02, mat(0x111111), [x, 3.75, 2.9]));
+      root.add(box(0.32, 0.06, 0.32, mat(0x111111), [x, 3.52, 3.0]), box(0.32, 0.06, 0.32, mat(0x111111), [x, 2.74, 3.0]));
+      root.add(box(0.015, 0.5, 0.015, mat(0x111111), [x, 3.8, 3.0]));
     }
 
-    root.add(box(4.2, 1.2, 0.1, mat(0x111111), [0, 3.1, LAYOUT.backWallZ + 0.2]));
-    const title = createTextSprite('居酒屋 RAMEN', { fontSize: 80, color: '#fde68a', height: 0.55 });
-    title.position.set(0, 3.2, LAYOUT.backWallZ + 0.35);
+    root.add(menuBoard(level, [0, 2.9, LAYOUT.backWallZ + 0.18], { width: 3, height: 1.4 }));
+    const title = createTextSprite('居酒屋', { fontSize: 90, color: '#fde68a', height: 0.55 });
+    title.position.set(0, 4.0, LAYOUT.backWallZ + 0.4);
     root.add(title);
+
+    place(root, 'lantern', [-6.2, LAYOUT.counterTopY, LAYOUT.frontRowZ + 0.2], { scale: 1.4 });
+    place(root, 'lantern', [6.2, LAYOUT.counterTopY, LAYOUT.frontRowZ + 0.2], { scale: 1.4 });
+    place(root, 'barrel', [-8.2, 0, 2.6], { scale: 1.1 });
+    place(root, 'barrel', [-8.9, 0, 1.6], { rotation: 1, scale: 1.1 });
+    place(root, 'barrel', [-8.5, 0.96, 2.1], { rotation: 2, scale: 1.1 });
+    place(root, 'barrel', [8.4, 0, 2.4], { rotation: 0.4, scale: 1.1 });
+    for (const x of [-6, 6]) place(root, 'woodStool', [x, 0, LAYOUT.customerZ], { rotation: x * 0.1 });
 
     // Street buildings with warm windows.
     for (let index = 0; index < 8; index += 1) {
       const side = index % 2 ? 1 : -1;
       const height = 5 + (index % 3) * 2;
-      const building = box(
-        5,
-        height,
-        5,
-        new THREE.MeshStandardMaterial({ color: 0x2a2320, emissive: 0xffffff, emissiveIntensity: 0.5, emissiveMap: windowsTexture(0x1a1412, 0xffb45a, index + 1) }),
-        [side * (12 + (index % 4) * 6), height / 2, -8 - Math.floor(index / 2) * 5]
-      );
-      root.add(building);
+      root.add(box(5, height, 5, new THREE.MeshStandardMaterial({ color: 0x2a2320, emissive: 0xffffff, emissiveIntensity: 0.5, emissiveMap: windowsTexture(0x1a1412, 0xffb45a, index + 1) }), [side * (13 + (index % 4) * 6), height / 2, -9 - Math.floor(index / 2) * 5]));
     }
 
     return (dt, time) => {
       noren.forEach((strip, index) => {
-        strip.rotation.x = -0.08 + Math.sin(time * 1.6 + index * 0.7) * 0.07;
+        strip.rotation.x = -0.06 + Math.sin(time * 1.6 + index * 0.7) * 0.06;
       });
     };
   },
 
-  cyber(root, palette, cutaway) {
-    const metal = mat(palette.wall, { metalness: 0.7, roughness: 0.4 });
-    sideWalls(root, metal);
-    const roof = box(14.6, 0.25, 6.8, metal, [0, 4.3, -1.2]);
+  cyber(root, level, cutaway) {
+    const iron = pbr('corrugated_iron_02', [4, 2], 0x4b5563, { color: 0x6b7280, metalness: 0.6 });
+    buildShell(root, {
+      floor: pbr('rubber_tiles', [8, 4], 0x1f2937),
+      counterBody: surfaces.darkSteel(),
+      counterTop: physical(0x0b0b10, { roughness: 0.15, clearcoat: 1, metalness: 0.3 }),
+      counterFront: iron,
+      wall: iron,
+    });
+
+    // Wet asphalt: low roughness so neon and the skyline reflect in it.
+    const asphalt = pbr('asphalt_02', [12, 12], 0x1f2937, { color: 0x4b5563, roughness: 0.35, metalness: 0.2 });
+    root.add(groundPatch(asphalt, 28));
+
+    for (const side of [-1, 1]) root.add(box(0.2, 4.2, 6.6, iron, [side * 7.2, 2.1, -1.1]));
+    const roof = box(14.6, 0.25, 6.8, surfaces.darkSteel(), [0, 4.3, -1.2]);
     root.add(roof);
     cutaway.push(roof);
 
-    const cyan = neon(palette.neonA);
-    const magenta = neon(palette.neonB);
-    root.add(box(14.6, 0.06, 0.06, magenta, [0, 4.15, 2.2], { cast: false }));
-    root.add(box(LAYOUT.counterLength + 0.3, 0.04, 0.04, cyan, [0, LAYOUT.counterTopY, LAYOUT.frontRowZ + 0.64], { cast: false }));
-    for (const side of [-1, 1]) {
-      root.add(box(0.06, 4, 0.06, side < 0 ? cyan : magenta, [side * 7.05, 2, 1.95], { cast: false }));
-    }
-
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(60, 40),
-      new THREE.MeshStandardMaterial({ color: 0xffffff, map: gridTexture(0x0b0c14, 0x00f0ff, [30, 20]), roughness: 0.25, metalness: 0.6 })
-    );
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.set(0, 0.004, 10);
-    ground.receiveShadow = true;
-    root.add(ground);
+    const cyan = neon(0x00f0ff);
+    const magenta = neon(0xff2bd6);
+    const tube = (length, material, position, vertical = false) => {
+      const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, length, 10), material);
+      if (!vertical) mesh.rotation.z = Math.PI / 2;
+      mesh.position.set(...position);
+      root.add(mesh);
+    };
+    tube(14.6, magenta, [0, 4.15, 2.25]);
+    tube(LAYOUT.counterLength + 0.2, cyan, [0, LAYOUT.counterTopY - 0.02, LAYOUT.frontRowZ + 0.63]);
+    tube(4, cyan, [-7.05, 2, 1.95], true);
+    tube(4, magenta, [7.05, 2, 1.95], true);
+    tube(10, cyan, [0, 3.9, LAYOUT.backWallZ + 0.2]);
 
     const sign = createTextSprite('NEON DINER', { fontSize: 90, color: '#ff4fe0', height: 0.7 });
-    sign.position.set(0, 3.3, LAYOUT.backWallZ + 0.35);
+    sign.position.set(0, 3.3, LAYOUT.backWallZ + 0.4);
     root.add(sign);
+    root.add(menuBoard(level, [0, 2.1, LAYOUT.backWallZ + 0.18], { width: 3, height: 1.1 }));
 
-    // Skyline.
-    for (let index = 0; index < 18; index += 1) {
+    place(root, 'utilityBox', [-8.2, 0, 1.2], { rotation: Math.PI / 2 });
+    place(root, 'utilityBox', [8.3, 0, -0.5], { rotation: -Math.PI / 2 });
+    place(root, 'barrier', [-9.5, 0, 6], { rotation: 0.3 });
+    place(root, 'barrier', [9.8, 0, 6.5], { rotation: -0.4 });
+    place(root, 'wetFloorSign', [3.2, 0, 4.6], { rotation: 0.6, scale: 1.3 });
+    place(root, 'trashCan', [-8.4, 0, 4], { rotation: 0.8 });
+    for (const x of [-6.2, 6.2]) place(root, 'metalStool', [x, 0, LAYOUT.customerZ]);
+    place(root, 'wallLamp', [-7.35, 2.6, 0.5], { rotation: -Math.PI / 2, scale: 1.2 });
+    place(root, 'wallLamp', [7.35, 2.6, 0.5], { rotation: Math.PI / 2, scale: 1.2 });
+
+    // Distant skyline blocks with lit windows.
+    for (let index = 0; index < 14; index += 1) {
       const height = 12 + ((index * 7) % 5) * 7;
       const tint = index % 2 ? 0xff2bd6 : 0x00f0ff;
-      const building = box(
-        6,
-        height,
-        6,
-        new THREE.MeshStandardMaterial({ color: 0x0b0b12, emissive: 0xffffff, emissiveIntensity: 0.9, emissiveMap: windowsTexture(0x06060a, tint, index + 7) }),
-        [-45 + index * 5.5, height / 2, -22 - (index % 3) * 8],
-        { cast: false, receive: false }
-      );
-      root.add(building);
+      root.add(box(6, height, 6, new THREE.MeshStandardMaterial({ color: 0x0b0b12, emissive: 0xffffff, emissiveIntensity: 0.8, emissiveMap: windowsTexture(0x06060a, tint, index + 7) }), [-38 + index * 5.8, height / 2, -26 - (index % 3) * 8], { cast: false, receive: false }));
     }
 
     return (dt, time) => {
@@ -273,11 +432,17 @@ export function buildEnvironment(level) {
   const root = new THREE.Group();
   root.name = `level-${level.id}`;
 
-  root.add(createSky(theme.sky));
-  buildShell(root, theme.palette);
+  if (!assets.hdri(level.theme)) {
+    root.add(createSky(theme.sky));
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), mat(0x6b7280, { roughness: 0.95 }));
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    root.add(ground);
+  }
+
   const cutaway = []; // roof pieces hidden by the top-down camera
-  const animate = DECOR[level.theme](root, theme.palette, cutaway);
-  const customerSlots = buildCustomerSlots(root, level.customerSlots, theme.palette);
+  const animate = DECOR[level.theme](root, level, cutaway);
+  const customerSlots = buildCustomerSlots(root, level.customerSlots);
 
   const stations = level.stations.map((config) => {
     const view = buildStationView(config, theme.palette);
