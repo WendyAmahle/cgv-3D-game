@@ -1,17 +1,21 @@
 import * as THREE from 'three';
 import { events } from '../core/Events.js';
 import { RECIPES, matchesRecipe } from './Recipes.js';
-import { createCustomerModel, createOrderBubble } from '../world/Models.js';
+import { createOrderBubble } from '../world/Models.js';
+import { createCustomer } from '../world/Characters.js';
 import { disposeObject } from '../utils/Dispose.js';
 import { pick, randomRange } from '../utils/Constants.js';
 
-const WALK_SPEED = 2.6;
+const WALK_SPEED = 1.5; // m/s, matches the walk animation
+const ENTRY_DISTANCE = 7;
 const WRONG_ORDER_PENALTY = 4; // seconds of patience lost
+const THANKS_TIME = 1.4; // seconds spent nodding before leaving
 
 let nextCustomerId = 1;
 
 // Customers walk in to a free slot, wait with a patience timer, then leave
 // happy (served) or angry (patience ran out → order:missed).
+// States: arriving → waiting → (thanking →) leaving.
 // Slot views come from world/Environment.js: { root, focus, position }.
 export class CustomerManager {
   constructor(level, slotViews) {
@@ -46,13 +50,14 @@ export class CustomerManager {
     const patience = randomRange(this.level.patience);
     const side = slot.view.position.x < 0 ? -1 : 1;
 
-    const model = createCustomerModel(this.level.theme, nextCustomerId);
-    model.position.set(side * 9, 0, 3);
+    const { root, animator, height } = createCustomer(this.level.theme, nextCustomerId);
+    root.position.set(side * ENTRY_DISTANCE, 0, 2.5);
     const bubble = createOrderBubble(RECIPES[recipeId].name);
-    bubble.position.set(0, 2.55, 0);
+    bubble.position.set(0, height + 0.45, 0);
     bubble.visible = false;
-    model.add(bubble);
-    slot.view.root.add(model);
+    root.add(bubble);
+    slot.view.root.add(root);
+    animator.play('walk', { fade: 0 });
 
     slot.customer = {
       id: nextCustomerId++,
@@ -62,33 +67,45 @@ export class CustomerManager {
       maxPatience: patience,
       state: 'arriving',
       side,
-      model,
+      model: root,
+      animator,
       bubble,
       time: Math.random() * 10,
+      fidget: 3 + Math.random() * 3,
     };
     return true;
   }
 
   updateCustomer(slot, customer, dt) {
-    const { model } = customer;
+    const { model, animator } = customer;
     customer.time += dt;
+    animator.update(dt);
 
     if (customer.state === 'arriving' || customer.state === 'leaving') {
       if (customer.state === 'arriving') this.target.set(0, 0, 0);
-      else this.target.set(customer.side * 10, 0, 3.5);
+      else this.target.set(customer.side * (ENTRY_DISTANCE + 2), 0, 3);
 
-      const arrived = walkTowards(model, this.target, WALK_SPEED * dt, customer.time);
+      const arrived = walkTowards(model, this.target, WALK_SPEED * dt * (customer.happy === false ? 0.8 : 1), dt);
+      if (!animator.animated) model.position.y = arrived ? 0 : Math.abs(Math.sin(customer.time * 10)) * 0.06;
       if (!arrived) return;
 
       if (customer.state === 'arriving') {
         customer.state = 'waiting';
-        model.rotation.y = Math.PI; // face the kitchen
-        model.position.y = 0;
+        customer.facing = Math.PI; // face the kitchen
         customer.bubble.visible = true;
+        animator.play('idle');
         events.emit('order:new', { customer });
       } else {
         this.remove(slot);
       }
+      return;
+    }
+
+    turnTowards(model, customer.facing ?? Math.PI, dt);
+
+    if (customer.state === 'thanking') {
+      customer.thanks -= dt;
+      if (customer.thanks <= 0) this.startLeaving(customer);
       return;
     }
 
@@ -97,10 +114,15 @@ export class CustomerManager {
       const ratio = Math.max(0, customer.patience / customer.maxPatience);
       customer.bubble.userData.setPatience(ratio);
 
-      // Idle sway that turns into impatient bouncing as patience runs out.
-      const agitation = ratio < 0.3 ? 1 : 0;
-      model.position.y = Math.abs(Math.sin(customer.time * (3 + agitation * 9))) * 0.05 * (1 + agitation * 2);
-      model.rotation.z = Math.sin(customer.time * 1.5) * 0.03;
+      // Impatient customers fidget: idle speeds up and they shake their head.
+      if (ratio < 0.3) {
+        if (animator.current === animator.actions.idle) animator.play('idle', { timeScale: 1.8 });
+        customer.fidget -= dt;
+        if (customer.fidget <= 0) {
+          customer.fidget = 4 + Math.random() * 2;
+          animator.play('headShake', { then: 'idle' });
+        }
+      }
 
       if (customer.patience <= 0) this.leave(slot, false);
     }
@@ -114,6 +136,7 @@ export class CustomerManager {
     const recipe = RECIPES[customer.recipeId];
     if (!matchesRecipe(tags, customer.recipeId)) {
       customer.patience = Math.max(0.5, customer.patience - WRONG_ORDER_PENALTY);
+      customer.animator.play('headShake', { then: 'idle' });
       return { ok: false, recipe };
     }
 
@@ -124,11 +147,23 @@ export class CustomerManager {
 
   leave(slot, happy) {
     const customer = slot.customer;
-    customer.state = 'leaving';
     customer.happy = happy;
     customer.bubble.visible = false;
-    customer.model.rotation.z = 0;
-    if (!happy) events.emit('order:missed', { customer });
+    if (happy) {
+      customer.state = 'thanking';
+      customer.thanks = THANKS_TIME;
+      customer.animator.play('agree');
+    } else {
+      customer.state = 'thanking';
+      customer.thanks = 1.2;
+      customer.animator.play('headShake');
+      events.emit('order:missed', { customer });
+    }
+  }
+
+  startLeaving(customer) {
+    customer.state = 'leaving';
+    customer.animator.play('walk', { timeScale: customer.happy ? 1 : 0.8 });
   }
 
   remove(slot) {
@@ -145,8 +180,9 @@ export class CustomerManager {
   }
 }
 
-// Moves `model` towards `target` (slot-local) with a walking bob. Returns true on arrival.
-function walkTowards(model, target, step, time) {
+// Moves `model` towards `target` (slot-local), turning to face the way it walks.
+// Returns true on arrival.
+function walkTowards(model, target, step, dt) {
   const dx = target.x - model.position.x;
   const dz = target.z - model.position.z;
   const distance = Math.hypot(dx, dz);
@@ -157,7 +193,11 @@ function walkTowards(model, target, step, time) {
   }
   model.position.x += (dx / distance) * step;
   model.position.z += (dz / distance) * step;
-  model.position.y = Math.abs(Math.sin(time * 10)) * 0.08;
-  model.rotation.y = Math.atan2(dx, dz);
+  turnTowards(model, Math.atan2(dx, dz), dt);
   return false;
+}
+
+function turnTowards(model, angle, dt) {
+  const delta = Math.atan2(Math.sin(angle - model.rotation.y), Math.cos(angle - model.rotation.y));
+  model.rotation.y += delta * Math.min(1, dt * 8);
 }
