@@ -42,7 +42,7 @@ export class LevelManager {
 
   build(level, scene) {
     const world = buildEnvironment(level);
-    const lighting = applyLighting(level.lighting, scene, world.root, world.theme);
+    const lighting = applyLighting(level.lighting, scene, world.root, world.theme, level.theme);
     scene.add(world.root);
     world.update = (dt, time) => {
       world.animate?.(dt, time);

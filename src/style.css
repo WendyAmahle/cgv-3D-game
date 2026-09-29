@@ -483,6 +483,19 @@ button:disabled {
   font-size: 0.85rem;
 }
 
+#loading {
+  z-index: 5;
+  background: #0b1120;
+}
+
+.loading-card {
+  text-align: center;
+}
+
+.loading-card .meter {
+  height: 10px;
+}
+
 @keyframes pop {
   from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }

@@ -55,6 +55,16 @@ export class Screens {
     document.activeElement?.blur?.();
   }
 
+  showLoading(text, progress) {
+    $('#loading').classList.remove('hidden');
+    $('#loadingText').textContent = text;
+    $('#loadingFill').style.width = `${Math.round(progress * 100)}%`;
+  }
+
+  hideLoading() {
+    $('#loading').classList.add('hidden');
+  }
+
   showIntro(level, index) {
     $('#introNumber').textContent = `Level ${index + 1}`;
     $('#introName').textContent = level.name;

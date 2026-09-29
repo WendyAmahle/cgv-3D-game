@@ -16,6 +16,7 @@ import { MainMenu } from '../ui/MainMenu.js';
 import { PauseMenu } from '../ui/PauseMenu.js';
 import { Credits } from '../ui/Credits.js';
 import { KEYS, matches } from '../utils/Constants.js';
+import { assets } from '../utils/AssetLoader.js';
 
 const CAMERA_KEYS = { Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4 };
 
@@ -60,9 +61,10 @@ export class Game {
     this.world = null;
     this.gameplay = null;
     this.focusPoint = new THREE.Vector3();
+    this.request = 0; // guards against overlapping async level loads
   }
 
-  init() {
+  async init() {
     document.querySelector('#app').appendChild(this.renderer.domElement);
     this.bindEvents();
     this.audio.bindEvents();
@@ -70,8 +72,17 @@ export class Game {
     this.pauseMenu.setQuality(this.quality);
     this.pauseMenu.setMuted(this.audio.muted);
     this.onResize();
-    this.showMenu();
     this.renderer.setAnimationLoop((timestamp) => this.frame(timestamp));
+    await this.ensureAssets('shared', 'Loading kitchen');
+    await this.showMenu();
+  }
+
+  // Downloads a group of assets (see utils/AssetLoader.js) behind the loading screen.
+  async ensureAssets(group, text) {
+    if (assets.isLoaded(group)) return;
+    this.screens.showLoading(`${text}…`, 0);
+    await assets.load(group, (progress) => this.screens.showLoading(`${text}…`, progress));
+    this.screens.hideLoading();
   }
 
   bindEvents() {
@@ -154,15 +165,20 @@ export class Game {
 
   // ------------------------------------------------------------------ flow
 
-  loadWorld(index) {
+  // Returns false if a newer load started while this one waited for assets.
+  async loadWorld(index, request) {
     this.teardownGameplay();
-    if (this.world) this.levels.dispose(this.world);
     const level = LEVELS[index];
+    await this.ensureAssets(level.theme, `Loading ${level.name}`);
+    if (request !== this.request) return false;
+    if (this.world) this.levels.dispose(this.world);
+    this.renderer.toneMappingExposure = level.exposure ?? 1;
     this.world = this.levels.build(level, this.scene);
     this.effects.attach(this.world, level);
     this.post.configure(level.post);
     this.applyQuality();
     this.applyCutaway();
+    return true;
   }
 
   // The top-down camera looks through the roof.
@@ -179,9 +195,10 @@ export class Game {
     this.audio.setSizzle(0);
   }
 
-  showMenu() {
+  async showMenu() {
     const index = this.levels.highestUnlocked;
-    this.loadWorld(index);
+    const request = ++this.request;
+    if (!(await this.loadWorld(index, request))) return;
     this.state.set(STATES.MENU);
     this.controller.enabled = false;
     this.hud.hide();
@@ -192,10 +209,12 @@ export class Game {
     this.audio.startMusic(LEVELS[index].music);
   }
 
-  openLevel(index) {
+  async openLevel(index) {
+    const request = ++this.request;
     this.levelIndex = index;
     const level = LEVELS[index];
-    this.loadWorld(index);
+    this.controller.enabled = false;
+    if (!(await this.loadWorld(index, request))) return;
     this.gameplay = new Gameplay(level, this.world, this.player);
     this.controller.setTargets(this.gameplay.targets);
     this.controller.enabled = false;
@@ -302,7 +321,7 @@ export class Game {
       this.effects.update(dt, this.gameplay?.stations ?? []);
     }
 
-    if (playing) {
+    if (playing && this.gameplay) {
       this.gameplay.update(dt);
       this.controller.update(dt, time);
       this.player.update(dt, time);
