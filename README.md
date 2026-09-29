@@ -15,7 +15,8 @@ In dev builds the game object is available in the browser console as `window.gam
 
 | Input | Action |
 | --- | --- |
-| Mouse | Point at and click stations and customers |
+| Mouse drag | Drag and drop items: crate → grill → board → customer, drinks → board, anything → bin |
+| Mouse click | Start pouring a drink; click a customer to hear their order |
 | A/D · W/S (or arrows) | Move the selection · switch between the back counter, front counter and customers |
 | Space / Enter | Use the selected station / serve the selected customer |
 | X | Throw away the held item |
