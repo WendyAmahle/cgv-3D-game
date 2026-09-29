@@ -87,6 +87,19 @@ canvas {
   max-width: calc(100vw - 300px);
 }
 
+.hud-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: auto;
+}
+
+.hud-actions button {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  border-radius: 10px;
+}
+
 #hudTime.warning {
   color: var(--bad);
   animation: pulse 0.8s infinite alternate;

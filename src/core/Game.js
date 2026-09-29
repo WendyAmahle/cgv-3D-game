@@ -108,6 +108,7 @@ export class Game {
     on('ui:credits', () => this.screens.show('credits', { returnTo: this.state.is(STATES.MENU) ? 'menu' : this.screens.current }));
     on('ui:back', () => this.screens.show(this.screens.returnTo));
     on('ui:start', () => this.beginShift());
+    on('ui:pause', () => this.state.is(STATES.PLAYING) && this.pause());
     on('ui:resume', () => this.resume());
     on('ui:restart', () => this.openLevel(this.levelIndex));
     on('ui:next', () => this.openLevel(Math.min(this.levelIndex + 1, LEVELS.length - 1)));
