@@ -29,7 +29,7 @@ In dev builds the game object is available in the browser console as `window.gam
 | Level | Theme | What it adds |
 | --- | --- | --- |
 | 1 Burger Truck | Daylight park | Core loop: grill → assemble → serve, plus drinks |
-| 2 Ramen Izakaya | Night, lanterns, fireflies | Boiling pot and broth, 3 customers at once, rush hour halfway through |
+| 2 Lantern Noodle Bar | Night, lanterns, fireflies | Boiling pot and broth, 3 customers at once, rush hour halfway through |
 | 3 Neon Diner | Cyberpunk, rain, bloom | Every station, fast android customers, random "power surge" overclock events |
 
 Each level is a plain config file in `src/levels/`: stations, recipes, timings, theme, lighting, post-processing and music.

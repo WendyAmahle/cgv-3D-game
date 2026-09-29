@@ -1,14 +1,14 @@
-// Level 2 — Ramen Izakaya: boiling + broth, three customers at once, rush hour.
+// Level 2 — Lantern Noodle Bar: boiling + broth, three customers at once, rush hour.
 export default {
   id: 2,
-  name: 'Ramen Izakaya',
+  name: 'Lantern Noodle Bar',
   tagline: 'Late-night noodle bar under paper lanterns.',
   mechanic: 'Boil noodles in the pot, ladle broth into bowls and juggle three customers at once. Halfway through, rush hour hits.',
   theme: 'izakaya',
   lighting: 'night',
   weather: 'fireflies',
   post: { bloom: 0.45, threshold: 1.1, saturation: 1.05, vignette: 0.4, tint: 0xfff0e0 },
-  exposure: 0.85,
+  exposure: 0.8,
   music: { tempo: 92, root: 57, scale: [0, 3, 5, 7, 10, 12], progression: [0, -4, -2, 0], wave: 'sine' },
 
   duration: 165,

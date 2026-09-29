@@ -322,7 +322,7 @@ const DECOR = {
       ctx.fillText('酒', size / 4, size / 2);
       ctx.fillText('酒', (size * 3) / 4, size / 2);
     });
-    const lanternMaterial = new THREE.MeshStandardMaterial({ map: paper, emissive: 0xffffff, emissiveMap: paper, emissiveIntensity: 1.6, roughness: 0.9 });
+    const lanternMaterial = new THREE.MeshStandardMaterial({ map: paper, emissive: 0xffffff, emissiveMap: paper, emissiveIntensity: 0.8, roughness: 0.9 });
     const profile = [];
     for (let i = 0; i <= 12; i += 1) {
       const t = i / 12;
@@ -338,7 +338,7 @@ const DECOR = {
     }
 
     root.add(menuBoard(level, [0, 2.9, LAYOUT.backWallZ + 0.18], { width: 3, height: 1.4 }));
-    const title = createTextSprite('居酒屋', { fontSize: 90, color: '#fde68a', height: 0.55 });
+    const title = createTextSprite('LANTERN NOODLE BAR', { fontSize: 80, color: '#fde68a', height: 0.45 });
     title.position.set(0, 4.0, LAYOUT.backWallZ + 0.4);
     root.add(title);
 

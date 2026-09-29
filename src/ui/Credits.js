@@ -79,7 +79,7 @@ export const TEAM = [
 ];
 
 export const ORIGINAL_WORK = [
-  'Food, stations, food truck, izakaya and diner buildings are modelled procedurally by the team (the scanned bun is sliced in code).',
+  'Food, stations, food truck, noodle bar and diner buildings are modelled procedurally by the team (the scanned bun is sliced in code).',
   'Animation retargeting from X Bot onto the other skeletons is our own code.',
   'All sound effects and music are synthesised at runtime with the Web Audio API.',
   'Custom GLSL shaders: cooking (injected into the PBR material), liquid fill, steam, particles, sky and colour-grade/heat-haze.',

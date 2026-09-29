@@ -42,7 +42,7 @@ export const RECIPES = {
   cola: { name: 'Cola', ingredients: ['cola'], price: 5 },
   burgerCombo: { name: 'Burger + Cola', ingredients: ['bun', 'patty:cooked', 'lettuce', 'cola'], price: 20 },
 
-  // Level 2 — Ramen Izakaya
+  // Level 2 — Lantern Noodle Bar
   shoyuRamen: { name: 'Shoyu Ramen', ingredients: ['broth', 'noodles:cooked', 'egg', 'nori'], price: 18 },
   chashuRamen: { name: 'Chashu Ramen', ingredients: ['broth', 'noodles:cooked', 'pork:cooked'], price: 20 },
   greenTea: { name: 'Green Tea', ingredients: ['tea'], price: 6 },
