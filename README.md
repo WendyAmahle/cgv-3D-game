@@ -20,7 +20,8 @@ In dev builds the game object is available in the browser console as `window.gam
 | A/D · W/S (or arrows) | Move the selection · switch between the back counter, front counter and customers |
 | Space / Enter | Use the selected station / serve the selected customer |
 | X | Throw away the held item |
-| 1–4 / C | Camera: overview, chef view, station focus, top-down |
+| 1–4 / C | Camera: overview, third person (follows the chef), station focus, top-down |
+| N | Show / hide the minimap |
 | Q / E · mouse wheel | Orbit · zoom the overview camera |
 | Esc / P · M | Pause · mute |
 

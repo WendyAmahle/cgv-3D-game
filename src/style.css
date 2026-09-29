@@ -181,6 +181,36 @@ canvas {
   color: #fde68a;
 }
 
+/* Frame only: the minimap itself is drawn into this box on the WebGL canvas. */
+#minimap {
+  position: absolute;
+  left: 16px;
+  bottom: 96px;
+  width: 260px;
+  height: 124px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.35), inset 0 0 0 1px rgba(15, 23, 42, 0.6);
+}
+
+#minimap .label {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  margin: 0;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.75);
+}
+
+#minimap.off {
+  width: auto;
+  height: auto;
+  padding: 16px 40px 0 0;
+  border-color: transparent;
+  box-shadow: none;
+}
+
 #hudBottom {
   position: absolute;
   left: 16px;
@@ -551,6 +581,10 @@ button:disabled {
   }
 
   #cameraPanel {
+    display: none;
+  }
+
+  #minimap {
     display: none;
   }
 }

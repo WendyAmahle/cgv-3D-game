@@ -4,6 +4,8 @@ import { GameState, STATES } from './GameState.js';
 import { LEVELS, LevelManager } from './LevelManager.js';
 import { Gameplay } from '../gameplay/Gameplay.js';
 import { Player } from '../player/Player.js';
+import { Chef } from '../player/Chef.js';
+import { Physics } from '../gameplay/Physics.js';
 import { PlayerController } from '../player/PlayerController.js';
 import { CameraController } from '../player/CameraController.js';
 import { Effects } from '../graphics/Effects.js';
@@ -15,6 +17,7 @@ import { Screens } from '../ui/Screens.js';
 import { MainMenu } from '../ui/MainMenu.js';
 import { PauseMenu } from '../ui/PauseMenu.js';
 import { Credits } from '../ui/Credits.js';
+import { Minimap } from '../ui/Minimap.js';
 import { KEYS, matches } from '../utils/Constants.js';
 import { assets } from '../utils/AssetLoader.js';
 
@@ -49,10 +52,14 @@ export class Game {
       canGive: (target) => target.kind === 'station' && this.player.isEmpty && target.ref.canGive(),
       canDrop: (target) => this.gameplay?.canDrop(target) ?? false,
       drop: (target, source) => this.gameplay?.drop(target, source),
+      spill: (source, velocity) => this.gameplay?.spill(source, velocity),
     });
     this.scene.add(this.controller.ring, this.player.dragRoot);
     this.effects = new Effects(this.scene);
     this.post = new PostProcessing(this.renderer, this.scene, this.camera);
+    this.physics = new Physics(this.scene);
+    this.minimap = new Minimap(this.renderer, this.scene);
+    this.chef = null; // created once the character models have loaded
 
     this.hud = new HUD();
     this.screens = new Screens();
@@ -65,6 +72,7 @@ export class Game {
     this.world = null;
     this.gameplay = null;
     this.focusPoint = new THREE.Vector3();
+    this.chefTarget = new THREE.Vector3();
     this.request = 0; // guards against overlapping async level loads
   }
 
@@ -78,6 +86,9 @@ export class Game {
     this.onResize();
     this.renderer.setAnimationLoop((timestamp) => this.frame(timestamp));
     await this.ensureAssets('shared', 'Loading kitchen');
+    this.chef = new Chef();
+    this.scene.add(this.chef.root);
+    this.cameraController.follow = this.chef.root;
     await this.showMenu();
   }
 
@@ -120,9 +131,11 @@ export class Game {
     on('level:failed', ({ reason }) => this.onLevelFailed(reason));
 
     on('message', ({ text }) => this.hud.toast(text));
-    on('camera:mode', ({ name }) => {
+    on('camera:mode', ({ mode, name }) => {
       this.hud.setCamera(name);
       this.applyCutaway();
+      // Third person: held items go in the chef's arms instead of the camera hand.
+      this.player.setCarry(mode === 2 && this.chef ? this.chef.carry : null);
     });
     on('order:wrong', () => {
       this.cameraController.shake(0.08);
@@ -161,6 +174,7 @@ export class Game {
     if (!this.state.is(STATES.PLAYING)) return;
 
     if (CAMERA_KEYS[code]) this.cameraController.setMode(CAMERA_KEYS[code]);
+    else if (matches(code, KEYS.minimap)) this.hud.toast(this.minimap.toggle() ? 'Minimap on' : 'Minimap off');
     else if (matches(code, KEYS.cycleCamera)) this.cameraController.cycle();
     else if (matches(code, KEYS.orbitLeft)) this.cameraController.orbit(-1);
     else if (matches(code, KEYS.orbitRight)) this.cameraController.orbit(1);
@@ -180,6 +194,7 @@ export class Game {
     this.renderer.toneMappingExposure = level.exposure ?? 1;
     this.world = this.levels.build(level, this.scene);
     this.effects.attach(this.world, level);
+    this.chef?.reset(level);
     this.post.configure(level.post);
     this.applyQuality();
     this.applyCutaway();
@@ -220,7 +235,7 @@ export class Game {
     const level = LEVELS[index];
     this.controller.enabled = false;
     if (!(await this.loadWorld(index, request))) return;
-    this.gameplay = new Gameplay(level, this.world, this.player);
+    this.gameplay = new Gameplay(level, this.world, this.player, this.physics);
     this.controller.setTargets(this.gameplay.targets);
     this.controller.enabled = false;
 
@@ -239,6 +254,7 @@ export class Game {
     if (!this.state.is(STATES.INTRO)) return;
     this.screens.hideAll();
     this.hud.show();
+    this.minimap.invalidate();
     this.controller.enabled = true;
     this.state.set(STATES.PLAYING);
     events.emit('level:start', { level: LEVELS[this.levelIndex] });
@@ -311,6 +327,7 @@ export class Game {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
     this.post.setSize(width, height);
+    this.minimap.invalidate();
     sharedUniforms.uPointScale.value = (height * this.renderer.getPixelRatio()) / 2;
   }
 
@@ -329,6 +346,11 @@ export class Game {
       this.effects.update(dt, this.gameplay?.stations ?? []);
     }
 
+    if (!paused) {
+      this.physics.update(dt);
+      this.chef?.update(dt, this.chefGoal());
+    }
+
     if (playing && this.gameplay) {
       this.gameplay.update(dt);
       this.controller.update(dt, time);
@@ -344,5 +366,15 @@ export class Game {
 
     this.post.setHeatSources(this.effects.heatSources());
     this.post.render(dt);
+    if (this.gameplay && !this.hud.root.classList.contains('hidden')) {
+      this.minimap.render([...(this.world?.cutaway ?? []), this.player.hand]);
+    }
+  }
+
+  // Where the chef should be working: the dragged item, else the selection.
+  chefGoal() {
+    if (!this.controller.enabled) return null;
+    if (this.controller.drag) return this.player.dragRoot.position;
+    return this.controller.selected?.focus.getWorldPosition(this.chefTarget) ?? null;
   }
 }
