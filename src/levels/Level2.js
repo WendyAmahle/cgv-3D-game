@@ -7,7 +7,8 @@ export default {
   theme: 'izakaya',
   lighting: 'night',
   weather: 'fireflies',
-  post: { bloom: 0.45, threshold: 0.8, saturation: 1.05, vignette: 0.4, tint: 0xffe8d0 },
+  post: { bloom: 0.45, threshold: 1.1, saturation: 1.05, vignette: 0.4, tint: 0xfff0e0 },
+  exposure: 0.85,
   music: { tempo: 92, root: 57, scale: [0, 3, 5, 7, 10, 12], progression: [0, -4, -2, 0], wave: 'sine' },
 
   duration: 165,

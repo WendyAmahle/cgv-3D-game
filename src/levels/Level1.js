@@ -7,7 +7,8 @@ export default {
   theme: 'truck',
   lighting: 'day',
   weather: 'none',
-  post: { bloom: 0.15, threshold: 0.9, saturation: 1.1, vignette: 0.25, tint: 0xfff6ea },
+  post: { bloom: 0.25, threshold: 1.1, saturation: 1.05, vignette: 0.25, tint: 0xfff6ea },
+  exposure: 0.95,
   music: { tempo: 116, root: 60, scale: [0, 2, 4, 7, 9, 12], progression: [0, 5, 7, 5], wave: 'triangle' },
 
   duration: 150,
