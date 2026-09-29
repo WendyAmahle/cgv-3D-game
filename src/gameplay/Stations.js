@@ -44,6 +44,22 @@ class Station {
 
   interact() {}
 
+  // Drag and drop: can an item be dragged off this station?
+  canGive() {
+    return Boolean(this.item);
+  }
+
+  // Drag and drop: can `item` be dropped here?
+  canAccept() {
+    return false;
+  }
+
+  // A drag that started here was dropped somewhere invalid: take the item back.
+  receiveBack(item) {
+    if (this.item) disposeItem(item);
+    else this.place(item);
+  }
+
   update() {}
 
   status() {
@@ -65,8 +81,16 @@ export class CrateStation extends Station {
     player.hold(createItem(this.config.item));
   }
 
+  canGive() {
+    return true;
+  }
+
+  receiveBack(item) {
+    disposeItem(item);
+  }
+
   status() {
-    return `Grab ${ITEMS[this.config.item].label.toLowerCase()}`;
+    return `Drag out ${ITEMS[this.config.item].label.toLowerCase()}`;
   }
 }
 
@@ -79,6 +103,20 @@ export class CookerStation extends Station {
 
   accepts(item) {
     return ITEMS[item.type]?.cook?.station === this.type;
+  }
+
+  canAccept(item) {
+    return !this.item && !isPlate(item) && this.accepts(item);
+  }
+
+  receiveBack(item) {
+    if (this.item) {
+      disposeItem(item);
+      return;
+    }
+    this.place(item);
+    item.heating = true;
+    refreshItem(item);
   }
 
   interact(player) {
@@ -143,6 +181,10 @@ export class DispenserStation extends Station {
     return ITEMS[this.config.item].liquid;
   }
 
+  canGive() {
+    return Boolean(this.item) && !this.pouring;
+  }
+
   interact(player) {
     if (!this.item) {
       const vessel = createItem(this.config.item);
@@ -178,7 +220,7 @@ export class DispenserStation extends Station {
     const label = ITEMS[this.config.item].label;
     if (!this.item) return `Click to pour ${label.toLowerCase()}`;
     if (this.pouring) return `Pouring ${Math.floor(this.item.fill * 100)}%`;
-    return `${label} ready`;
+    return `${label} ready: drag it to the board`;
   }
 }
 
@@ -190,6 +232,32 @@ export class BoardStation extends Station {
     this.view.anchor.add(this.plate.mesh);
   }
 
+  canGive() {
+    return this.plate.contents.length > 0;
+  }
+
+  canAccept(item) {
+    return isPlate(item) ? this.plate.contents.length === 0 : this.plate.contents.length < MAX_PLATE_ITEMS;
+  }
+
+  receiveBack(item) {
+    if (!isPlate(item)) {
+      addToPlate(this.plate, item);
+    } else if (this.plate.contents.length) {
+      disposeItem(item);
+    } else {
+      this.putPlate(item);
+    }
+  }
+
+  putPlate(plate) {
+    disposeItem(this.plate);
+    this.plate = plate;
+    plate.mesh.position.set(0, 0, 0);
+    plate.mesh.rotation.set(0, 0, 0);
+    this.view.anchor.add(plate.mesh);
+  }
+
   interact(player) {
     const held = player.held;
 
@@ -198,11 +266,7 @@ export class BoardStation extends Station {
         say('There is already a plate on the board.');
         return;
       }
-      disposeItem(this.plate);
-      this.plate = player.release();
-      this.plate.mesh.position.set(0, 0, 0);
-      this.plate.mesh.rotation.set(0, 0, 0);
-      this.view.anchor.add(this.plate.mesh);
+      this.putPlate(player.release());
       events.emit('item:place', { item: this.plate });
       return;
     }
@@ -241,6 +305,14 @@ export class BoardStation extends Station {
 }
 
 export class TrashStation extends Station {
+  canGive() {
+    return false;
+  }
+
+  canAccept() {
+    return true;
+  }
+
   interact(player) {
     if (player.isEmpty) {
       say('Nothing to throw away.');

@@ -2,7 +2,7 @@ import { events, say } from '../core/Events.js';
 import { RECIPES, tagLabel } from './Recipes.js';
 import { CookerStation, createStation } from './Stations.js';
 import { CustomerManager } from './Customers.js';
-import { disposeItem, itemTags } from './Items.js';
+import { disposeItem, itemLabel, itemTags } from './Items.js';
 import { pick, randomRange } from '../utils/Constants.js';
 
 // One shift in one level: stations, customers, timer, money and win/lose.
@@ -104,6 +104,39 @@ export class Gameplay {
     position.y += 1.8;
     events.emit('order:served', { customer, reward, tip, combo: stats.combo, position });
     say(`${recipe.name} served! +$${reward}${tip ? ` (incl. $${tip} tip)` : ''}`);
+  }
+
+  // ---- Drag and drop (mouse) ---------------------------------------------
+
+  // Starts a drag from a station: its item goes into the player's hands.
+  pickUp(target) {
+    if (this.result || !this.player.isEmpty || target.kind !== 'station') return false;
+    const station = target.ref;
+    if (!station.canGive()) return false;
+    station.interact(this.player);
+    return !this.player.isEmpty;
+  }
+
+  canDrop(target) {
+    const item = this.player.held;
+    if (!item || this.result || !target) return false;
+    if (target.kind === 'customer') return target.ref.customer?.state === 'waiting';
+    return target.ref.canAccept(item);
+  }
+
+  // Drops the dragged item on `target`. Anything not accepted (an invalid spot,
+  // or a customer rejecting the dish) goes back to where the drag started.
+  drop(target, source) {
+    if (target && target !== source) {
+      if (this.canDrop(target)) this.interact(target);
+      else say(`You can't put ${itemLabel(this.player.held).toLowerCase()} there.`);
+    }
+    if (!this.player.isEmpty) this.returnHeld(source);
+  }
+
+  returnHeld(source) {
+    const item = this.player.release();
+    if (item) source.ref.receiveBack(item);
   }
 
   discardHeld() {
