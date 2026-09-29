@@ -10,6 +10,10 @@ export const LAYOUT = {
 
 export const STORAGE_KEY = 'bistro-rush-progress-v1';
 
+// While developing, every level is playable from Level select.
+// Set to false before the final submission so levels unlock in order.
+export const UNLOCK_ALL_LEVELS = true;
+
 // Keyboard bindings (KeyboardEvent.code values).
 export const KEYS = {
   left: ['KeyA', 'ArrowLeft'],

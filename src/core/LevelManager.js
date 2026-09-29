@@ -4,7 +4,7 @@ import Level3 from '../levels/Level3.js';
 import { buildEnvironment } from '../world/Environment.js';
 import { applyLighting } from '../world/Lighting.js';
 import { disposeObject } from '../utils/Dispose.js';
-import { STORAGE_KEY } from '../utils/Constants.js';
+import { STORAGE_KEY, UNLOCK_ALL_LEVELS } from '../utils/Constants.js';
 
 export const LEVELS = [Level1, Level2, Level3];
 
@@ -28,7 +28,7 @@ export class LevelManager {
   }
 
   isUnlocked(index) {
-    return index < this.unlocked;
+    return UNLOCK_ALL_LEVELS || index < this.unlocked;
   }
 
   unlockAfter(index) {
