@@ -43,10 +43,14 @@ export class Game {
     this.audio = new AudioManager();
     this.cameraController = new CameraController(this.camera, this.renderer.domElement);
     this.player = new Player(this.camera);
-    this.controller = new PlayerController(this.camera, this.renderer.domElement, (target) =>
-      this.gameplay?.interact(target)
-    );
-    this.scene.add(this.controller.ring);
+    this.controller = new PlayerController(this.camera, this.renderer.domElement, this.player, {
+      interact: (target) => this.gameplay?.interact(target),
+      pickUp: (target) => this.gameplay?.pickUp(target) ?? false,
+      canGive: (target) => target.kind === 'station' && this.player.isEmpty && target.ref.canGive(),
+      canDrop: (target) => this.gameplay?.canDrop(target) ?? false,
+      drop: (target, source) => this.gameplay?.drop(target, source),
+    });
+    this.scene.add(this.controller.ring, this.player.dragRoot);
     this.effects = new Effects(this.scene);
     this.post = new PostProcessing(this.renderer, this.scene, this.camera);
 
@@ -240,6 +244,7 @@ export class Game {
   }
 
   pause() {
+    this.controller.cancelDrag();
     this.state.set(STATES.PAUSED);
     this.controller.enabled = false;
     this.audio.setSizzle(0);
@@ -254,6 +259,7 @@ export class Game {
   }
 
   onLevelComplete() {
+    this.controller.cancelDrag();
     this.levels.unlockAfter(this.levelIndex);
     this.state.set(STATES.LEVEL_COMPLETE);
     this.controller.enabled = false;
@@ -263,6 +269,7 @@ export class Game {
   }
 
   onLevelFailed(reason) {
+    this.controller.cancelDrag();
     this.state.set(STATES.GAME_OVER);
     this.controller.enabled = false;
     this.audio.setSizzle(0);
