@@ -29,13 +29,13 @@ const PRESETS = {
     shaderAmbient: 0.6,
   },
   neon: {
-    environmentIntensity: 0.7,
+    environmentIntensity: 0.35,
     hemisphere: [0x6a5aa0, 0x140a24, 0.3],
     key: { color: 0xb18cff, intensity: 0.7, position: [4, 10, 6] },
     points: [
-      { color: 0x00f0ff, intensity: 30, distance: 14, position: [-5, 3, 2.5], flicker: false },
-      { color: 0xff2bd6, intensity: 30, distance: 14, position: [5, 3, 2.5], flicker: true },
-      { color: 0xdfe6ff, intensity: 16, distance: 12, position: [0, 3.6, -0.2] },
+      { color: 0x00f0ff, intensity: 16, distance: 12, position: [-5, 3, 2.5], flicker: false },
+      { color: 0xff2bd6, intensity: 16, distance: 12, position: [5, 3, 2.5], flicker: true },
+      { color: 0xdfe6ff, intensity: 8, distance: 10, position: [0, 3.6, -0.2] },
     ],
     shaderAmbient: 0.55,
   },

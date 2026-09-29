@@ -5,6 +5,7 @@ import { canvasTexture, mat, noiseNormalMap, pbr, physical, surfaces, windowsTex
 import { RECIPES } from '../gameplay/Recipes.js';
 import { createSky } from './Sky.js';
 import { buildStationView } from './Stations.js';
+import { buildNeonStreet } from './City.js';
 import { createTextSprite } from './Models.js';
 
 // Per-level visual identity. `sky` is only used if the HDRI fails to load.
@@ -405,22 +406,18 @@ const DECOR = {
     place(root, 'utilityBox', [-8.2, 0, 1.2], { rotation: Math.PI / 2 });
     place(root, 'utilityBox', [8.3, 0, -0.5], { rotation: -Math.PI / 2 });
     place(root, 'barrier', [-9.5, 0, 6], { rotation: 0.3 });
-    place(root, 'barrier', [9.8, 0, 6.5], { rotation: -0.4 });
     place(root, 'wetFloorSign', [3.2, 0, 4.6], { rotation: 0.6, scale: 1.3 });
     place(root, 'trashCan', [-8.4, 0, 4], { rotation: 0.8 });
     for (const x of [-6.2, 6.2]) place(root, 'metalStool', [x, 0, LAYOUT.customerZ]);
     place(root, 'wallLamp', [-7.35, 2.6, 0.5], { rotation: -Math.PI / 2, scale: 1.2 });
     place(root, 'wallLamp', [7.35, 2.6, 0.5], { rotation: Math.PI / 2, scale: 1.2 });
 
-    // Distant skyline blocks with lit windows.
-    for (let index = 0; index < 14; index += 1) {
-      const height = 12 + ((index * 7) % 5) * 7;
-      const tint = index % 2 ? 0xff2bd6 : 0x00f0ff;
-      root.add(box(6, height, 6, new THREE.MeshStandardMaterial({ color: 0x0b0b12, emissive: 0xffffff, emissiveIntensity: 0.8, emissiveMap: windowsTexture(0x06060a, tint, index + 7) }), [-38 + index * 5.8, height / 2, -26 - (index % 3) * 8], { cast: false, receive: false }));
-    }
+    // Real apartment buildings, shops, signs and cables around the street.
+    const street = buildNeonStreet(root);
 
     return (dt, time) => {
       sign.material.opacity = Math.sin(time * 31) > 0.93 ? 0.35 : 0.9 + Math.sin(time * 3) * 0.1;
+      street?.(dt, time);
     };
   },
 };
