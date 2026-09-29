@@ -26,7 +26,7 @@ void main() {
   vec2 p = vec2(vUv.x * 8.0, vUv.y * 3.0 - uTime * 0.8);
   float n = noise(p) * 0.6 + noise(p * 2.3 + 7.0) * 0.4;
   float fadeY = smoothstep(0.0, 0.15, vUv.y) * (1.0 - smoothstep(0.5, 1.0, vUv.y));
-  float alpha = smoothstep(0.35, 0.9, n) * fadeY * uIntensity * 0.5;
+  float alpha = smoothstep(0.35, 0.9, n) * fadeY * uIntensity * 0.3;
   gl_FragColor = vec4(uColor, alpha);
   #include <colorspace_fragment>
 }

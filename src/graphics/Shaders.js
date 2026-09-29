@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import cookingPars from './shaders/cooking_pars.glsl?raw';
 import cookingVertex from './shaders/cooking.vert.glsl?raw';
 import cookingFragment from './shaders/cooking.frag.glsl?raw';
 import liquidVertex from './shaders/liquid.vert.glsl?raw';
@@ -24,23 +25,36 @@ export const sharedUniforms = {
 
 const { uTime, uLightDir, uLightColor, uAmbient, uPointScale } = sharedUniforms;
 
-export function createCookingMaterial({ raw, cooked, burnt, marks = 0 }) {
-  return new THREE.ShaderMaterial({
-    uniforms: {
-      uTime,
-      uLightDir,
-      uLightColor,
-      uAmbient,
-      uCook: { value: 0 },
-      uHeat: { value: 0 },
-      uMarks: { value: marks },
-      uRaw: { value: new THREE.Color(raw) },
-      uCooked: { value: new THREE.Color(cooked) },
-      uBurnt: { value: new THREE.Color(burnt) },
-    },
-    vertexShader: cookingVertex,
-    fragmentShader: cookingFragment,
-  });
+// Food that cooks: a MeshStandardMaterial with the cooking GLSL injected, so it
+// keeps physically based lighting, shadows and HDRI reflections. Drive it with
+// material.userData.uniforms.uCook (0 raw → 1 cooked → 2 burnt) and uHeat.
+export function createCookingMaterial({ raw, cooked, burnt, marks = 0, roughness = [0.4, 0.7, 0.95], ...options }) {
+  const material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, metalness: 0, ...options });
+  const uniforms = {
+    uTime,
+    uCook: { value: 0 },
+    uHeat: { value: 0 },
+    uMarks: { value: marks },
+    uRaw: { value: new THREE.Color(raw) },
+    uCooked: { value: new THREE.Color(cooked) },
+    uBurnt: { value: new THREE.Color(burnt) },
+    uRoughness: { value: new THREE.Vector3(...roughness) },
+  };
+  material.userData.uniforms = uniforms;
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms);
+    const after = (chunk, code) => [`#include <${chunk}>`, `#include <${chunk}>\n${code}`];
+    shader.vertexShader = shader.vertexShader
+      .replace(...after('common', cookingPars))
+      .replace(...after('begin_vertex', cookingVertex));
+    shader.fragmentShader = shader.fragmentShader
+      .replace(...after('common', cookingPars))
+      .replace(...after('color_fragment', cookingFragment))
+      .replace(...after('roughnessmap_fragment', 'roughnessFactor *= cookRoughness;'))
+      .replace(...after('emissivemap_fragment', 'totalEmissiveRadiance += cookEmissive;'));
+  };
+  material.customProgramCacheKey = () => 'bistro-cooking';
+  return material;
 }
 
 export function createLiquidMaterial({ color, foam, bottom, top }) {
