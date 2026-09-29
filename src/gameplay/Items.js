@@ -31,21 +31,42 @@ export function createPlate() {
 export const isPlate = (item) => item?.type === 'plate';
 
 export function addToPlate(plate, item) {
-  const liquid = ITEMS[item.type].liquid;
   item.mesh.rotation.set(0, 0, 0);
-
-  if (liquid?.vessel === 'cup') {
-    // Drinks sit beside the food rather than on top of it.
-    const cups = plate.contents.filter((other) => ITEMS[other.type].liquid?.vessel === 'cup').length;
-    item.mesh.position.set(0.36, 0.03, -0.12 + cups * 0.26);
-  } else {
-    const stacked = plate.contents.filter((other) => ITEMS[other.type].liquid?.vessel !== 'cup');
-    const height = stacked.reduce((sum, other) => sum + (other.mesh.userData.height ?? 0.1), 0);
-    item.mesh.position.set(0, plate.mesh.userData.baseHeight + height, 0);
-  }
-
   plate.contents.push(item);
   plate.mesh.add(item.mesh);
+  layoutPlate(plate);
+}
+
+// Builds the dish in a sensible order whatever order things were added:
+// bowl or bottom bun first, fillings in the order added, the top bun last,
+// and drinks beside the food.
+export function layoutPlate(plate) {
+  const vessel = (item) => ITEMS[item.type].liquid?.vessel;
+  const cups = plate.contents.filter((item) => vessel(item) === 'cup');
+  const bowls = plate.contents.filter((item) => vessel(item) === 'bowl');
+  const buns = plate.contents.filter((item) => item.mesh.userData.bun);
+  const fillings = plate.contents.filter((item) => !cups.includes(item) && !bowls.includes(item) && !buns.includes(item));
+
+  cups.forEach((cup, index) => cup.mesh.position.set(0.36, 0.02, -0.12 + index * 0.26));
+
+  let y = plate.mesh.userData.baseHeight;
+  for (const bowl of bowls) {
+    bowl.mesh.position.set(0, y, 0);
+    y += bowl.mesh.userData.height;
+  }
+  for (const bun of buns) {
+    bun.mesh.position.set(0, y, 0);
+    y += bun.mesh.userData.bun.bottom.userData.height;
+  }
+  for (const item of fillings) {
+    item.mesh.position.set(0, y, 0);
+    y += item.mesh.userData.height ?? 0.1;
+  }
+  for (const bun of buns) {
+    const { top } = bun.mesh.userData.bun;
+    top.position.y = y - bun.mesh.position.y + 0.005;
+    y += top.userData.height;
+  }
 }
 
 // Advances cooking; returns the new stage if it changed this frame.
