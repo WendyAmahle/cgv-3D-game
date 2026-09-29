@@ -195,3 +195,104 @@ function createFallbackCustomer(theme, random) {
   });
   return { root, animator: new Animator(root, {}), height: 1.75 };
 }
+
+// ------------------------------------------------------------------- chef
+
+// A white toque, built from primitives and parented to the head bone so it
+// follows every head movement of the animation (hierarchical modelling).
+function createChefHat() {
+  const white = mat(0xffffff, { roughness: 0.9 });
+  const hat = new THREE.Group();
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.105, 0.1, 0.12, 24), white);
+  band.position.y = 0.06;
+  const puff = new THREE.Mesh(new THREE.SphereGeometry(0.14, 24, 16), white);
+  puff.scale.set(1, 0.72, 1);
+  puff.position.y = 0.17;
+  hat.add(band, puff);
+  hat.traverse((object) => {
+    if (object.isMesh) object.castShadow = true;
+  });
+  return hat;
+}
+
+// Seats the hat on top of the head, upright in the model's rest pose.
+function putOnHat(model, hat) {
+  let head = null;
+  let headTop = null;
+  model.traverse((node) => {
+    if (!node.isBone) return;
+    if (/HeadTop_End$/.test(node.name)) headTop = node;
+    else if (/Head$/.test(node.name)) head = node;
+  });
+  if (!head) return false;
+
+  model.updateMatrixWorld(true);
+  const top = (headTop ?? head).getWorldPosition(new THREE.Vector3());
+  if (!headTop) top.y += 0.12;
+  top.y -= 0.04;
+  const scale = head.getWorldScale(new THREE.Vector3());
+  const rotation = head.getWorldQuaternion(new THREE.Quaternion());
+
+  head.add(hat);
+  hat.position.copy(head.worldToLocal(top));
+  hat.quaternion.copy(rotation.invert());
+  hat.scale.set(1 / scale.x, 1 / scale.y, 1 / scale.z);
+  return true;
+}
+
+// The player's chef: same bodies and animations as the customers, in whites.
+export function createChef() {
+  const body = ['avatar', 'michelle'].find((key) => assets.has(key));
+  const model = body && assets.model(body);
+  if (!model) return createFallbackChef();
+  const clips = clipsFor(body, model);
+
+  if (body === 'avatar') {
+    model.traverse((object) => {
+      if (!object.isMesh) return;
+      const name = object.material.name;
+      if (name === 'Wolf3D_Skin' || name === 'Wolf3D_Body') object.material = tinted(object.material, null, 0.62);
+      else if (name === 'Wolf3D_Outfit_Top') {
+        // Plain chef's whites: drop the outfit's printed colours, keep its folds (normal map).
+        object.material = tinted(object.material, 0xf8fafc);
+        object.material.map = null;
+      } else if (name === 'Wolf3D_Outfit_Bottom') object.material = tinted(object.material, 0x1f2937);
+      else if (name === 'Wolf3D_Beard' || name === 'Wolf3D_Headwear') object.visible = false; // the toque replaces any hat
+    });
+  }
+
+  model.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(model);
+  const height = 1.74;
+  model.scale.multiplyScalar(height / (box.max.y - box.min.y));
+  model.updateMatrixWorld(true);
+  model.position.y -= new THREE.Box3().setFromObject(model).min.y;
+
+  const root = new THREE.Group();
+  root.add(model);
+  const hat = createChefHat();
+  if (!putOnHat(model, hat)) {
+    hat.position.y = height - 0.04;
+    root.add(hat);
+  }
+  model.traverse((object) => {
+    if (object.isMesh) object.castShadow = true;
+  });
+
+  return { root, animator: new Animator(model, clips), height };
+}
+
+function createFallbackChef() {
+  const root = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.28, 0.7, 6, 12), mat(0xf8fafc, { roughness: 0.85 }));
+  body.position.y = 0.85;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 20, 16), mat(0xc68642, { roughness: 0.8 }));
+  head.position.y = 1.55;
+  const hat = createChefHat();
+  hat.position.y = 1.66;
+  root.add(body, head, hat);
+  root.traverse((object) => {
+    if (object.isMesh) object.castShadow = true;
+  });
+  return { root, animator: new Animator(root, {}), height: 1.9 };
+}

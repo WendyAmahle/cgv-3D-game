@@ -3,7 +3,7 @@ import { events } from '../core/Events.js';
 
 export const CAMERA_VIEWS = {
   1: 'Overview',
-  2: 'Chef view',
+  2: 'Third person',
   3: 'Station focus',
   4: 'Top-down',
 };
@@ -12,7 +12,7 @@ const PIVOT = new THREE.Vector3(0, 1.0, 1.0);
 
 // Multiple camera views with smooth transitions between them.
 //   1 Overview   — orbit with Q/E, zoom with the mouse wheel
-//   2 Chef view  — from behind the back counter, looking at customers
+//   2 Third person — over the chef avatar's shoulder, following them along the aisle
 //   3 Focus      — follows whatever is selected
 //   4 Top-down   — plan view of the whole kitchen
 export class CameraController {
@@ -23,6 +23,7 @@ export class CameraController {
     this.distance = 10;
     this.autoOrbit = false; // used behind the main menu
     this.shakeAmount = 0;
+    this.follow = null; // the chef, for the third-person view
 
     this.focus = new THREE.Vector3(0, 1.1, 1.2);
     this.focusKind = 'station';
@@ -84,8 +85,16 @@ export class CameraController {
 
     switch (this.mode) {
       case 2:
-        position.set(0, 3.0, -3.4);
-        look.set(0, 1.2, 2.8);
+        if (this.follow) {
+          // Stays behind the chef (on the back-wall side) rather than swinging
+          // round every time they turn between the two counters.
+          const chef = this.follow.position;
+          position.set(chef.x * 0.9, 4.1, chef.z - 3.3);
+          look.set(chef.x, 0.9, chef.z + 2.8);
+        } else {
+          position.set(0, 3.0, -3.4);
+          look.set(0, 1.2, 2.8);
+        }
         break;
       case 3:
         if (this.focusKind === 'customer') {

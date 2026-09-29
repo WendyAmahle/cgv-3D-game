@@ -3,8 +3,9 @@ import { events } from '../core/Events.js';
 import { disposeItem, refreshItem } from '../gameplay/Items.js';
 
 // The chef's hands: holds one item. Normally it bobs in the bottom-right of
-// the view; while dragging with the mouse it follows the cursor in the world
-// (dragRoot, positioned by PlayerController).
+// the view (a child of the camera); in the third-person view it sits in the
+// chef avatar's arms (carry); while dragging with the mouse it follows the
+// cursor in the world (dragRoot, positioned by PlayerController).
 export class Player {
   constructor(camera) {
     this.held = null;
@@ -14,6 +15,13 @@ export class Player {
     camera.add(this.hand);
     this.dragRoot = new THREE.Group();
     this.dragging = false;
+    this.carry = null;
+  }
+
+  // Where held items go when not dragging: an object, or null for the camera hand.
+  setCarry(anchor) {
+    this.carry = anchor;
+    if (this.held) this.attach(this.held);
   }
 
   setDragging(dragging) {
@@ -25,7 +33,7 @@ export class Player {
     item.mesh.removeFromParent();
     item.mesh.position.set(0, 0, 0);
     item.mesh.rotation.set(this.dragging ? 0 : 0.35, 0, 0);
-    (this.dragging ? this.dragRoot : this.hand).add(item.mesh);
+    (this.dragging ? this.dragRoot : this.carry ?? this.hand).add(item.mesh);
   }
 
   get isEmpty() {

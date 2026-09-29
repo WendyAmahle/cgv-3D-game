@@ -8,6 +8,9 @@ export const LAYOUT = {
   customerZ: 2.9,
 };
 
+// Objects on this layer are drawn only by the minimap camera.
+export const MINIMAP_LAYER = 1;
+
 export const STORAGE_KEY = 'bistro-rush-progress-v1';
 
 // While developing, every level is playable from Level select.
@@ -27,6 +30,7 @@ export const KEYS = {
   orbitLeft: ['KeyQ'],
   orbitRight: ['KeyE'],
   cycleCamera: ['KeyC'],
+  minimap: ['KeyN'],
 };
 
 export const matches = (code, list) => list.includes(code);
