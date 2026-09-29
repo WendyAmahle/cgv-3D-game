@@ -3,8 +3,8 @@ import { assets } from '../utils/AssetLoader.js';
 import { mat } from '../graphics/Materials.js';
 
 // Animated customers. Bodies: a Ready Player Me avatar (recoloured per
-// customer), Mixamo's Michelle, and Mixamo's X Bot as Level 3 androids. All
-// share the Mixamo skeleton, so X Bot's animations drive every body.
+// customer) and Mixamo's Michelle. Both use the Mixamo skeleton, so Mixamo's
+// X Bot animations (idle, walk, nod, head shake) drive every body.
 //
 // createCustomer() returns { root, animator, height }. root faces +z.
 
@@ -14,7 +14,7 @@ const ONE_SHOTS = new Set(['agree', 'headShake']);
 const BODIES = {
   truck: ['avatar', 'avatar', 'michelle'],
   izakaya: ['avatar', 'michelle', 'avatar'],
-  cyber: ['xbot', 'xbot', 'avatar'],
+  cyber: ['avatar', 'avatar', 'michelle'],
 };
 
 const OUTFITS = {
@@ -32,7 +32,6 @@ const OUTFITS = {
   },
 };
 const SKIN_TONES = [1, 0.9, 0.78, 0.62, 0.48, 0.38];
-const NEON = [0x00f0ff, 0xff2bd6, 0x7cff6b, 0xffb800];
 
 function seeded(seed) {
   let state = (seed * 16807 + 11) % 2147483647;
@@ -157,21 +156,6 @@ function dressAvatar(model, theme, random) {
   });
 }
 
-function dressAndroid(model, random) {
-  const neon = NEON[Math.floor(random() * NEON.length)];
-  const shell = new THREE.MeshPhysicalMaterial({
-    color: random() > 0.5 ? 0xe5e7eb : 0x27272a,
-    metalness: 0.9,
-    roughness: 0.22,
-    clearcoat: 1,
-  });
-  const joints = new THREE.MeshStandardMaterial({ color: 0x050505, emissive: neon, emissiveIntensity: 2.2 });
-  model.traverse((object) => {
-    if (!object.isMesh) return;
-    object.material = object.material.name.includes('Joints') ? joints : shell;
-  });
-}
-
 export function createCustomer(theme, seed) {
   const random = seeded(seed);
   const pool = BODIES[theme] ?? BODIES.truck;
@@ -181,7 +165,6 @@ export function createCustomer(theme, seed) {
   const clips = clipsFor(body, model);
 
   if (body === 'avatar') dressAvatar(model, theme, random);
-  if (body === 'xbot') dressAndroid(model, random);
 
   // Normalise height, then stand the feet on the ground.
   model.updateMatrixWorld(true);

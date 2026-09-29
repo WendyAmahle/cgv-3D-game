@@ -3,7 +3,7 @@ export default {
   id: 3,
   name: 'Neon Diner',
   tagline: 'Rain-soaked cyberpunk diner, open all night.',
-  mechanic: 'Every station at once, impatient android customers and random power surges that overclock a cooker, cooking twice as fast and burning twice as fast.',
+  mechanic: 'Every station at once, impatient night-owl customers and random power surges that overclock a cooker, cooking twice as fast and burning twice as fast.',
   theme: 'cyber',
   lighting: 'neon',
   weather: 'rain',

@@ -29,7 +29,7 @@ export const CREDITS = [
     author: 'Mixamo (Adobe), via the three.js examples',
     source: 'https://www.mixamo.com',
     license: 'Mixamo terms: free to use in projects',
-    use: 'Customer bodies and the idle / walk / nod / head-shake animations.',
+    use: 'Michelle: customer body. X Bot: the idle / walk / nod / head-shake animations used by every customer.',
   },
   {
     name: 'Avatar character',
