@@ -31,7 +31,15 @@ const GROUPS = {
   },
   cyber: {
     hdri: 'shanghai_bund',
-    models: { utilityBox: 'utility_box_02', wallLamp: 'street_lamp_02', barrier: 'concrete_road_barrier', metalStool: 'metal_stool_01', wetFloorSign: 'WetFloorSign_01' },
+    models: {
+      utilityBox: 'utility_box_02',
+      wallLamp: 'street_lamp_02',
+      barrier: 'concrete_road_barrier',
+      metalStool: 'metal_stool_01',
+      wetFloorSign: 'WetFloorSign_01',
+      facadeKit: 'modular_urban_apartments_facade',
+      aircon: 'exterior_aircon_unit',
+    },
     textures: ['asphalt_02', 'corrugated_iron_02', 'rubber_tiles'],
   },
 };

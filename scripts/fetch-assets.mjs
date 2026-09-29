@@ -7,12 +7,13 @@ import path from 'node:path';
 
 const ROOT = path.resolve(import.meta.dirname, '../public/assets');
 
-// Poly Haven (CC0) — https://polyhaven.com
+// Poly Haven (CC0) â€” https://polyhaven.com
 const MODELS = [
   'hamburger_buns', 'wooden_crate_02', 'wooden_cutting_board', 'CashRegister_01',
   'wooden_picnic_table', 'street_lamp_01', 'metal_trash_can', 'shrub_02', 'potted_plant_02',
   'wooden_lantern_01', 'chinese_stool', 'wine_barrel_01',
   'utility_box_02', 'street_lamp_02', 'concrete_road_barrier', 'metal_stool_01', 'WetFloorSign_01',
+  'modular_urban_apartments_facade', 'exterior_aircon_unit',
 ];
 const TEXTURES = [
   'leafy_grass', 'patterned_paving', 'long_white_tiles', 'metal_plate',
