@@ -59,7 +59,7 @@ Everything talks through the event bus in `src/core/Events.js` (see the list of 
 
 Realistic props, textures, HDRI skies and characters live in `public/assets/` and are loaded by `src/utils/AssetLoader.js`. Each level only downloads its own group, behind a loading screen.
 
-- **Poly Haven** (CC0): scanned burger buns, crates, cutting board, cash register, bins, picnic tables, street lamps, plants, lanterns, stools, barrels, barriers; PBR textures (grass, paving, tiles, wood, cobblestone, asphalt, corrugated iron); HDRI skies for each level.
+- **Poly Haven** (CC0): scanned burger buns, crates, cutting board, cash register, bins, picnic tables, street lamps, plants, lanterns, stools, barrels, barriers, a modular apartment facade kit (assembled into the Level 3 street in `src/world/City.js`) and aircon units; PBR textures (grass, paving, tiles, wood, cobblestone, asphalt, corrugated iron); HDRI skies for each level.
 - **Characters**: Mixamo's Michelle and X Bot, and a Ready Player Me avatar (from the three.js examples). X Bot's animations are retargeted onto the other skeletons in `src/world/Characters.js`, and avatar outfits are recoloured per customer.
 
 `node scripts/fetch-assets.mjs` re-downloads everything. If an asset fails to load, the game falls back to procedural models. Every asset is listed in the in-game credits (`src/ui/Credits.js`).
