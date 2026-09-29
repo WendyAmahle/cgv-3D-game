@@ -16,6 +16,7 @@ const EVENT_SOUNDS = {
   'item:pickup': 'pickup',
   'item:place': 'place',
   'item:trash': 'trash',
+  'item:bounce': 'place',
   'cook:start': 'place',
   'cook:done': 'ding',
   'cook:burnt': 'burnt',

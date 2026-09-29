@@ -17,8 +17,10 @@ const RING = { select: 0xfff08a, ok: 0x4ade80, bad: 0xf87171 };
 //
 // Keyboard: A/D and W/S move the selection, Space/Enter uses it (pick up / put down).
 //
+// Letting go over empty space drops the item, thrown with the cursor's speed.
+//
 // handlers: { interact(target), pickUp(target) → bool, canGive(target) → bool,
-//             canDrop(target) → bool, drop(target | null, source) }
+//             canDrop(target) → bool, drop(target | null, source), spill(source, velocity) }
 export class PlayerController {
   constructor(camera, dom, player, handlers) {
     this.camera = camera;
@@ -37,6 +39,8 @@ export class PlayerController {
     this.ring.visible = false;
     this.worldPosition = new THREE.Vector3();
     this.dragGoal = new THREE.Vector3();
+    this.dragLast = new THREE.Vector3();
+    this.dragVelocity = new THREE.Vector3();
     this.dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(LAYOUT.counterTopY + 0.5));
 
     dom.addEventListener('pointerdown', (event) => this.onPointerDown(event));
@@ -80,13 +84,15 @@ export class PlayerController {
     this.drag = { source, over: null };
     this.player.setDragging(true);
     source.focus.getWorldPosition(this.player.dragRoot.position).add({ x: 0, y: 0.5, z: 0 });
+    this.dragVelocity.set(0, 0, 0);
     this.updateDrag(0);
   }
 
   endDrag() {
     const { source, over } = this.drag;
     this.drag = null;
-    this.handlers.drop(over, source);
+    if (over) this.handlers.drop(over, source);
+    else this.handlers.spill(source, this.dragVelocity.clampLength(0, 5));
     this.player.setDragging(false);
     this.select(over ?? source);
   }
@@ -114,7 +120,13 @@ export class PlayerController {
       return;
     }
     const root = this.player.dragRoot;
+    this.dragLast.copy(root.position);
     root.position.lerp(this.dragGoal, dt ? 1 - Math.exp(-dt * 18) : 1);
+    if (dt) {
+      // Smoothed hand speed, so a flick of the mouse throws the item.
+      this.dragLast.subVectors(root.position, this.dragLast).divideScalar(dt).multiplyScalar(0.6);
+      this.dragVelocity.lerp(this.dragLast, 1 - Math.exp(-dt * 20));
+    }
   }
 
   // --------------------------------------------------------------- picking

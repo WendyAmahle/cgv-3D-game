@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { events, say } from '../core/Events.js';
 import { RECIPES, tagLabel } from './Recipes.js';
 import { CookerStation, createStation } from './Stations.js';
@@ -7,10 +8,12 @@ import { pick, randomRange } from '../utils/Constants.js';
 
 // One shift in one level: stations, customers, timer, money and win/lose.
 // `world` comes from LevelManager.build(): { stations: [{config, view}], customerSlots }.
+// `physics` (Physics.js) takes over items that are thrown or dropped.
 export class Gameplay {
-  constructor(level, world, player) {
+  constructor(level, world, player, physics) {
     this.level = level;
     this.player = player;
+    this.physics = physics;
     this.stations = world.stations.map(({ config, view }) => createStation(config, view));
     this.customers = new CustomerManager(level, world.customerSlots);
     this.stats = {
@@ -27,6 +30,9 @@ export class Gameplay {
     this.rushStarted = false;
     this.overclockTimer = level.overclock ? randomRange(level.overclock.interval) : Infinity;
     this.targets = this.buildTargets();
+    const trash = this.stations.find((station) => station.type === 'trash');
+    // The bin's opening, for throws. Station roots sit directly under the level root at the origin.
+    this.bin = trash && { rim: trash.view.root.position.clone().add({ x: 0, y: 0.98, z: 0 }), radius: 0.26 };
     this.unsubscribe = events.on('order:missed', () => this.onMissed());
   }
 
@@ -64,7 +70,8 @@ export class Gameplay {
 
   interact(target) {
     if (this.result) return;
-    if (target.kind === 'station') target.ref.interact(this.player);
+    if (target.kind === 'station' && target.ref.type === 'trash' && !this.player.isEmpty) this.binHeld();
+    else if (target.kind === 'station') target.ref.interact(this.player);
     else this.serve(target.ref);
   }
 
@@ -139,11 +146,39 @@ export class Gameplay {
     if (item) source.ref.receiveBack(item);
   }
 
+  // Released over empty space: the item falls under physics and is wasted.
+  spill(source, velocity) {
+    const item = this.player.held;
+    if (!item) return;
+    if (this.result) {
+      this.returnHeld(source);
+      return;
+    }
+    const label = itemLabel(item).toLowerCase();
+    const from = item.mesh.getWorldPosition(new THREE.Vector3());
+    this.player.release();
+    this.physics.drop(item, from, velocity);
+    events.emit('item:dropped', { item });
+    say(`Oops, you dropped the ${label}!`);
+  }
+
+  // Throws what you're holding into the bin along a ballistic arc. The bin
+  // sound plays when it lands (Physics emits item:trash).
+  binHeld() {
+    const item = this.player.held;
+    if (!item) return;
+    const from = item.mesh.getWorldPosition(new THREE.Vector3());
+    this.player.release();
+    if (this.bin) {
+      this.physics.throwInto(item, from, this.bin);
+    } else {
+      disposeItem(item);
+      events.emit('item:trash', { item });
+    }
+  }
+
   discardHeld() {
-    if (this.player.isEmpty) return;
-    const item = this.player.release();
-    disposeItem(item);
-    events.emit('item:trash', { item });
+    this.binHeld();
   }
 
   onMissed() {
@@ -205,5 +240,6 @@ export class Gameplay {
     this.stations.forEach((station) => station.dispose());
     this.customers.dispose();
     this.player.clear();
+    this.physics.clear();
   }
 }
