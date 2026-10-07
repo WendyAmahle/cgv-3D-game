@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { LAYOUT } from '../utils/Constants.js';
 import { assets } from '../utils/AssetLoader.js';
 import { canvasTexture, mat, noiseNormalMap, pbr, physical, surfaces, windowsTexture } from '../graphics/Materials.js';
@@ -57,6 +58,27 @@ function place(root, key, [x, y, z], { rotation = 0, scale = 1 } = {}) {
   root.add(model);
   return model;
 }
+
+// Same as `place`, but skips shadow-casting: for small background clutter
+// (foliage, planters) where a shadow draw call isn't worth the cost.
+function placeLite(root, key, position, options) {
+  const model = place(root, key, position, options);
+  model?.traverse((object) => {
+    if (object.isMesh) object.castShadow = false;
+  });
+  return model;
+}
+
+// One mesh from several box footprints that share a material, instead of one
+// draw call per box — cuts the truck body down from 6 meshes to 3.
+function mergedBoxes(material, boxes) {
+  const geometries = boxes.map(([w, h, d, x, y, z]) => new THREE.BoxGeometry(w, h, d).translate(x, y, z));
+  const mesh = new THREE.Mesh(mergeGeometries(geometries), material);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
 
 function neon(color, intensity = 3) {
   return new THREE.MeshStandardMaterial({ color: 0x000000, emissive: color, emissiveIntensity: intensity });
@@ -192,19 +214,27 @@ const DECOR = {
     root.add(groundPatch(paving, 26));
     root.add(plane(9, 60, pbr('leafy_grass', [4, 24], 0x6a9c4a), [-18, 0.004, 0]));
 
-    // Truck body.
+    // Truck body: one merged mesh per material instead of one box per panel,
+    // so the two side walls/trims cost 3 draw calls instead of 6.
     const paint = surfaces.paint(0xc1121f);
     const white = surfaces.paint(0xf8fafc);
     const chrome = surfaces.chrome();
-    for (const side of [-1, 1]) {
-      root.add(box(0.12, 4.2, 6.4, paint, [side * 7.2, 2.1, -1.2]));
-      root.add(box(0.14, 0.14, 6.4, chrome, [side * 7.2, 1.2, -1.2]));
-      root.add(box(0.14, 0.5, 6.4, white, [side * 7.2, 3.6, -1.2]));
-    }
+    root.add(mergedBoxes(paint, [
+      [0.12, 4.2, 6.4, -7.2, 2.1, -1.2],
+      [0.12, 4.2, 6.4, 7.2, 2.1, -1.2],
+      [14.6, 0.5, 0.12, 0, 0.25, 2.05], // skirt under the hatch
+    ]));
+    root.add(mergedBoxes(chrome, [
+      [0.14, 0.14, 6.4, -7.2, 1.2, -1.2],
+      [0.14, 0.14, 6.4, 7.2, 1.2, -1.2],
+    ]));
+    root.add(mergedBoxes(white, [
+      [0.14, 0.5, 6.4, -7.2, 3.6, -1.2],
+      [0.14, 0.5, 6.4, 7.2, 3.6, -1.2],
+    ]));
     const roof = box(14.6, 0.2, 6.8, white, [0, 4.3, -1.2]);
     root.add(roof);
     cutaway.push(roof);
-    root.add(box(14.6, 0.5, 0.12, paint, [0, 0.25, 2.05])); // skirt under the hatch
 
     // Striped awning over the serving hatch.
     const stripes = canvasTexture('awning', 256, (ctx, size) => {
@@ -223,42 +253,38 @@ const DECOR = {
     cab.add(box(2.4, 2.4, 5.2, paint, [0, 1.6, 0]));
     cab.add(box(0.05, 1.0, 4.4, physical(0x0b1220, { roughness: 0.05, metalness: 0.2, clearcoat: 1 }), [-1.21, 2.2, 0]));
     cab.add(box(0.1, 0.35, 5.3, chrome, [-1.22, 0.55, 0]));
-    for (const z of [-2.1, 2.1]) {
-      const lamp = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.08, 20), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff3c4, emissiveIntensity: 1.5 }));
-      lamp.rotation.z = Math.PI / 2;
-      lamp.position.set(-1.25, 0.95, z);
-      cab.add(lamp);
-    }
+    const lampGeometries = [-2.1, 2.1].map((z) => new THREE.CylinderGeometry(0.18, 0.18, 0.08, 20).rotateZ(Math.PI / 2).translate(-1.25, 0.95, z));
+    const lamps = new THREE.Mesh(mergeGeometries(lampGeometries), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff3c4, emissiveIntensity: 1.5 }));
+    cab.add(lamps);
     cab.position.set(-8.6, 0, -1.2);
     root.add(cab);
 
-    // Wheels: under the truck body and the cab.
+    // Wheels: under the truck body and the cab, merged into two draw calls
+    // (tyres, hubs) instead of one mesh pair per wheel.
     const tyre = surfaces.rubber();
-    const wheels = [[-4.5, 2.12], [4.5, 2.12], [-4.5, -4.55], [4.5, -4.55], [-8.6, 1.45], [-8.6, -3.85]];
-    for (const [x, z] of wheels) {
-      const wheel = new THREE.Group();
-      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.24, 24), chrome);
-      hub.rotation.x = Math.PI / 2;
-      wheel.add(new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.16, 16, 32), tyre), hub);
-      wheel.position.set(x, 0.58, z);
-      wheel.traverse((object) => (object.castShadow = true));
-      root.add(wheel);
-    }
+    const wheelSpots = [[-4.5, 2.12], [4.5, 2.12], [-4.5, -4.55], [4.5, -4.55], [-8.6, 1.45], [-8.6, -3.85]];
+    const tireGeometries = wheelSpots.map(([x, z]) => new THREE.TorusGeometry(0.42, 0.16, 16, 32).translate(x, 0.58, z));
+    const hubGeometries = wheelSpots.map(([x, z]) => new THREE.CylinderGeometry(0.28, 0.28, 0.24, 24).rotateX(Math.PI / 2).translate(x, 0.58, z));
+    const tires = new THREE.Mesh(mergeGeometries(tireGeometries), tyre);
+    const hubs = new THREE.Mesh(mergeGeometries(hubGeometries), chrome);
+    tires.castShadow = hubs.castShadow = true;
+    root.add(tires, hubs);
 
     root.add(menuBoard(level, [0, 2.8, LAYOUT.backWallZ + 0.18]));
     place(root, 'register', [-6.1, LAYOUT.counterTopY, LAYOUT.frontRowZ], { rotation: Math.PI, scale: 1.2 });
 
-    // Park furniture.
+    // Park furniture. Foliage skips shadow-casting (placeLite) — cheap plants
+    // with a lot of small leaf triangles aren't worth a shadow draw call.
     place(root, 'picnicTable', [-5.5, 0, 8], { rotation: Math.PI / 2 });
     place(root, 'picnicTable', [5.5, 0, 8.5], { rotation: Math.PI / 2 + 0.2 });
     place(root, 'streetLamp', [-10, 0, 4.5]);
     place(root, 'streetLamp', [10, 0, 4.5]);
     place(root, 'trashCan', [9.3, 0, 7], { rotation: -0.5 });
-    place(root, 'shrub', [-3, 0, -6.6], { scale: 1.2 });
-    place(root, 'shrub', [5, 0, -6.4], { rotation: 2.5, scale: 1.1 });
-    place(root, 'shrub', [12, 0, -3], { rotation: 1.2 });
-    place(root, 'pottedPlant', [-7.8, 0, 3.4], { scale: 1.3 });
-    place(root, 'pottedPlant', [7.8, 0, 3.4], { rotation: 1.4, scale: 1.3 });
+    placeLite(root, 'shrub', [-3, 0, -6.6], { scale: 1.2 });
+    placeLite(root, 'shrub', [5, 0, -6.4], { rotation: 2.5, scale: 1.1 });
+    placeLite(root, 'shrub', [12, 0, -3], { rotation: 1.2 });
+    placeLite(root, 'pottedPlant', [-7.8, 0, 3.4], { scale: 1.3 });
+    placeLite(root, 'pottedPlant', [7.8, 0, 3.4], { rotation: 1.4, scale: 1.3 });
     return null;
   },
 
