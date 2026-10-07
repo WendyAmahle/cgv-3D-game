@@ -19,7 +19,12 @@ export class PostProcessing {
     this.projected = new THREE.Vector3();
 
     const size = renderer.getSize(new THREE.Vector2());
-    this.composer = new EffectComposer(renderer);
+    // EffectComposer's default render target isn't multisampled, so routing
+    // the scene through post-processing silently threw away the renderer's
+    // antialias:true — every edge in the game was aliased whenever post was
+    // on (the default). An explicit MSAA target restores it.
+    const renderTarget = new THREE.WebGLRenderTarget(size.x, size.y, { samples: 4 });
+    this.composer = new EffectComposer(renderer, renderTarget);
     this.composer.addPass(new RenderPass(scene, camera));
     this.bloom = new UnrealBloomPass(size, 0.3, 0.5, 0.85);
     this.composer.addPass(this.bloom);
