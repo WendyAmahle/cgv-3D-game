@@ -14,6 +14,10 @@ const PRESETS = {
     key: { color: 0xffe9c2, intensity: 3.1, position: [8, 12, 7] },
     points: [],
     shaderAmbient: 0.6,
+    // The park (shrubs out to x=12, picnic tables out to z=8.5) is wider
+    // than the other levels' interiors, so the default shadow frustum
+    // clipped/popped shadows at the edges.
+    shadowExtent: 20,
   },
   night: {
     environmentIntensity: 0.4,
@@ -66,11 +70,12 @@ export function applyLighting(presetName, scene, root, theme, themeName) {
   const key = new THREE.DirectionalLight(preset.key.color, preset.key.intensity);
   key.position.set(...preset.key.position);
   key.castShadow = true;
+  const shadowExtent = preset.shadowExtent ?? 12;
   key.shadow.mapSize.set(2048, 2048);
-  key.shadow.camera.left = -12;
-  key.shadow.camera.right = 12;
-  key.shadow.camera.top = 12;
-  key.shadow.camera.bottom = -12;
+  key.shadow.camera.left = -shadowExtent;
+  key.shadow.camera.right = shadowExtent;
+  key.shadow.camera.top = shadowExtent;
+  key.shadow.camera.bottom = -shadowExtent;
   key.shadow.camera.near = 1;
   key.shadow.camera.far = 40;
   key.shadow.bias = -0.0004;
