@@ -25,8 +25,8 @@ export default {
     { type: 'crate', item: 'lettuce', row: 'back', x: 1.2 },
     { type: 'crate', item: 'cheese', row: 'back', x: 3.6 },
     { type: 'grill', row: 'front', x: -4.5 },
-    { type: 'board', row: 'front', x: -1.5 },
-    { type: 'dispenser', item: 'cola', row: 'front', x: 1.5 },
+    { type: 'board', row: 'front', x: -1.1 },
+    { type: 'dispenser', item: 'cola', row: 'front', x: 1.1 },
     { type: 'trash', row: 'front', x: 4.5 },
   ],
 };
