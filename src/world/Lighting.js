@@ -9,11 +9,11 @@ import { assets } from '../utils/AssetLoader.js';
 // local colour. Also feeds the custom shaders via sharedUniforms.
 const PRESETS = {
   day: {
-    environmentIntensity: 1.0,
-    hemisphere: [0xeaf4ff, 0x6b8f5a, 0.25],
-    key: { color: 0xfff1d6, intensity: 2.8, position: [8, 12, 7] },
+    environmentIntensity: 1.1,
+    hemisphere: [0xdcefff, 0x7fae52, 0.3],
+    key: { color: 0xffe9c2, intensity: 3.1, position: [8, 12, 7] },
     points: [],
-    shaderAmbient: 0.55,
+    shaderAmbient: 0.6,
   },
   night: {
     environmentIntensity: 0.4,
