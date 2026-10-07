@@ -140,10 +140,25 @@ export class Physics {
     for (const collider of COLLIDERS) {
       collider.clampPoint(position, closest);
       normal.subVectors(position, closest);
-      const distance = normal.length();
-      if (distance >= body.radius) continue;
-      if (distance > 1e-6) normal.divideScalar(distance);
-      else normal.set(0, 1, 0); // centre ended up inside: push out of the top
+      let distance = normal.length();
+      if (distance > 1e-6) {
+        if (distance >= body.radius) continue;
+        normal.divideScalar(distance);
+      } else {
+        // The centre ended up fully inside the box (a fast-falling item can
+        // tunnel past the top face in one step): clampPoint gives no useful
+        // direction here, so push out through whichever face is nearest
+        // instead of always assuming "up" — the old fallback could leave a
+        // dropped item hovering/embedded inside a counter indefinitely.
+        const left = position.x - collider.min.x, right = collider.max.x - position.x;
+        const down = position.y - collider.min.y, up = collider.max.y - position.y;
+        const back = position.z - collider.min.z, front = collider.max.z - position.z;
+        const minX = Math.min(left, right), minY = Math.min(down, up), minZ = Math.min(back, front);
+        if (minY <= minX && minY <= minZ) normal.set(0, down < up ? -1 : 1, 0);
+        else if (minX <= minZ) normal.set(left < right ? -1 : 1, 0, 0);
+        else normal.set(0, 0, back < front ? -1 : 1);
+        distance = 0;
+      }
       position.addScaledVector(normal, body.radius - distance);
       this.bounce(body, normal);
       touching = true;
