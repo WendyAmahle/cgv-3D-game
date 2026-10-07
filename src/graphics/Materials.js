@@ -74,7 +74,7 @@ export function canvasTexture(key, size, draw, repeat = [1, 1], colorSpace = THR
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(...repeat);
-  texture.anisotropy = 4;
+  texture.anisotropy = 8;
   texture.userData.shared = true;
   textures.set(key, texture);
   return texture;
