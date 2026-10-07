@@ -76,26 +76,32 @@ function cached(key, build) {
 
 // --------------------------------------------------------------- textures
 
+// Canvas-drawn food textures at 2x their original resolution (less blurry
+// held up close), with every fixed-pixel detail (speckle size, line width,
+// ring spacing) scaled by `unit` so the pattern itself looks identical, just
+// sharper — only the raster resolution changes, not the design.
 const crumbTexture = () =>
-  canvasTexture('crumb', 256, (ctx, size) => {
+  canvasTexture('crumb', 512, (ctx, size) => {
+    const unit = size / 256;
     const gradient = ctx.createRadialGradient(size / 2, size / 2, size * 0.1, size / 2, size / 2, size / 2);
     gradient.addColorStop(0, '#f6e7c4');
     gradient.addColorStop(0.85, '#eed8a8');
     gradient.addColorStop(1, '#c98f4a');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, size, size);
-    for (let i = 0; i < 900; i += 1) {
+    for (let i = 0; i < 900 * unit * unit; i += 1) {
       ctx.fillStyle = `rgba(150,110,60,${Math.random() * 0.25})`;
       ctx.beginPath();
-      ctx.ellipse(Math.random() * size, Math.random() * size, Math.random() * 3 + 0.5, Math.random() * 2 + 0.5, Math.random() * 3, 0, Math.PI * 2);
+      ctx.ellipse(Math.random() * size, Math.random() * size, (Math.random() * 3 + 0.5) * unit, (Math.random() * 2 + 0.5) * unit, Math.random() * 3, 0, Math.PI * 2);
       ctx.fill();
     }
   });
 
 const leafTexture = () =>
-  canvasTexture('lettuce', 256, (ctx, size) => {
+  canvasTexture('lettuce', 512, (ctx, size) => {
+    const unit = size / 256;
     const c = size / 2;
-    const gradient = ctx.createRadialGradient(c, c, 4, c, c, c);
+    const gradient = ctx.createRadialGradient(c, c, 4 * unit, c, c, c);
     gradient.addColorStop(0, '#e8f5b8');
     gradient.addColorStop(0.35, '#a8d86a');
     gradient.addColorStop(1, '#4f9a2f');
@@ -104,7 +110,7 @@ const leafTexture = () =>
     ctx.strokeStyle = 'rgba(235,250,200,0.55)';
     for (let i = 0; i < 22; i += 1) {
       const angle = (i / 22) * Math.PI * 2;
-      ctx.lineWidth = 1 + Math.random() * 2;
+      ctx.lineWidth = (1 + Math.random() * 2) * unit;
       ctx.beginPath();
       ctx.moveTo(c, c);
       ctx.quadraticCurveTo(c + Math.cos(angle + 0.3) * c * 0.5, c + Math.sin(angle + 0.3) * c * 0.5, c + Math.cos(angle) * c, c + Math.sin(angle) * c);
@@ -113,37 +119,39 @@ const leafTexture = () =>
   });
 
 const noriTexture = () =>
-  canvasTexture('nori', 256, (ctx, size) => {
+  canvasTexture('nori', 512, (ctx, size) => {
+    const unit = size / 256;
     ctx.fillStyle = '#16200f';
     ctx.fillRect(0, 0, size, size);
-    for (let i = 0; i < 3000; i += 1) {
+    for (let i = 0; i < 3000 * unit * unit; i += 1) {
       ctx.fillStyle = `rgba(${40 + Math.random() * 40},${60 + Math.random() * 50},${30 + Math.random() * 20},${Math.random() * 0.4})`;
-      ctx.fillRect(Math.random() * size, Math.random() * size, Math.random() * 6 + 1, 1);
+      ctx.fillRect(Math.random() * size, Math.random() * size, (Math.random() * 6 + 1) * unit, unit);
     }
   });
 
 const chashuTexture = () =>
-  canvasTexture('chashu', 256, (ctx, size) => {
+  canvasTexture('chashu', 512, (ctx, size) => {
+    const unit = size / 256;
     const c = size / 2;
     ctx.fillStyle = '#f0c9b8';
     ctx.fillRect(0, 0, size, size);
     ctx.lineCap = 'round';
-    for (let r = c; r > 6; r -= 11) {
-      ctx.strokeStyle = r % 22 < 11 ? '#fff4e6' : '#d98f7c';
-      ctx.lineWidth = 7;
+    for (let r = c; r > 6 * unit; r -= 11 * unit) {
+      ctx.strokeStyle = (r / unit) % 22 < 11 ? '#fff4e6' : '#d98f7c';
+      ctx.lineWidth = 7 * unit;
       ctx.beginPath();
       ctx.arc(c + (c - r) * 0.08, c, r, 0, Math.PI * 2);
       ctx.stroke();
     }
     ctx.strokeStyle = '#8a4a2a';
-    ctx.lineWidth = 10;
+    ctx.lineWidth = 10 * unit;
     ctx.beginPath();
-    ctx.arc(c, c, c - 5, 0, Math.PI * 2);
+    ctx.arc(c, c, c - 5 * unit, 0, Math.PI * 2);
     ctx.stroke();
   });
 
 const yolkTexture = () =>
-  canvasTexture('yolk', 128, (ctx, size) => {
+  canvasTexture('yolk', 256, (ctx, size) => {
     const c = size / 2;
     const gradient = ctx.createRadialGradient(c, c, 2, c, c, c);
     gradient.addColorStop(0, '#c85a05');

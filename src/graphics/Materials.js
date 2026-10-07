@@ -156,7 +156,7 @@ export function windowsTexture(wall, lit, seed = 1) {
 
 // Tangent-space normal map from value noise — bumpy detail for food surfaces.
 export function noiseNormalMap(key, { scale = 8, strength = 2, octaves = 3 } = {}) {
-  return canvasTexture(`normal-${key}`, 256, (ctx, size) => {
+  return canvasTexture(`normal-${key}`, 512, (ctx, size) => {
     const heights = new Float32Array(size * size);
     const lattice = new Float32Array(1024).map(() => Math.random());
     const value = (x, y) => lattice[((x & 31) + (y & 31) * 32) % 1024];
