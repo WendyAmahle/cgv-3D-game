@@ -121,11 +121,13 @@ export class PlayerController {
     }
     const root = this.player.dragRoot;
     this.dragLast.copy(root.position);
-    root.position.lerp(this.dragGoal, dt ? 1 - Math.exp(-dt * 18) : 1);
+    // Snappy but not jittery: a touchpad's lower-frequency updates still read
+    // as an immediate response instead of the held item visibly trailing behind.
+    root.position.lerp(this.dragGoal, dt ? 1 - Math.exp(-dt * 38) : 1);
     if (dt) {
       // Smoothed hand speed, so a flick of the mouse throws the item.
       this.dragLast.subVectors(root.position, this.dragLast).divideScalar(dt).multiplyScalar(0.6);
-      this.dragVelocity.lerp(this.dragLast, 1 - Math.exp(-dt * 20));
+      this.dragVelocity.lerp(this.dragLast, 1 - Math.exp(-dt * 26));
     }
   }
 
