@@ -47,18 +47,26 @@ function seeded(seed) {
 // rest with bones rotated along the limbs, so for each bone we convert:
 //   target local = inverse(parent rest world) × X Bot local × bone rest world
 // Only rotations are kept, so walks play in place.
+//
+// Bones are matched by name with any Mixamo prefix stripped, not by the raw
+// name: X Bot and Michelle use "mixamorig:Hips" (with a colon), while the
+// Ready Player Me avatar's bones are unprefixed ("Hips"). Matching on the raw
+// name worked for Michelle by coincidence but silently matched nothing for
+// the avatar, so every avatar-bodied character (customers and the chef) got
+// no animation at all and just sat in its bind pose — which looks like
+// crossed arms.
+const stripMixamoPrefix = (name) => name.replace(/^mixamorig:?/, '');
+
 const clipCache = new Map();
 function clipsFor(body, model) {
   if (clipCache.has(body)) return clipCache.get(body);
 
   model.updateMatrixWorld(true);
   const rest = new Map();
-  let prefix = '';
   model.traverse((node) => {
     if (!node.isBone) return;
-    if (node.name.startsWith('mixamorig')) prefix = 'mixamorig';
     const parentWorld = node.parent.getWorldQuaternion(new THREE.Quaternion());
-    rest.set(node.name, { world: node.getWorldQuaternion(new THREE.Quaternion()), parentInverse: parentWorld.invert() });
+    rest.set(stripMixamoPrefix(node.name), { name: node.name, world: node.getWorldQuaternion(new THREE.Quaternion()), parentInverse: parentWorld.invert() });
   });
 
   const source = assets.animations('xbot');
@@ -70,14 +78,14 @@ function clipsFor(body, model) {
     const tracks = [];
     for (const track of clip.tracks) {
       if (!track.name.endsWith('.quaternion')) continue;
-      const bone = prefix + track.name.slice(0, -'.quaternion'.length).replace(/^mixamorig/, '');
+      const bone = stripMixamoPrefix(track.name.slice(0, -'.quaternion'.length));
       const target = rest.get(bone);
       if (!target) continue;
       const values = new Float32Array(track.values.length);
       for (let i = 0; i < values.length; i += 4) {
         q.fromArray(track.values, i).premultiply(target.parentInverse).multiply(target.world).toArray(values, i);
       }
-      tracks.push(new THREE.QuaternionKeyframeTrack(`${bone}.quaternion`, track.times, values));
+      tracks.push(new THREE.QuaternionKeyframeTrack(`${target.name}.quaternion`, track.times, values));
     }
     clips[name] = new THREE.AnimationClip(name, clip.duration, tracks);
   }
