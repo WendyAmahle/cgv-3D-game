@@ -79,6 +79,26 @@ function mergedBoxes(material, boxes) {
   return mesh;
 }
 
+// A soft dark ellipse on the ground: a cheap stand-in for contact/ambient
+// occlusion under big static props like the truck, grounding them visually
+// without an extra light or render pass.
+function contactShadow(radiusX, radiusZ, [x, y, z]) {
+  const fade = canvasTexture('contact-shadow', 128, (ctx, size) => {
+    const c = size / 2;
+    const gradient = ctx.createRadialGradient(c, c, 0, c, c, c);
+    gradient.addColorStop(0, 'rgba(0,0,0,0.55)');
+    gradient.addColorStop(0.7, 'rgba(0,0,0,0.3)');
+    gradient.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+  }, [1, 1], THREE.NoColorSpace);
+  const mesh = new THREE.Mesh(new THREE.CircleGeometry(1, 40), new THREE.MeshBasicMaterial({ map: fade, transparent: true, depthWrite: false, toneMapped: false }));
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.scale.set(radiusX, radiusZ, 1);
+  mesh.position.set(x, y, z);
+  mesh.renderOrder = -0.5;
+  return mesh;
+}
 
 function neon(color, intensity = 3) {
   return new THREE.MeshStandardMaterial({ color: 0x000000, emissive: color, emissiveIntensity: intensity });
@@ -235,6 +255,7 @@ const DECOR = {
     const roof = box(14.6, 0.2, 6.8, white, [0, 4.3, -1.2]);
     root.add(roof);
     cutaway.push(roof);
+    root.add(contactShadow(8.2, 3.8, [0, 0.013, -1.2]));
 
     // Striped awning over the serving hatch.
     const stripes = canvasTexture('awning', 256, (ctx, size) => {
@@ -253,11 +274,13 @@ const DECOR = {
     cab.add(box(2.4, 2.4, 5.2, paint, [0, 1.6, 0]));
     cab.add(box(0.05, 1.0, 4.4, physical(0x0b1220, { roughness: 0.05, metalness: 0.2, clearcoat: 1 }), [-1.21, 2.2, 0]));
     cab.add(box(0.1, 0.35, 5.3, chrome, [-1.22, 0.55, 0]));
+    // Headlamps barely glow in broad daylight; they're a chrome highlight, not a light source.
     const lampGeometries = [-2.1, 2.1].map((z) => new THREE.CylinderGeometry(0.18, 0.18, 0.08, 20).rotateZ(Math.PI / 2).translate(-1.25, 0.95, z));
-    const lamps = new THREE.Mesh(mergeGeometries(lampGeometries), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff3c4, emissiveIntensity: 1.5 }));
+    const lamps = new THREE.Mesh(mergeGeometries(lampGeometries), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.6, roughness: 0.2, emissive: 0xfff3c4, emissiveIntensity: 0.25 }));
     cab.add(lamps);
     cab.position.set(-8.6, 0, -1.2);
     root.add(cab);
+    root.add(contactShadow(2.6, 3.1, [-8.6, 0.013, -1.2]));
 
     // Wheels: under the truck body and the cab, merged into two draw calls
     // (tyres, hubs) instead of one mesh pair per wheel.
@@ -280,12 +303,20 @@ const DECOR = {
     place(root, 'streetLamp', [-10, 0, 4.5]);
     place(root, 'streetLamp', [10, 0, 4.5]);
     place(root, 'trashCan', [9.3, 0, 7], { rotation: -0.5 });
-    placeLite(root, 'shrub', [-3, 0, -6.6], { scale: 1.2 });
-    placeLite(root, 'shrub', [5, 0, -6.4], { rotation: 2.5, scale: 1.1 });
-    placeLite(root, 'shrub', [12, 0, -3], { rotation: 1.2 });
-    placeLite(root, 'pottedPlant', [-7.8, 0, 3.4], { scale: 1.3 });
-    placeLite(root, 'pottedPlant', [7.8, 0, 3.4], { rotation: 1.4, scale: 1.3 });
-    return null;
+    const sway = [
+      [placeLite(root, 'shrub', [-3, 0, -6.6], { scale: 1.2 }), 0],
+      [placeLite(root, 'shrub', [5, 0, -6.4], { rotation: 2.5, scale: 1.1 }), 1.7],
+      [placeLite(root, 'shrub', [12, 0, -3], { rotation: 1.2 }), 3.1],
+      [placeLite(root, 'pottedPlant', [-7.8, 0, 3.4], { scale: 1.3 }), 4.4],
+      [placeLite(root, 'pottedPlant', [7.8, 0, 3.4], { rotation: 1.4, scale: 1.3 }), 5.6],
+    ].filter(([model]) => model).map(([model, seed]) => ({ model, seed, base: model.rotation.z }));
+
+    // Idle motion so the level doesn't read as a static photo: the awning
+    // flutters and the park greenery sways gently in the breeze.
+    return (dt, time) => {
+      awning.rotation.x = 0.16 + Math.sin(time * 1.4) * 0.015;
+      for (const leaf of sway) leaf.model.rotation.z = leaf.base + Math.sin(time * 0.9 + leaf.seed) * 0.035;
+    };
   },
 
   izakaya(root, level, cutaway) {
