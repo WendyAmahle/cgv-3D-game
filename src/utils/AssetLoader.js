@@ -21,7 +21,17 @@ const GROUPS = {
   },
   truck: {
     hdri: 'greenwich_park',
-    models: { picnicTable: 'wooden_picnic_table', streetLamp: 'street_lamp_01', shrub: 'shrub_02', pottedPlant: 'potted_plant_02' },
+    models: {
+      picnicTable: 'wooden_picnic_table',
+      streetLamp: 'street_lamp_01',
+      shrub: 'shrub_02',
+      pottedPlant: 'potted_plant_02',
+      chalkboard: 'standing_chalkboard_01',
+      cafeSet: 'outdoor_table_chair_set_01',
+      monoblocChair: 'plastic_monobloc_chair_01',
+      bench: 'painted_wooden_bench',
+      planter: 'planter_box_01',
+    },
     textures: ['leafy_grass', 'patterned_paving', 'long_white_tiles', 'metal_plate'],
   },
   izakaya: {

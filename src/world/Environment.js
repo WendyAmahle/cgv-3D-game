@@ -303,6 +303,18 @@ const DECOR = {
     place(root, 'streetLamp', [-10, 0, 4.5]);
     place(root, 'streetLamp', [10, 0, 4.5]);
     place(root, 'trashCan', [9.3, 0, 7], { rotation: -0.5 });
+
+    // Scanned street furniture (real-world metre scale). Positions keep clear
+    // of the customers' walk-in path and the overview camera's sightlines to
+    // the stations.
+    place(root, 'chalkboard', [-3.4, 0, 5.4], { rotation: 0.25 });
+    place(root, 'cafeSet', [1.6, 0, 8.4], { rotation: 0.3 });
+    place(root, 'monoblocChair', [-3.3, 0, 7.5], { rotation: -1.2 });
+    place(root, 'monoblocChair', [-3.1, 0, 8.7], { rotation: -2.1 });
+    place(root, 'bench', [9.8, 0, 2.2], { rotation: -Math.PI / 2 });
+    place(root, 'planter', [-4.6, 0, 2.35]);
+    place(root, 'planter', [4.6, 0, 2.35]);
+
     const sway = [
       [placeLite(root, 'shrub', [-3, 0, -6.6], { scale: 1.2 }), 0],
       [placeLite(root, 'shrub', [5, 0, -6.4], { rotation: 2.5, scale: 1.1 }), 1.7],
