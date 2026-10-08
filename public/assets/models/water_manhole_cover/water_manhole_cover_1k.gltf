@@ -1,0 +1,220 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.5.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 576,
+      "max": [
+        0.3453802466392517,
+        0.03877965733408928,
+        0.3453802466392517
+      ],
+      "min": [
+        -0.3453802466392517,
+        -0.028761375695466995,
+        -0.3453802466392517
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 576,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 576,
+      "bufferView": 0,
+      "byteOffset": 24
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1920,
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 16983,
+      "bufferView": 1,
+      "byteOffset": 3840
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4565,
+      "max": [
+        0.3047727644443512,
+        0.038856424391269684,
+        0.2999168932437897
+      ],
+      "min": [
+        -0.3047727644443512,
+        0.014296040870249271,
+        -0.2999168932437897
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4565,
+      "bufferView": 2,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 4565,
+      "bufferView": 2,
+      "byteOffset": 24
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 18432,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 18432,
+      "byteLength": 37808,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 56240,
+      "byteLength": 146080,
+      "byteStride": 32,
+      "target": 34962
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "water_manhole_cover_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/water_manhole_cover_nor_gl_1k.jpg"
+    },
+    {
+      "name": "water_manhole_cover_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/water_manhole_cover_diff_1k.jpg"
+    },
+    {
+      "name": "water_manhole_cover_metal-water_manhole_cover_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/water_manhole_cover_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "water_manhole_cover.bin",
+      "byteLength": 202320
+    }
+  ],
+  "materials": [
+    {
+      "name": "water_manhole_cover",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cylinder.008",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 3
+        }
+      ]
+    },
+    {
+      "name": "Cylinder.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "water_manhole_cover_frame",
+      "mesh": 0
+    },
+    {
+      "name": "water_manhole_cover",
+      "mesh": 1
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ],
+  "scene": 0
+}

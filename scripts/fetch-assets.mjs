@@ -20,6 +20,7 @@ const MODELS = [
   'utility_box_02', 'street_lamp_02', 'concrete_road_barrier', 'metal_stool_01', 'WetFloorSign_01',
   'modular_urban_apartments_facade', 'exterior_aircon_unit',
   'standing_chalkboard_01', 'outdoor_table_chair_set_01', 'plastic_monobloc_chair_01', 'painted_wooden_bench', 'planter_box_01',
+  'portable_generator', 'hand_truck', 'trashbag', 'water_manhole_cover', 'barrel_03',
 ];
 const TEXTURES = [
   'leafy_grass', 'patterned_paving', 'long_white_tiles', 'metal_plate',
