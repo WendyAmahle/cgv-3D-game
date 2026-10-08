@@ -41,38 +41,65 @@ function seeded(seed) {
   };
 }
 
-// Retargets X Bot's clips onto another Mixamo-style skeleton. X Bot's bones
-// all rest with identity LOCAL rotations, so a clip's local rotation for a
-// bone is also its rotation relative to rest — the exact same delta applies
-// directly as an extra local-space rotation layered on top of the target's
-// own rest pose:
-//   target local = bone rest local × X Bot local
-// (An earlier version of this conjugated the delta through the parent's
-// rest-world orientation instead — `inverse(parent rest world) × X Bot local
-// × bone rest world` — which is only correct at the rest pose itself; for any
-// real rotation it silently mirrors the limb to the wrong side once a bone's
-// rest orientation isn't aligned to world axes. Verified against the actual
-// skeletons: that formula swings both hands behind the back/across the body
-// in every clip for the avatar body; this one keeps them on the correct
-// side.) Only rotations are kept, so walks play in place.
+// Retargets X Bot's clips onto another Mixamo-style skeleton. Rotations only,
+// so walks play in place.
 //
-// Bones are matched by name with any Mixamo prefix stripped, not by the raw
-// name: X Bot and Michelle use "mixamorig:Hips" (with a colon), while the
-// Ready Player Me avatar's bones are unprefixed ("Hips"). Matching on the raw
-// name worked for Michelle by coincidence but silently matched nothing for
-// the avatar, so every avatar-bodied character (customers and the chef) got
-// no animation at all and just sat in its bind pose.
+// The two skeletons don't share a rest pose: X Bot rests in a T-pose (arms
+// straight out) while the Ready Player Me avatar rests with its arms already
+// hanging down. X Bot's idle lowers the arms ~80° from its T-pose; applied
+// as-is on top of arms that already hang down, that swings them on past the
+// body — hands meeting behind the back or crossed in front. So each target
+// bone's rest orientation is first corrected (shortest arc) to point the same
+// way as the matching X Bot bone does at rest, then X Bot's motion is applied
+// relative to that shared pose:
+//   A(bone)      = correction(bone) × target rest world
+//   target local = A(parent)⁻¹ × X Bot rest world(parent) × X Bot local
+//                  × X Bot rest world(bone)⁻¹ × A(bone)
+// which makes every target bone point exactly where the X Bot bone points.
+//
+// Bones are matched by name with any Mixamo prefix stripped: X Bot and
+// Michelle's bones are "mixamorigHips" etc. (GLTFLoader drops the file's
+// colon), while the avatar's are unprefixed ("Hips").
 const stripMixamoPrefix = (name) => name.replace(/^mixamorig:?/, '');
 
 const clipCache = new Map();
 function clipsFor(body, model) {
   if (clipCache.has(body)) return clipCache.get(body);
 
+  const sourceModel = assets.model('xbot');
   model.updateMatrixWorld(true);
+  sourceModel.updateMatrixWorld(true);
+  const sourceBones = new Map();
+  sourceModel.traverse((node) => node.isBone && sourceBones.set(stripMixamoPrefix(node.name), node));
+
+  const position = new THREE.Vector3();
+  const direction = (bone, child) => child.getWorldPosition(new THREE.Vector3()).sub(bone.getWorldPosition(position)).normalize();
+  const firstChildBone = (bone) => bone.children.find((child) => child.isBone);
+
+  // Per target bone: its corrected rest-world rotation A, and the matching
+  // X Bot bone's rest-world rotation.
   const rest = new Map();
   model.traverse((node) => {
     if (!node.isBone) return;
-    rest.set(stripMixamoPrefix(node.name), { name: node.name, restLocal: node.quaternion.clone() });
+    const key = stripMixamoPrefix(node.name);
+    const sourceBone = sourceBones.get(key);
+    const child = firstChildBone(node);
+    const sourceChild = child && sourceBones.get(stripMixamoPrefix(child.name));
+    let correction;
+    if (sourceBone && child && sourceChild) {
+      correction = new THREE.Quaternion().setFromUnitVectors(direction(node, child), direction(sourceBone, sourceChild));
+    } else {
+      correction = rest.get(stripMixamoPrefix(node.parent.name))?.correction.clone() ?? new THREE.Quaternion();
+    }
+    rest.set(key, {
+      name: node.name,
+      parentKey: stripMixamoPrefix(node.parent.name),
+      parentWorld: node.parent.getWorldQuaternion(new THREE.Quaternion()),
+      correction,
+      corrected: correction.clone().multiply(node.getWorldQuaternion(new THREE.Quaternion())),
+      sourceWorld: sourceBone?.getWorldQuaternion(new THREE.Quaternion()) ?? null,
+      sourceParentWorld: sourceBone?.parent.getWorldQuaternion(new THREE.Quaternion()) ?? null,
+    });
   });
 
   const source = assets.animations('xbot');
@@ -84,12 +111,14 @@ function clipsFor(body, model) {
     const tracks = [];
     for (const track of clip.tracks) {
       if (!track.name.endsWith('.quaternion')) continue;
-      const bone = stripMixamoPrefix(track.name.slice(0, -'.quaternion'.length));
-      const target = rest.get(bone);
-      if (!target) continue;
+      const target = rest.get(stripMixamoPrefix(track.name.slice(0, -'.quaternion'.length)));
+      if (!target?.sourceWorld) continue;
+      const parentCorrected = rest.get(target.parentKey)?.corrected ?? target.parentWorld;
+      const before = parentCorrected.clone().invert().multiply(target.sourceParentWorld);
+      const after = target.sourceWorld.clone().invert().multiply(target.corrected);
       const values = new Float32Array(track.values.length);
       for (let i = 0; i < values.length; i += 4) {
-        q.fromArray(track.values, i).premultiply(target.restLocal).toArray(values, i);
+        q.fromArray(track.values, i).premultiply(before).multiply(after).toArray(values, i);
       }
       tracks.push(new THREE.QuaternionKeyframeTrack(`${target.name}.quaternion`, track.times, values));
     }
