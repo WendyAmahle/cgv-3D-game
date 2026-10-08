@@ -201,10 +201,14 @@ export class Game {
     return true;
   }
 
-  // The top-down camera looks through the roof.
+  // The top-down camera looks through the roof; pieces flagged
+  // hideInThirdPerson also get out of the way of the over-the-shoulder view.
   applyCutaway() {
-    const hide = this.cameraController.mode === 4 && !this.cameraController.autoOrbit;
-    this.world?.cutaway.forEach((object) => (object.visible = !hide));
+    const { mode, autoOrbit } = this.cameraController;
+    this.world?.cutaway.forEach((object) => {
+      const hide = !autoOrbit && (mode === 4 || (mode === 2 && object.userData.hideInThirdPerson));
+      object.visible = !hide;
+    });
   }
 
   teardownGameplay() {
