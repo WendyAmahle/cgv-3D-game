@@ -186,6 +186,7 @@ function dressAvatar(model, theme, random) {
   const choose = (list) => list[Math.floor(random() * list.length)];
   const skin = choose(SKIN_TONES);
   const showBeard = random() > 0.6;
+  const showHat = random() > 0.5;
   const top = choose(outfit.top);
   const bottom = choose(outfit.bottom);
 
@@ -196,11 +197,10 @@ function dressAvatar(model, theme, random) {
     else if (name === 'Wolf3D_Outfit_Top') object.material = tinted(object.material, top);
     else if (name === 'Wolf3D_Outfit_Bottom') object.material = tinted(object.material, bottom);
     else if (name === 'Wolf3D_Beard') object.visible = showBeard;
-    // The source avatar's headwear (its original export had a hat) is never
-    // styled for customers, unlike every other slot — createChef() already
-    // hides this same mesh for the player's own body. Left on, every
-    // avatar-bodied customer wears that same random leftover hat.
-    else if (name === 'Wolf3D_Headwear') object.visible = false;
+    // The avatar has no hair mesh, so its hat is the only head covering:
+    // shown on some customers for variety rather than on all (or none, which
+    // leaves a row of identical bald heads).
+    else if (name === 'Wolf3D_Headwear') object.visible = showHat;
   });
 }
 
