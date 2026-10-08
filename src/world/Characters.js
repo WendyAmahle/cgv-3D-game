@@ -41,20 +41,27 @@ function seeded(seed) {
   };
 }
 
-// Retargets X Bot's clips onto another Mixamo-style skeleton. X Bot's bones all
-// rest with identity rotations (aligned to the world axes), so a clip's local
-// rotation for a bone is also its rotation relative to rest. Other skeletons
-// rest with bones rotated along the limbs, so for each bone we convert:
-//   target local = inverse(parent rest world) × X Bot local × bone rest world
-// Only rotations are kept, so walks play in place.
+// Retargets X Bot's clips onto another Mixamo-style skeleton. X Bot's bones
+// all rest with identity LOCAL rotations, so a clip's local rotation for a
+// bone is also its rotation relative to rest — the exact same delta applies
+// directly as an extra local-space rotation layered on top of the target's
+// own rest pose:
+//   target local = bone rest local × X Bot local
+// (An earlier version of this conjugated the delta through the parent's
+// rest-world orientation instead — `inverse(parent rest world) × X Bot local
+// × bone rest world` — which is only correct at the rest pose itself; for any
+// real rotation it silently mirrors the limb to the wrong side once a bone's
+// rest orientation isn't aligned to world axes. Verified against the actual
+// skeletons: that formula swings both hands behind the back/across the body
+// in every clip for the avatar body; this one keeps them on the correct
+// side.) Only rotations are kept, so walks play in place.
 //
 // Bones are matched by name with any Mixamo prefix stripped, not by the raw
 // name: X Bot and Michelle use "mixamorig:Hips" (with a colon), while the
 // Ready Player Me avatar's bones are unprefixed ("Hips"). Matching on the raw
 // name worked for Michelle by coincidence but silently matched nothing for
 // the avatar, so every avatar-bodied character (customers and the chef) got
-// no animation at all and just sat in its bind pose — which looks like
-// crossed arms.
+// no animation at all and just sat in its bind pose.
 const stripMixamoPrefix = (name) => name.replace(/^mixamorig:?/, '');
 
 const clipCache = new Map();
@@ -65,8 +72,7 @@ function clipsFor(body, model) {
   const rest = new Map();
   model.traverse((node) => {
     if (!node.isBone) return;
-    const parentWorld = node.parent.getWorldQuaternion(new THREE.Quaternion());
-    rest.set(stripMixamoPrefix(node.name), { name: node.name, world: node.getWorldQuaternion(new THREE.Quaternion()), parentInverse: parentWorld.invert() });
+    rest.set(stripMixamoPrefix(node.name), { name: node.name, restLocal: node.quaternion.clone() });
   });
 
   const source = assets.animations('xbot');
@@ -83,7 +89,7 @@ function clipsFor(body, model) {
       if (!target) continue;
       const values = new Float32Array(track.values.length);
       for (let i = 0; i < values.length; i += 4) {
-        q.fromArray(track.values, i).premultiply(target.parentInverse).multiply(target.world).toArray(values, i);
+        q.fromArray(track.values, i).premultiply(target.restLocal).toArray(values, i);
       }
       tracks.push(new THREE.QuaternionKeyframeTrack(`${target.name}.quaternion`, track.times, values));
     }
