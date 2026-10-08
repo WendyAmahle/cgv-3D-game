@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { LAYOUT } from '../utils/Constants.js';
 import { assets } from '../utils/AssetLoader.js';
 import { canvasTexture, mat, noiseNormalMap, pbr, physical, surfaces, windowsTexture } from '../graphics/Materials.js';
@@ -67,16 +66,6 @@ function placeLite(root, key, position, options) {
     if (object.isMesh) object.castShadow = false;
   });
   return model;
-}
-
-// One mesh from several box footprints that share a material, instead of one
-// draw call per box — cuts the truck body down from 6 meshes to 3.
-function mergedBoxes(material, boxes) {
-  const geometries = boxes.map(([w, h, d, x, y, z]) => new THREE.BoxGeometry(w, h, d).translate(x, y, z));
-  const mesh = new THREE.Mesh(mergeGeometries(geometries), material);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  return mesh;
 }
 
 // A soft dark ellipse on the ground: a cheap stand-in for contact/ambient
@@ -191,9 +180,10 @@ function spotDecal() {
 
 // ---------------------------------------------------------------- shell
 
-// Floor, two counters and back wall; materials come from the theme.
+// Floor, two counters and back wall; materials come from the theme. Passing
+// null for the floor or wall leaves it out.
 function buildShell(root, { floor, counterBody, counterTop, counterFront, wall }) {
-  root.add(plane(14.4, 6.4, floor, [0, 0.01, -1.3]));
+  if (floor) root.add(plane(14.4, 6.4, floor, [0, 0.01, -1.3]));
 
   const bodyHeight = LAYOUT.counterTopY - 0.05;
   for (const z of [LAYOUT.frontRowZ, LAYOUT.backRowZ]) {
@@ -201,7 +191,7 @@ function buildShell(root, { floor, counterBody, counterTop, counterFront, wall }
     root.add(box(LAYOUT.counterLength + 0.2, 0.05, 1.22, counterTop, [0, LAYOUT.counterTopY - 0.025, z]));
   }
   root.add(box(LAYOUT.counterLength, bodyHeight - 0.1, 0.02, counterFront, [0, bodyHeight / 2, LAYOUT.frontRowZ + 0.56]));
-  root.add(box(15, 4.3, 0.3, wall, [0, 2.15, LAYOUT.backWallZ]));
+  if (wall) root.add(box(15, 4.3, 0.3, wall, [0, 2.15, LAYOUT.backWallZ]));
 }
 
 function buildCustomerSlots(root, count) {
@@ -222,78 +212,59 @@ function buildCustomerSlots(root, count) {
 
 const DECOR = {
   truck(root, level, cutaway) {
+    // Open-air serving counters in front of the parked truck: no shell floor
+    // (the paving runs underneath) and no back wall (the truck replaces it).
     buildShell(root, {
-      floor: pbr('metal_plate', [7, 3], 0x9ca3af, { metalness: 0.9 }),
+      floor: null,
       counterBody: surfaces.steel(),
       counterTop: surfaces.steel(),
       counterFront: surfaces.paint(0xc1121f),
-      wall: pbr('long_white_tiles', [5, 2], 0xf4f4f5),
+      wall: null,
     });
 
     const paving = pbr('patterned_paving', [14, 14], 0xcfc6b4);
     root.add(groundPatch(paving, 26));
     root.add(plane(9, 60, pbr('leafy_grass', [4, 24], 0x6a9c4a), [-18, 0.004, 0]));
 
-    // Truck body: one merged mesh per material instead of one box per panel,
-    // so the two side walls/trims cost 3 draw calls instead of 6.
-    const paint = surfaces.paint(0xc1121f);
-    const white = surfaces.paint(0xf8fafc);
-    const chrome = surfaces.chrome();
-    root.add(mergedBoxes(paint, [
-      [0.12, 4.2, 6.4, -7.2, 2.1, -1.2],
-      [0.12, 4.2, 6.4, 7.2, 2.1, -1.2],
-      [14.6, 0.5, 0.12, 0, 0.25, 2.05], // skirt under the hatch
-    ]));
-    root.add(mergedBoxes(chrome, [
-      [0.14, 0.14, 6.4, -7.2, 1.2, -1.2],
-      [0.14, 0.14, 6.4, 7.2, 1.2, -1.2],
-    ]));
-    root.add(mergedBoxes(white, [
-      [0.14, 0.5, 6.4, -7.2, 3.6, -1.2],
-      [0.14, 0.5, 6.4, 7.2, 3.6, -1.2],
-    ]));
-    const roof = box(14.6, 0.2, 6.8, white, [0, 4.3, -1.2]);
-    root.add(roof);
-    cutaway.push(roof);
-    root.add(contactShadow(8.2, 3.8, [0, 0.013, -1.2]));
+    // The real food truck (sandrafaki, CC BY 4.0), parked behind the counters
+    // with its serving window facing the customers. In the model the window
+    // is on +x and the cab at +z, so a -90° turn puts the window toward the
+    // camera and the cab on the left. windowZ sits just behind the
+    // third-person camera (3.2m behind the chef) so that view never ends up
+    // inside the truck.
+    const TRUCK = { height: 3.9, centerX: -0.9, windowZ: -3.4 };
+    const truck = place(root, 'foodTruck', [0, 0, 0], { rotation: -Math.PI / 2 });
+    const truckBounds = new THREE.Box3();
+    if (truck) {
+      truck.updateMatrixWorld(true);
+      truckBounds.setFromObject(truck);
+      truck.scale.multiplyScalar(TRUCK.height / (truckBounds.max.y - truckBounds.min.y));
+      truck.updateMatrixWorld(true);
+      truckBounds.setFromObject(truck);
+      truck.position.set(TRUCK.centerX - (truckBounds.min.x + truckBounds.max.x) / 2, -truckBounds.min.y, TRUCK.windowZ - truckBounds.max.z);
+      truck.updateMatrixWorld(true);
+      truckBounds.setFromObject(truck);
+      const size = truckBounds.getSize(new THREE.Vector3());
+      const centre = truckBounds.getCenter(new THREE.Vector3());
+      root.add(contactShadow(size.x / 2 + 0.4, size.z / 2 + 0.4, [centre.x, 0.013, centre.z]));
+    }
 
-    // Striped awning over the serving hatch.
+    // Short striped awning over the truck's window, kept high and shallow so
+    // the overview camera never loses the crates behind it.
     const stripes = canvasTexture('awning', 256, (ctx, size) => {
       for (let i = 0; i < 8; i += 1) {
         ctx.fillStyle = i % 2 ? '#fdf6e3' : '#c1121f';
         ctx.fillRect((i * size) / 8, 0, size / 8, size);
       }
-    }, [6, 1]);
-    const awning = box(14.8, 0.04, 1.8, physical(0xffffff, { map: stripes, normalMap: noiseNormalMap('fabric', { scale: 64, strength: 0.6 }), roughness: 0.85, sheen: 0.5 }), [0, 4.05, 2.85]);
-    awning.rotation.x = 0.16;
+    }, [3, 1]);
+    const awning = box(3.6, 0.04, 0.9, physical(0xffffff, { map: stripes, normalMap: noiseNormalMap('fabric', { scale: 64, strength: 0.6 }), roughness: 0.85, sheen: 0.5 }), [0, 3.35, TRUCK.windowZ + 0.45]);
+    awning.rotation.x = 0.22;
+    awning.userData.hideInThirdPerson = true; // that camera sits right above it
     root.add(awning);
     cutaway.push(awning);
 
-    // Cab at the left end.
-    const cab = new THREE.Group();
-    cab.add(box(2.4, 2.4, 5.2, paint, [0, 1.6, 0]));
-    cab.add(box(0.05, 1.0, 4.4, physical(0x0b1220, { roughness: 0.05, metalness: 0.2, clearcoat: 1 }), [-1.21, 2.2, 0]));
-    cab.add(box(0.1, 0.35, 5.3, chrome, [-1.22, 0.55, 0]));
-    // Headlamps barely glow in broad daylight; they're a chrome highlight, not a light source.
-    const lampGeometries = [-2.1, 2.1].map((z) => new THREE.CylinderGeometry(0.18, 0.18, 0.08, 20).rotateZ(Math.PI / 2).translate(-1.25, 0.95, z));
-    const lamps = new THREE.Mesh(mergeGeometries(lampGeometries), new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.6, roughness: 0.2, emissive: 0xfff3c4, emissiveIntensity: 0.25 }));
-    cab.add(lamps);
-    cab.position.set(-8.6, 0, -1.2);
-    root.add(cab);
-    root.add(contactShadow(2.6, 3.1, [-8.6, 0.013, -1.2]));
-
-    // Wheels: under the truck body and the cab, merged into two draw calls
-    // (tyres, hubs) instead of one mesh pair per wheel.
-    const tyre = surfaces.rubber();
-    const wheelSpots = [[-4.5, 2.12], [4.5, 2.12], [-4.5, -4.55], [4.5, -4.55], [-8.6, 1.45], [-8.6, -3.85]];
-    const tireGeometries = wheelSpots.map(([x, z]) => new THREE.TorusGeometry(0.42, 0.16, 16, 32).translate(x, 0.58, z));
-    const hubGeometries = wheelSpots.map(([x, z]) => new THREE.CylinderGeometry(0.28, 0.28, 0.24, 24).rotateX(Math.PI / 2).translate(x, 0.58, z));
-    const tires = new THREE.Mesh(mergeGeometries(tireGeometries), tyre);
-    const hubs = new THREE.Mesh(mergeGeometries(hubGeometries), chrome);
-    tires.castShadow = hubs.castShadow = true;
-    root.add(tires, hubs);
-
-    root.add(menuBoard(level, [0, 2.8, LAYOUT.backWallZ + 0.18]));
+    // Menu on the truck's rear side panel, right of the window.
+    root.add(menuBoard(level, [2.45, 2.25, TRUCK.windowZ + 0.05], { width: 1.7, height: 0.85 }));
     place(root, 'register', [-6.1, LAYOUT.counterTopY, LAYOUT.frontRowZ], { rotation: Math.PI, scale: 1.2 });
 
     // Park furniture. Foliage skips shadow-casting (placeLite) — cheap plants
@@ -326,7 +297,7 @@ const DECOR = {
     // Idle motion so the level doesn't read as a static photo: the awning
     // flutters and the park greenery sways gently in the breeze.
     return (dt, time) => {
-      awning.rotation.x = 0.16 + Math.sin(time * 1.4) * 0.015;
+      awning.rotation.x = 0.22 + Math.sin(time * 1.4) * 0.015;
       for (const leaf of sway) leaf.model.rotation.z = leaf.base + Math.sin(time * 0.9 + leaf.seed) * 0.035;
     };
   },

@@ -31,6 +31,7 @@ const GROUPS = {
       monoblocChair: 'plastic_monobloc_chair_01',
       bench: 'painted_wooden_bench',
       planter: 'planter_box_01',
+      foodTruck: 'food_truck',
     },
     textures: ['leafy_grass', 'patterned_paving', 'long_white_tiles', 'metal_plate'],
   },
@@ -61,6 +62,9 @@ const GROUPS = {
 // before any cloning) measurably cuts the game's memory footprint without
 // touching how anything is authored.
 const MAX_TEXTURE_SIZE = 512;
+// The food truck's whole exterior is one texture atlas and it fills much of
+// the screen, so 512px would visibly blur it.
+const TEXTURE_SIZE_OVERRIDES = { foodTruck: 1024 };
 
 function capTextureSize(root, maxSize) {
   const seen = new Set();
@@ -164,7 +168,7 @@ class AssetLibrary {
 
   async loadGltf(key, url) {
     const gltf = await this.gltfLoader.loadAsync(url);
-    capTextureSize(gltf.scene, MAX_TEXTURE_SIZE);
+    capTextureSize(gltf.scene, TEXTURE_SIZE_OVERRIDES[key] ?? MAX_TEXTURE_SIZE);
     markShared(gltf.scene);
     this.gltfs.set(key, gltf);
   }
