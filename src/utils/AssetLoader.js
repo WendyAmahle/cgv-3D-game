@@ -44,6 +44,37 @@ const GROUPS = {
   },
 };
 
+// GLTF/GLB-embedded textures (characters, furniture models) often ship at
+// 1024px+ regardless of how large they actually read on screen — the sample
+// Ready Player Me avatar alone decodes to tens of MB of texture data, most of
+// it never scrutinized closely. Capping it here (once, on the shared source
+// before any cloning) measurably cuts the game's memory footprint without
+// touching how anything is authored.
+const MAX_TEXTURE_SIZE = 512;
+
+function capTextureSize(root, maxSize) {
+  const seen = new Set();
+  root.traverse((object) => {
+    if (!object.isMesh) return;
+    for (const material of [].concat(object.material ?? [])) {
+      for (const slot of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'aoMap']) {
+        const texture = material[slot];
+        if (!texture || !texture.image || seen.has(texture)) continue;
+        seen.add(texture);
+        const { width, height } = texture.image;
+        if (!width || (width <= maxSize && height <= maxSize)) continue;
+        const scale = maxSize / Math.max(width, height);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(width * scale);
+        canvas.height = Math.round(height * scale);
+        canvas.getContext('2d').drawImage(texture.image, 0, 0, canvas.width, canvas.height);
+        texture.image = canvas;
+        texture.needsUpdate = true;
+      }
+    }
+  });
+}
+
 function markShared(root) {
   root.traverse((object) => {
     if (object.geometry) object.geometry.userData.shared = true;
@@ -123,6 +154,7 @@ class AssetLibrary {
 
   async loadGltf(key, url) {
     const gltf = await this.gltfLoader.loadAsync(url);
+    capTextureSize(gltf.scene, MAX_TEXTURE_SIZE);
     markShared(gltf.scene);
     this.gltfs.set(key, gltf);
   }
