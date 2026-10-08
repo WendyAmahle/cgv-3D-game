@@ -185,6 +185,55 @@ function chalkMenu(model, level) {
   });
 }
 
+// A string of festoon lights sagging between two points: a thin wire plus
+// warm bulbs hanging off it (one instanced mesh for all the bulbs).
+function festoon(from, to, sag, spacing = 0.55) {
+  const a = new THREE.Vector3(...from), b = new THREE.Vector3(...to);
+  const point = (t) => a.clone().lerp(b, t).add(new THREE.Vector3(0, -sag * 4 * t * (1 - t), 0));
+  const curve = new THREE.CatmullRomCurve3(Array.from({ length: 17 }, (_, i) => point(i / 16)));
+  const group = new THREE.Group();
+  group.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 48, 0.008, 4), mat(0x1f2937, { roughness: 0.6 })));
+  const count = Math.max(2, Math.floor(a.distanceTo(b) / spacing));
+  const bulbs = new THREE.InstancedMesh(
+    new THREE.SphereGeometry(0.045, 10, 8),
+    new THREE.MeshStandardMaterial({ color: 0xfff1d0, emissive: 0xffc46b, emissiveIntensity: 2.2, roughness: 0.3 }),
+    count
+  );
+  const matrix = new THREE.Matrix4();
+  for (let i = 0; i < count; i += 1) {
+    matrix.makeTranslation(point((i + 0.5) / count).add(new THREE.Vector3(0, -0.06, 0)));
+    bulbs.setMatrixAt(i, matrix);
+  }
+  group.add(bulbs);
+  return group;
+}
+
+// Striped patio umbrella: pole, open cone canopy and a finial.
+function umbrella([x, y, z]) {
+  const stripes = canvasTexture('umbrella-stripes', 256, (ctx, size) => {
+    for (let i = 0; i < 8; i += 1) {
+      ctx.fillStyle = i % 2 ? '#f5efe0' : '#b91c1c';
+      ctx.fillRect((i * size) / 8, 0, size / 8, size);
+    }
+  });
+  const group = new THREE.Group();
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 2.4, 10), surfaces.chrome());
+  pole.position.y = 1.2;
+  const canopy = new THREE.Mesh(
+    new THREE.ConeGeometry(1.25, 0.42, 16, 1, true),
+    physical(0xffffff, { map: stripes, side: THREE.DoubleSide, roughness: 0.85, sheen: 0.4, normalMap: noiseNormalMap('fabric', { scale: 64, strength: 0.6 }) })
+  );
+  canopy.position.y = 2.3;
+  const finial = new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 8), surfaces.chrome());
+  finial.position.y = 2.53;
+  group.add(pole, canopy, finial);
+  group.traverse((object) => {
+    if (object.isMesh) object.castShadow = object.receiveShadow = true;
+  });
+  group.position.set(x, y, z);
+  return group;
+}
+
 // "Please wait here" floor sticker for each customer spot.
 function spotDecal() {
   const texture = canvasTexture('spot-decal', 256, (ctx, size) => {
@@ -315,6 +364,21 @@ const DECOR = {
     place(root, 'monoblocChair', [-5.6, 0, 6.0], { rotation: 2.6 });
     place(root, 'monoblocChair', [-6.4, 0, 5.4], { rotation: 1.9 });
     place(root, 'bench', [-7.8, 0, 6.4], { rotation: 0.5 });
+    root.add(umbrella([5.4, 0, 5.6]));
+
+    // Working-truck clutter behind the counters, where the chef never walks.
+    place(root, 'generator', [4.6, 0, -4.3], { rotation: -0.4 });
+    place(root, 'trashBag', [5.5, 0, -3.2], { rotation: 0.6 });
+    place(root, 'trashBag', [5.95, 0, -2.85], { rotation: 2.2, scale: 0.9 });
+    place(root, 'handTruck', [-6.3, 0, -2.6], { rotation: 0.7 });
+    place(root, 'metalBarrel', [-7.2, 0, -2.2]);
+    place(root, 'manhole', [-1.0, 0, 6.4], { rotation: 0.4 });
+
+    // Festoon lights from the truck's roof corners out to the street lamps
+    // (lamp heads sit ~3.3m up). They run wide of the stations, so they never
+    // cross the overview camera's view of them.
+    root.add(festoon([-3.3, 3.65, -3.35], [-10, 3.45, 4.5], 0.55));
+    root.add(festoon([3.1, 3.65, -3.35], [10, 3.45, 4.5], 0.55));
     place(root, 'planter', [-4.6, 0, 2.35]);
     place(root, 'planter', [4.6, 0, 2.35]);
 

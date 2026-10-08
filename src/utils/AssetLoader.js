@@ -32,6 +32,11 @@ const GROUPS = {
       bench: 'painted_wooden_bench',
       planter: 'planter_box_01',
       foodTruck: 'food_truck',
+      generator: 'portable_generator',
+      handTruck: 'hand_truck',
+      trashBag: 'trashbag',
+      manhole: 'water_manhole_cover',
+      metalBarrel: 'barrel_03', // not `barrel`: the izakaya group already uses that key
     },
     textures: ['patterned_paving'],
   },
