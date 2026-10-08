@@ -38,6 +38,13 @@ export const CREDITS = [
     license: 'Ready Player Me terms (non-commercial academic use)',
     use: 'Recoloured customer bodies.',
   },
+  {
+    name: 'Food Truck',
+    author: 'sandrafaki (https://sketchfab.com/sandrafaki)',
+    source: 'https://sketchfab.com/3d-models/food-truck-9a179f9803734a3e95630727b9db3477',
+    license: 'CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/)',
+    use: 'The Burger Truck level\'s food truck. This work is based on "Food Truck" by sandrafaki, licensed under CC-BY-4.0; resized textures, otherwise unmodified.',
+  },
   polyHaven('Hamburger Buns', 'Alexander Shulha', 'hamburger_buns', '3D model'),
   polyHaven('Wooden Crate 02', 'James Ray Cock & Jurita Burger', 'wooden_crate_02', '3D model'),
   polyHaven('Wooden Cutting Board', 'Kuutti Siitonen', 'wooden_cutting_board', '3D model'),
@@ -86,7 +93,7 @@ export const TEAM = [
 ];
 
 export const ORIGINAL_WORK = [
-  'Food, stations, food truck, noodle bar and diner buildings are modelled procedurally by the team (the scanned bun is sliced in code).',
+  'Food, stations, serving counters, noodle bar and diner buildings are modelled procedurally by the team (the scanned bun is sliced in code).',
   'Animation retargeting from X Bot onto the other skeletons is our own code.',
   'All sound effects and music are synthesised at runtime with the Web Audio API.',
   'Custom GLSL shaders: cooking (injected into the PBR material), liquid fill, steam, particles, sky and colour-grade/heat-haze.',

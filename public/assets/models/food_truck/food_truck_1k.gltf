@@ -1,0 +1,259 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.5.1",
+    "version": "2.0",
+    "extras": {
+      "author": "sandrafaki (https://sketchfab.com/sandrafaki)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/food-truck-9a179f9803734a3e95630727b9db3477",
+      "title": "Food Truck"
+    }
+  },
+  "accessors": [
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 25904,
+      "max": [
+        3.460481882095337,
+        7.665850639343262,
+        10.065582275390625
+      ],
+      "min": [
+        -3.460481882095337,
+        0.00975596159696579,
+        -6.630512714385986
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 25904,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 25904,
+      "bufferView": 0,
+      "byteOffset": 24
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 25904,
+      "bufferView": 0,
+      "byteOffset": 32
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 25904,
+      "bufferView": 0,
+      "byteOffset": 40
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 25904,
+      "bufferView": 0,
+      "byteOffset": 48
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 25904,
+      "bufferView": 0,
+      "byteOffset": 56
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 25904,
+      "bufferView": 0,
+      "byteOffset": 64
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 25904,
+      "bufferView": 0,
+      "byteOffset": 72
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 25904,
+      "bufferView": 0,
+      "byteOffset": 80
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 25904,
+      "bufferView": 0,
+      "byteOffset": 88
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5125,
+      "count": 93948,
+      "bufferView": 1,
+      "byteOffset": 0
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 2486784,
+      "byteStride": 96,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 2486784,
+      "byteLength": 375792,
+      "target": 34963
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 0,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "mimeType": "image/png",
+      "uri": "textures/Material_168_baseColor.png"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "scene.bin",
+      "byteLength": 2862576
+    }
+  ],
+  "materials": [
+    {
+      "name": "Material_168",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "roughnessFactor": 0,
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        }
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "node_id102_Material_168_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0,
+            "TEXCOORD_0": 2,
+            "TEXCOORD_1": 3,
+            "TEXCOORD_2": 4,
+            "TEXCOORD_3": 5,
+            "TEXCOORD_4": 6,
+            "TEXCOORD_5": 7,
+            "TEXCOORD_6": 8,
+            "TEXCOORD_7": 9,
+            "TEXCOORD_8": 10
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 11
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Sketchfab_model",
+      "rotation": [
+        -0.7071067811865475,
+        0,
+        0,
+        0.7071067811865476
+      ],
+      "children": [
+        1
+      ]
+    },
+    {
+      "name": "ba242ac016694bfd8c8cb26cc0d0f8be.fbx",
+      "rotation": [
+        0.7071067811865475,
+        0,
+        0,
+        0.7071067811865476
+      ],
+      "scale": [
+        0.009999999776482582,
+        0.009999999776482582,
+        0.009999999776482582
+      ],
+      "children": [
+        2
+      ]
+    },
+    {
+      "name": "RootNode",
+      "children": [
+        3
+      ]
+    },
+    {
+      "name": "root",
+      "children": [
+        4
+      ]
+    },
+    {
+      "name": "node_id102",
+      "translation": [
+        0.029911654070019722,
+        -0.1631423383951187,
+        0.4570063352584839
+      ],
+      "scale": [
+        -0.061095401644706726,
+        0.06687482446432114,
+        0.06687482446432114
+      ],
+      "children": [
+        5
+      ]
+    },
+    {
+      "name": "node_id102_Material_168_0",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Sketchfab_Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0
+}

@@ -2,6 +2,11 @@
 // The files are committed, so you only need this to re-fetch or add assets:
 //   node scripts/fetch-assets.mjs
 // Every asset here must also be listed in src/ui/Credits.js.
+//
+// Not fetched by this script (Sketchfab needs a logged-in account to
+// download): public/assets/models/food_truck/ — "Food Truck" by sandrafaki,
+// CC BY 4.0, https://sketchfab.com/3d-models/food-truck-9a179f9803734a3e95630727b9db3477
+// (glTF download, textures resized to 1024px with @gltf-transform/cli).
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 
