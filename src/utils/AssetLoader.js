@@ -33,7 +33,7 @@ const GROUPS = {
       planter: 'planter_box_01',
       foodTruck: 'food_truck',
     },
-    textures: ['leafy_grass', 'patterned_paving', 'long_white_tiles', 'metal_plate'],
+    textures: ['patterned_paving'],
   },
   izakaya: {
     hdri: 'cobblestone_street_night',

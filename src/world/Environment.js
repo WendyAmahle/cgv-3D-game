@@ -153,6 +153,38 @@ function menuBoard(level, [x, y, z], { width = 3.2, height = 1.5 } = {}) {
   return group;
 }
 
+// Chalks the level's dishes onto the scanned sidewalk chalkboard, keeping the
+// photographed slate underneath. Each face of the A-frame uses one half of
+// the texture's width, mapped upside down, so the menu is drawn into both
+// halves rotated 180°.
+function chalkMenu(model, level) {
+  const names = [...new Set(level.recipes)].map((id) => RECIPES[id]);
+  model?.traverse((object) => {
+    const material = object.material;
+    if (!object.isMesh || material?.name !== 'standing_chalkboard_01_board' || !material.map?.image) return;
+    const slate = material.map.image;
+    const texture = canvasTexture(`chalk-menu-${level.id}`, 512, (ctx, size) => {
+      ctx.drawImage(slate, 0, 0, size, size);
+      ctx.fillStyle = 'rgba(245,245,240,0.88)';
+      ctx.textAlign = 'center';
+      for (const half of [0, 1]) {
+        ctx.save();
+        ctx.translate(size * (half + 0.5) / 2, size * 0.4);
+        ctx.rotate(Math.PI);
+        ctx.font = '700 25px "Segoe Print", "Comic Sans MS", cursive';
+        ctx.fillText("TODAY'S MENU", 0, -110);
+        ctx.font = '400 19px "Segoe Print", "Comic Sans MS", cursive';
+        names.forEach((recipe, index) => ctx.fillText(`${recipe.name}  $${recipe.price}`, 0, -60 + index * 40));
+        ctx.restore();
+      }
+    });
+    texture.flipY = false; // glTF UV convention
+    object.material = material.clone();
+    object.material.map = texture;
+    object.material.userData.shared = false;
+  });
+}
+
 // "Please wait here" floor sticker for each customer spot.
 function spotDecal() {
   const texture = canvasTexture('spot-decal', 256, (ctx, size) => {
@@ -218,13 +250,13 @@ const DECOR = {
       floor: null,
       counterBody: surfaces.steel(),
       counterTop: surfaces.steel(),
-      counterFront: surfaces.paint(0xc1121f),
+      counterFront: surfaces.steel(),
       wall: null,
     });
 
+    // The paving fades into the HDRI's own photographed park grass.
     const paving = pbr('patterned_paving', [14, 14], 0xcfc6b4);
     root.add(groundPatch(paving, 26));
-    root.add(plane(9, 60, pbr('leafy_grass', [4, 24], 0x6a9c4a), [-18, 0.004, 0]));
 
     // The real food truck (sandrafaki, CC BY 4.0), parked behind the counters
     // with its serving window facing the customers. In the model the window
@@ -275,14 +307,14 @@ const DECOR = {
     place(root, 'streetLamp', [10, 0, 4.5]);
     place(root, 'trashCan', [9.3, 0, 7], { rotation: -0.5 });
 
-    // Scanned street furniture (real-world metre scale). Positions keep clear
-    // of the customers' walk-in path and the overview camera's sightlines to
-    // the stations.
-    place(root, 'chalkboard', [-3.4, 0, 5.4], { rotation: 0.25 });
-    place(root, 'cafeSet', [1.6, 0, 8.4], { rotation: 0.3 });
-    place(root, 'monoblocChair', [-3.3, 0, 7.5], { rotation: -1.2 });
-    place(root, 'monoblocChair', [-3.1, 0, 8.7], { rotation: -2.1 });
-    place(root, 'bench', [9.8, 0, 2.2], { rotation: -Math.PI / 2 });
+    // Scanned street furniture (real-world metre scale), inside the default
+    // overview framing. Positions keep clear of the customers' paths in and
+    // out of their slots and of the camera's sightlines to the stations.
+    chalkMenu(place(root, 'chalkboard', [-3.4, 0, 5.4], { rotation: 0.25 }), level);
+    place(root, 'cafeSet', [5.4, 0, 5.6], { rotation: 0.3 });
+    place(root, 'monoblocChair', [-5.6, 0, 6.0], { rotation: 2.6 });
+    place(root, 'monoblocChair', [-6.4, 0, 5.4], { rotation: 1.9 });
+    place(root, 'bench', [-7.8, 0, 6.4], { rotation: 0.5 });
     place(root, 'planter', [-4.6, 0, 2.35]);
     place(root, 'planter', [4.6, 0, 2.35]);
 
