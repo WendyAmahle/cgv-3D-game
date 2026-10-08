@@ -1,68 +1,252 @@
 {
   "asset": {
-    "generator": "Khronos glTF Blender I/O v4.0.44",
+    "generator": "glTF-Transform v4.5.1",
     "version": "2.0"
   },
-  "scene": 0,
-  "scenes": [
+  "accessors": [
     {
-      "name": "Scene",
-      "nodes": [
-        0
-      ]
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 12348,
+      "max": [
+        0.19324655830860138,
+        1.2801183462142944,
+        0.8067892789840698
+      ],
+      "min": [
+        -0.19324660301208496,
+        -0.394923597574234,
+        -2.31228973746056e-8
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 12348,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 12348,
+      "bufferView": 0,
+      "byteOffset": 24
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 59334,
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1008,
+      "bufferView": 1,
+      "byteOffset": 118668
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 672,
+      "bufferView": 1,
+      "byteOffset": 120684
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 256,
+      "max": [
+        0.17394877970218658,
+        0.9191105365753174,
+        0.7871694564819336
+      ],
+      "min": [
+        -0.17387129366397858,
+        0.5472171306610107,
+        0.4399160146713257
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 256,
+      "bufferView": 2,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 256,
+      "bufferView": 2,
+      "byteOffset": 24
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 148,
+      "max": [
+        0.02999456226825714,
+        0.7111213207244873,
+        0.6435661911964417
+      ],
+      "min": [
+        -0.029995445162057877,
+        0.6366691589355469,
+        0.5835762023925781
+      ],
+      "bufferView": 3,
+      "byteOffset": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 148,
+      "bufferView": 3,
+      "byteOffset": 12
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 148,
+      "bufferView": 3,
+      "byteOffset": 24
     }
   ],
-  "nodes": [
+  "bufferViews": [
     {
-      "mesh": 0,
-      "name": "street_lamp_02"
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 395136,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 395136,
+      "byteLength": 122028,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 517164,
+      "byteLength": 8192,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 525356,
+      "byteLength": 4736,
+      "byteStride": 32,
+      "target": 34962
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    },
+    {
+      "source": 3,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "street_lamp_02_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/street_lamp_02_nor_gl_1k.jpg"
+    },
+    {
+      "name": "street_lamp_02_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/street_lamp_02_diff_1k.jpg"
+    },
+    {
+      "name": "street_lamp_02_metal-street_lamp_02_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/street_lamp_02_arm_1k.jpg"
+    },
+    {
+      "name": "street_lamp_02_diff-street_lamp_02_opacity",
+      "mimeType": "image/jpeg",
+      "uri": "textures/street_lamp_02_diff_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "street_lamp_02.bin",
+      "byteLength": 530092
     }
   ],
   "materials": [
     {
-      "doubleSided": true,
       "name": "street_lamp_02",
-      "normalTexture": {
-        "index": 0
-      },
+      "doubleSided": true,
       "pbrMetallicRoughness": {
         "baseColorTexture": {
-          "index": 1
+          "index": 0
         },
         "metallicRoughnessTexture": {
           "index": 2
         }
+      },
+      "normalTexture": {
+        "index": 1
       }
     },
     {
+      "name": "street_lamp_02_glass",
       "alphaMode": "BLEND",
       "doubleSided": true,
-      "name": "street_lamp_02_glass",
-      "normalTexture": {
-        "index": 3
-      },
       "pbrMetallicRoughness": {
         "baseColorTexture": {
-          "index": 4
+          "index": 3
         },
         "metallicRoughnessTexture": {
-          "index": 5
+          "index": 2
         }
+      },
+      "normalTexture": {
+        "index": 1
       }
     },
     {
-      "doubleSided": true,
       "name": "street_lamp_02_bulb",
-      "normalTexture": {
-        "index": 6
-      },
+      "doubleSided": true,
       "pbrMetallicRoughness": {
         "baseColorTexture": {
-          "index": 7
+          "index": 0
         },
         "metallicRoughnessTexture": {
-          "index": 8
+          "index": 2
         }
+      },
+      "normalTexture": {
+        "index": 1
       }
     }
   ],
@@ -76,278 +260,46 @@
             "NORMAL": 1,
             "TEXCOORD_0": 2
           },
-          "indices": 3,
-          "material": 0
+          "mode": 4,
+          "material": 0,
+          "indices": 3
         },
         {
           "attributes": {
-            "POSITION": 4,
-            "NORMAL": 5,
-            "TEXCOORD_0": 6
+            "POSITION": 6,
+            "NORMAL": 7,
+            "TEXCOORD_0": 8
           },
-          "indices": 7,
-          "material": 1
+          "mode": 4,
+          "material": 1,
+          "indices": 4
         },
         {
           "attributes": {
-            "POSITION": 8,
-            "NORMAL": 9,
-            "TEXCOORD_0": 10
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
           },
-          "indices": 11,
-          "material": 2
+          "mode": 4,
+          "material": 2,
+          "indices": 5
         }
       ]
     }
   ],
-  "textures": [
+  "nodes": [
     {
-      "sampler": 0,
-      "source": 0
-    },
-    {
-      "sampler": 0,
-      "source": 1
-    },
-    {
-      "sampler": 0,
-      "source": 2
-    },
-    {
-      "sampler": 0,
-      "source": 0
-    },
-    {
-      "sampler": 0,
-      "source": 3
-    },
-    {
-      "sampler": 0,
-      "source": 2
-    },
-    {
-      "sampler": 0,
-      "source": 0
-    },
-    {
-      "sampler": 0,
-      "source": 1
-    },
-    {
-      "sampler": 0,
-      "source": 2
+      "name": "street_lamp_02",
+      "mesh": 0
     }
   ],
-  "images": [
+  "scenes": [
     {
-      "mimeType": "image/jpeg",
-      "name": "street_lamp_02_nor_gl",
-      "uri": "textures/street_lamp_02_nor_gl_1k.jpg"
-    },
-    {
-      "mimeType": "image/jpeg",
-      "name": "street_lamp_02_diff",
-      "uri": "textures/street_lamp_02_diff_1k.jpg"
-    },
-    {
-      "mimeType": "image/jpeg",
-      "name": "street_lamp_02_metal-street_lamp_02_rough",
-      "uri": "textures/street_lamp_02_arm_1k.jpg"
-    },
-    {
-      "mimeType": "image/jpeg",
-      "name": "street_lamp_02_diff-street_lamp_02_opacity",
-      "uri": "textures/street_lamp_02_diff_1k.jpg"
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
     }
   ],
-  "accessors": [
-    {
-      "bufferView": 0,
-      "componentType": 5126,
-      "count": 12348,
-      "max": [
-        0.19324655830860138,
-        1.2801183462142944,
-        0.8067892789840698
-      ],
-      "min": [
-        -0.19324660301208496,
-        -0.394923597574234,
-        -2.31228973746056e-8
-      ],
-      "type": "VEC3"
-    },
-    {
-      "bufferView": 1,
-      "componentType": 5126,
-      "count": 12348,
-      "type": "VEC3"
-    },
-    {
-      "bufferView": 2,
-      "componentType": 5126,
-      "count": 12348,
-      "type": "VEC2"
-    },
-    {
-      "bufferView": 3,
-      "componentType": 5123,
-      "count": 59334,
-      "type": "SCALAR"
-    },
-    {
-      "bufferView": 4,
-      "componentType": 5126,
-      "count": 256,
-      "max": [
-        0.17394877970218658,
-        0.9191105365753174,
-        0.7871694564819336
-      ],
-      "min": [
-        -0.17387129366397858,
-        0.5472171306610107,
-        0.4399160146713257
-      ],
-      "type": "VEC3"
-    },
-    {
-      "bufferView": 5,
-      "componentType": 5126,
-      "count": 256,
-      "type": "VEC3"
-    },
-    {
-      "bufferView": 6,
-      "componentType": 5126,
-      "count": 256,
-      "type": "VEC2"
-    },
-    {
-      "bufferView": 7,
-      "componentType": 5123,
-      "count": 1008,
-      "type": "SCALAR"
-    },
-    {
-      "bufferView": 8,
-      "componentType": 5126,
-      "count": 148,
-      "max": [
-        0.02999456226825714,
-        0.7111213207244873,
-        0.6435661911964417
-      ],
-      "min": [
-        -0.029995445162057877,
-        0.6366691589355469,
-        0.5835762023925781
-      ],
-      "type": "VEC3"
-    },
-    {
-      "bufferView": 9,
-      "componentType": 5126,
-      "count": 148,
-      "type": "VEC3"
-    },
-    {
-      "bufferView": 10,
-      "componentType": 5126,
-      "count": 148,
-      "type": "VEC2"
-    },
-    {
-      "bufferView": 11,
-      "componentType": 5123,
-      "count": 672,
-      "type": "SCALAR"
-    }
-  ],
-  "bufferViews": [
-    {
-      "buffer": 0,
-      "byteLength": 148176,
-      "byteOffset": 0,
-      "target": 34962
-    },
-    {
-      "buffer": 0,
-      "byteLength": 148176,
-      "byteOffset": 148176,
-      "target": 34962
-    },
-    {
-      "buffer": 0,
-      "byteLength": 98784,
-      "byteOffset": 296352,
-      "target": 34962
-    },
-    {
-      "buffer": 0,
-      "byteLength": 118668,
-      "byteOffset": 395136,
-      "target": 34963
-    },
-    {
-      "buffer": 0,
-      "byteLength": 3072,
-      "byteOffset": 513804,
-      "target": 34962
-    },
-    {
-      "buffer": 0,
-      "byteLength": 3072,
-      "byteOffset": 516876,
-      "target": 34962
-    },
-    {
-      "buffer": 0,
-      "byteLength": 2048,
-      "byteOffset": 519948,
-      "target": 34962
-    },
-    {
-      "buffer": 0,
-      "byteLength": 2016,
-      "byteOffset": 521996,
-      "target": 34963
-    },
-    {
-      "buffer": 0,
-      "byteLength": 1776,
-      "byteOffset": 524012,
-      "target": 34962
-    },
-    {
-      "buffer": 0,
-      "byteLength": 1776,
-      "byteOffset": 525788,
-      "target": 34962
-    },
-    {
-      "buffer": 0,
-      "byteLength": 1184,
-      "byteOffset": 527564,
-      "target": 34962
-    },
-    {
-      "buffer": 0,
-      "byteLength": 1344,
-      "byteOffset": 528748,
-      "target": 34963
-    }
-  ],
-  "samplers": [
-    {
-      "magFilter": 9729,
-      "minFilter": 9987
-    }
-  ],
-  "buffers": [
-    {
-      "byteLength": 530092,
-      "uri": "street_lamp_02.bin"
-    }
-  ]
+  "scene": 0
 }
