@@ -4,6 +4,12 @@ export default {
   name: 'Burger Truck',
   tagline: 'Sunny lunch rush at the park.',
   mechanic: 'The basics: grab ingredients, grill patties before they burn, stack them on the board and serve. Pour colas at the dispenser.',
+  story: {
+    chapter: 'Chapter 1',
+    title: 'A truck called Hope',
+    text: 'Old Sam has parked his burger truck in Sunset Park for twenty years, but these days the lunch crowd walks straight past it to the MegaMunch kiosk. He tosses you the keys: "Show them what a real burger tastes like, kid."',
+    outro: 'The queue stretches past the fountain and the MegaMunch kiosk sits empty. Sam is grinning, and word of your burgers is already spreading across town.',
+  },
   theme: 'truck',
   lighting: 'day',
   weather: 'none',

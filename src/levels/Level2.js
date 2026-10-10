@@ -4,6 +4,12 @@ export default {
   name: 'Lantern Noodle Bar',
   tagline: 'Late-night noodle bar under paper lanterns.',
   mechanic: 'Boil noodles in the pot, ladle broth into bowls and juggle three customers at once. Halfway through, rush hour hits.',
+  story: {
+    chapter: 'Chapter 2',
+    title: 'Lanterns after dark',
+    text: 'Auntie Mei\'s noodle bar in Lantern Alley is three rent cheques away from closing. She heard about the burger truck and needs a second pair of hands at the pot, because tonight the late-night crowd is coming back.',
+    outro: 'The last bowl is scraped clean and Auntie Mei turns off the lanterns with a full till. Before you leave she slips you a note: "The Neon Diner downtown is next. Be careful."',
+  },
   theme: 'izakaya',
   lighting: 'night',
   weather: 'fireflies',
