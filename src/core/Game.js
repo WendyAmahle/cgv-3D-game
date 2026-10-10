@@ -19,6 +19,8 @@ import { PauseMenu } from '../ui/PauseMenu.js';
 import { Credits } from '../ui/Credits.js';
 import { Minimap } from '../ui/Minimap.js';
 import { StoryScreen } from '../ui/StoryScreen.js';
+import { StarRecord, rateShift } from '../ui/Stars.js';
+import { Achievements } from '../ui/Achievements.js';
 import { KEYS, matches } from '../utils/Constants.js';
 import { assets } from '../utils/AssetLoader.js';
 
@@ -68,6 +70,8 @@ export class Game {
     this.pauseMenu = new PauseMenu();
     this.credits = new Credits();
     this.story = new StoryScreen();
+    this.stars = new StarRecord();
+    this.achievements = new Achievements();
     this.afterStory = null; // where to go once the prologue ends
 
     this.quality = 'high';
@@ -83,6 +87,7 @@ export class Game {
     document.querySelector('#app').appendChild(this.renderer.domElement);
     this.bindEvents();
     this.audio.bindEvents();
+    this.achievements.bindEvents();
     this.credits.render();
     this.pauseMenu.setQuality(this.quality);
     this.pauseMenu.setMuted(this.audio.muted);
@@ -115,10 +120,14 @@ export class Game {
     const on = (name, handler) => events.on(name, handler);
     on('ui:play', () => this.openLevel(this.levels.highestUnlocked));
     on('ui:levels', () => {
-      this.menu.renderLevelCards(LEVELS, (index) => this.levels.isUnlocked(index));
+      this.menu.renderLevelCards(LEVELS, (index) => this.levels.isUnlocked(index), (level) => this.stars.get(level.id));
       this.screens.show('levels', { returnTo: 'menu' });
     });
-    on('ui:story', () => this.showStory(() => this.screens.show('menu')));
+    on('ui:trophies', () => {
+      this.achievements.render(this.stars.total, LEVELS.length * 3);
+      this.screens.show('trophies', { returnTo: 'menu' });
+    });
+    on('ui:story',() => this.showStory(() => this.screens.show('menu')));
     on('ui:story-prev', () => this.story.go(-1));
     on('ui:story-next', () => this.story.go(1) || this.finishStory());
     on('ui:story-skip', () => this.finishStory());
@@ -139,6 +148,7 @@ export class Game {
     on('level:failed', ({ reason }) => this.onLevelFailed(reason));
 
     on('message', ({ text }) => this.hud.toast(text));
+    on('order:served', ({ position, reward, tip, combo }) => this.hud.moneyPopup(position, reward, tip, combo, this.camera));
     on('camera:mode', ({ mode, name }) => {
       this.hud.setCamera(name);
       this.applyCutaway();
@@ -170,7 +180,7 @@ export class Game {
       if (this.state.is(STATES.PLAYING)) this.pause();
       else if (this.state.is(STATES.PAUSED) && this.screens.current === 'pause') this.resume();
       else if (this.screens.current === 'story') this.finishStory();
-      else if (['levels', 'howto', 'credits'].includes(this.screens.current)) this.screens.show(this.screens.returnTo);
+      else if (['levels', 'trophies', 'howto', 'credits'].includes(this.screens.current)) this.screens.show(this.screens.returnTo);
       return;
     }
 
@@ -278,7 +288,7 @@ export class Game {
 
     this.hud.hide();
     this.hud.setLevel(level, index);
-    this.screens.showIntro(level, index);
+    this.screens.showIntro(level, index, this.stars.get(level.id));
     this.state.set(STATES.INTRO);
     this.audio.startMusic(level.music);
   }
@@ -315,7 +325,10 @@ export class Game {
     this.controller.enabled = false;
     this.audio.setSizzle(0);
     const isLast = this.levelIndex === LEVELS.length - 1;
-    this.screens.showComplete(LEVELS[this.levelIndex], this.gameplay.stats, isLast);
+    const level = LEVELS[this.levelIndex];
+    const stars = rateShift(level, this.gameplay.stats);
+    const newBest = this.stars.record(level.id, stars);
+    this.screens.showComplete(level, this.gameplay.stats, isLast, stars, newBest);
   }
 
   onLevelFailed(reason) {

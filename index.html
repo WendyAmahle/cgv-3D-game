@@ -84,6 +84,7 @@
             <button class="primary" data-action="play" id="playButton">Play</button>
             <button data-action="levels">Level select</button>
             <button data-action="story">Story</button>
+            <button data-action="trophies">Trophies</button>
             <button data-action="howto">How to play</button>
             <button data-action="credits">Credits</button>
           </div>
@@ -109,6 +110,21 @@
         <div class="card">
           <h2>Choose a shift</h2>
           <div id="levelCards" class="level-cards"></div>
+          <div class="buttons"><button data-action="back">Back</button></div>
+        </div>
+      </section>
+
+      <section id="screen-trophies" class="screen hidden">
+        <div class="card">
+          <h2>Trophies</h2>
+          <p class="muted" id="trophyCount"></p>
+          <div class="trophies-layout">
+            <div id="trophyList" class="trophy-list"></div>
+            <div>
+              <span class="label">Career</span>
+              <div id="careerStats" class="stats"></div>
+            </div>
+          </div>
           <div class="buttons"><button data-action="back">Back</button></div>
         </div>
       </section>
@@ -154,6 +170,10 @@
             <div><span class="label">New this shift</span><p id="introMechanic"></p></div>
             <div><span class="label">Goal</span><p id="introGoal"></p></div>
           </div>
+          <div class="star-targets">
+            <span class="label">Stars <span id="introBest"></span></span>
+            <p id="introStars"></p>
+          </div>
           <span class="label">On the menu</span>
           <div id="introRecipes" class="recipe-list"></div>
           <div class="buttons">
@@ -181,6 +201,8 @@
         <div class="card narrow">
           <p class="eyebrow">Shift complete</p>
           <h2 id="completeTitle">Level cleared!</h2>
+          <div id="completeStars" class="star-row"></div>
+          <p id="completeStarNote" class="star-note"></p>
           <div id="completeStory" class="story-text"></div>
           <div id="completeStats" class="stats"></div>
           <div class="buttons">
@@ -211,6 +233,15 @@
           <div class="buttons"><button data-action="back">Back</button></div>
         </div>
       </section>
+
+      <!-- Trophy unlocked pop-up (above every screen) -->
+      <div id="trophyPopup" class="hidden">
+        <span id="trophyPopupIcon"></span>
+        <div>
+          <span class="label">Trophy unlocked</span>
+          <strong id="trophyPopupName"></strong>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="/src/main.js"></script>

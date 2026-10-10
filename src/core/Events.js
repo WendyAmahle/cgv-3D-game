@@ -19,6 +19,8 @@
 //   state:change       { state, previous }
 //   camera:mode        { mode, name }
 //   ui:<action>        { ...button dataset }          any [data-action] button
+//   hud:coin           {}                             serve coin reached the earnings panel
+//   achievement:unlocked { trophy }                   ui/Achievements.js
 export class EventBus {
   constructor() {
     this.handlers = new Map();

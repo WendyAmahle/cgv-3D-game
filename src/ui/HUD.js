@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { RECIPES, tagLabel } from '../gameplay/Recipes.js';
 import { itemLabel } from '../gameplay/Items.js';
+import { events } from '../core/Events.js';
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -39,6 +40,7 @@ export class HUD {
     };
     this.tickets = new Map(); // customer id -> { element, fill }
     this.projected = new THREE.Vector3();
+    this.popupPoint = new THREE.Vector3();
     this.toastTimer = null;
     this.bannerTimer = null;
   }
@@ -56,6 +58,7 @@ export class HUD {
     setText(this.el.levelName, level.name);
     setText(this.el.target, `· target $${level.targetMoney}`);
     this.clearTickets();
+    this.root.querySelectorAll('.money-pop, .coin').forEach((element) => element.remove());
   }
 
   setCamera(name) {
@@ -140,6 +143,48 @@ export class HUD {
     tooltip.style.top = `${(-this.projected.y * 0.5 + 0.5) * window.innerHeight}px`;
     setText(this.el.tooltipTitle, target.title());
     setText(this.el.tooltipStatus, target.status());
+  }
+
+  // "+$12" floats up from the customer, and a coin flies into the earnings panel.
+  moneyPopup(position, reward, tip, combo, camera) {
+    const point = this.popupPoint.copy(position).project(camera);
+    if (point.z > 1) return;
+    const x = (point.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (-point.y * 0.5 + 0.5) * window.innerHeight;
+
+    const popup = document.createElement('div');
+    popup.className = 'money-pop';
+    popup.innerHTML = '<strong></strong><span></span>';
+    popup.children[0].textContent = `+$${reward}`;
+    const extras = [tip ? `$${tip} tip` : '', combo > 1 ? `combo ×${combo}` : ''].filter(Boolean);
+    popup.children[1].textContent = extras.join(' · ');
+    popup.style.left = `${x}px`;
+    popup.style.top = `${y}px`;
+    this.root.append(popup);
+    popup.addEventListener('animationend', () => popup.remove());
+
+    const coin = document.createElement('div');
+    coin.className = 'coin';
+    coin.textContent = '$';
+    this.root.append(coin);
+    const goal = this.el.money.getBoundingClientRect();
+    const dx = goal.left + goal.width / 2 - x;
+    const dy = goal.top + goal.height / 2 - y;
+    const flight = coin.animate(
+      [
+        { transform: `translate(${x}px, ${y}px) translate(-50%, -50%) scale(0.6)`, opacity: 0 },
+        { transform: `translate(${x}px, ${y - 40}px) translate(-50%, -50%) scale(1.2)`, opacity: 1, offset: 0.25 },
+        { transform: `translate(${x + dx}px, ${y + dy}px) translate(-50%, -50%) scale(0.7)`, opacity: 1 },
+      ],
+      { duration: 850, delay: 150, easing: 'cubic-bezier(0.5, 0, 0.75, 0)', fill: 'backwards' }
+    );
+    flight.onfinish = () => {
+      coin.remove();
+      events.emit('hud:coin');
+      this.el.money.classList.remove('bump');
+      void this.el.money.offsetWidth; // restart the bump animation
+      this.el.money.classList.add('bump');
+    };
   }
 
   toast(text) {

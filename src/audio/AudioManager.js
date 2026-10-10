@@ -31,6 +31,8 @@ const EVENT_SOUNDS = {
   'level:complete': 'fanfare',
   'level:failed': 'fail',
   'ui:click': 'click',
+  'hud:coin': 'cash',
+  'achievement:unlocked': 'trophy',
 };
 
 const SYNTH = {
@@ -63,6 +65,13 @@ const SYNTH = {
   miss: (a) => a.tone({ freq: 300, slideTo: 90, duration: 0.7, volume: 0.25, type: 'sawtooth' }),
   alarm: (a) => [0, 0.25, 0.5].forEach((delay) => a.tone({ freq: 700, slideTo: 1100, duration: 0.2, volume: 0.15, type: 'square', delay })),
   fanfare: (a) => [60, 64, 67, 72, 76, 79, 84].forEach((note, index) => a.tone({ freq: midi(note), duration: 0.3, volume: 0.2, type: 'triangle', delay: index * 0.1 })),
+  // Cash register: a quick metallic "cha" then a bright "ching".
+  cash: (a) => {
+    a.noise({ duration: 0.06, volume: 0.18, filter: 5000 });
+    a.tone({ freq: 2637, duration: 0.35, volume: 0.12, delay: 0.05 });
+    a.tone({ freq: 3520, duration: 0.3, volume: 0.08, delay: 0.08 });
+  },
+  trophy: (a) => [72, 76, 79, 84, 88].forEach((note, index) => a.tone({ freq: midi(note), duration: 0.25, volume: 0.16, type: 'sine', delay: index * 0.06 })),
   fail: (a) => [67, 63, 60, 55].forEach((note, index) => a.tone({ freq: midi(note), duration: 0.4, volume: 0.2, type: 'sawtooth', delay: index * 0.22 })),
 };
 

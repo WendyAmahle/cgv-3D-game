@@ -1,10 +1,11 @@
 import { events } from '../core/Events.js';
 import { RECIPES } from '../gameplay/Recipes.js';
 import { EPILOGUE } from '../levels/Story.js';
+import { STAR_RULES, nextStarHint, starString, starTargets } from './Stars.js';
 
 const $ = (selector) => document.querySelector(selector);
 
-const SCREENS = ['menu', 'story', 'levels', 'howto', 'intro', 'pause', 'complete', 'gameover', 'credits'];
+const SCREENS = ['menu', 'story', 'levels', 'trophies', 'howto', 'intro', 'pause', 'complete', 'gameover', 'credits'];
 
 function renderStats(container, stats) {
   const rows = [
@@ -66,7 +67,7 @@ export class Screens {
     $('#loading').classList.add('hidden');
   }
 
-  showIntro(level, index) {
+  showIntro(level, index, bestStars = 0) {
     $('#introNumber').textContent = `Level ${index + 1}`;
     $('#introName').textContent = level.name;
     $('#introTagline').textContent = level.tagline;
@@ -74,6 +75,9 @@ export class Screens {
     $('#introStory').textContent = level.story.text;
     $('#introMechanic').textContent = level.mechanic;
     $('#introGoal').textContent = `Earn $${level.targetMoney} in ${Math.round(level.duration / 60 * 10) / 10} minutes. Lose if ${level.maxMisses} customers walk out.`;
+    const targets = starTargets(level);
+    $('#introBest').textContent = bestStars ? `· your best ${starString(bestStars)}` : '';
+    $('#introStars').textContent = `★ $${targets.one} · ★★ $${targets.two} · ★★★ $${targets.three} with ${STAR_RULES.threeMaxMisses} walkout or fewer`;
     const unique = [...new Set(level.recipes)];
     $('#introRecipes').replaceChildren(
       ...unique.map((id) => {
@@ -86,7 +90,7 @@ export class Screens {
     this.show('intro');
   }
 
-  showComplete(level, stats, isLast) {
+  showComplete(level, stats, isLast, stars, newBest) {
     $('#completeTitle').textContent = isLast ? 'You conquered every kitchen!' : `${level.name} cleared!`;
     // The last level's outro leads straight into the epilogue.
     const lines = isLast ? [level.story.outro, ...EPILOGUE] : [level.story.outro];
@@ -97,6 +101,18 @@ export class Screens {
         return paragraph;
       })
     );
+    // Stars pop in one after another.
+    $('#completeStars').replaceChildren(
+      ...[0, 1, 2].map((index) => {
+        const star = document.createElement('span');
+        star.className = index < stars ? 'star earned' : 'star';
+        star.textContent = '★';
+        star.style.animationDelay = `${0.3 + index * 0.35}s`;
+        return star;
+      })
+    );
+    const hint = nextStarHint(level, stats, stars);
+    $('#completeStarNote').textContent = [newBest ? 'New best!' : '', hint ?? 'Perfect shift!'].filter(Boolean).join(' · ');
     renderStats($('#completeStats'), stats);
     const next = $('#nextButton');
     next.textContent = isLast ? 'Credits' : 'Next level';

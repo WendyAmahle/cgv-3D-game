@@ -1,3 +1,5 @@
+import { starString } from './Stars.js';
+
 const $ = (selector) => document.querySelector(selector);
 
 // Main-menu specifics: the Play button label and the level-select cards.
@@ -6,7 +8,7 @@ export class MainMenu {
     $('#playButton').textContent = index === 0 ? 'Play' : `Continue: ${level.name}`;
   }
 
-  renderLevelCards(levels, isUnlocked) {
+  renderLevelCards(levels, isUnlocked, bestStars) {
     $('#levelCards').replaceChildren(
       ...levels.map((level, index) => {
         const unlocked = isUnlocked(index);
@@ -15,10 +17,13 @@ export class MainMenu {
         card.disabled = !unlocked;
         card.dataset.action = 'select-level';
         card.dataset.level = String(index);
-        card.innerHTML = '<span class="eyebrow"></span><strong></strong><span class="desc"></span>';
+        card.innerHTML = '<span class="eyebrow"></span><strong></strong><span class="desc"></span><span class="card-stars"></span>';
         card.children[0].textContent = unlocked ? `Level ${index + 1}` : `Level ${index + 1} · locked`;
         card.children[1].textContent = level.name;
         card.children[2].textContent = unlocked ? level.tagline : 'Clear the previous level to unlock.';
+        const stars = bestStars(level);
+        card.children[3].textContent = starString(stars);
+        card.children[3].classList.toggle('none', stars === 0);
         return card;
       })
     );
