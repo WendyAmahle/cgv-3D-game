@@ -32,7 +32,7 @@ With her recipe book and apron, you save three failing kitchens one shift at a t
 
 A skippable prologue is the first screen after loading, before the main menu (rewatch it with **Story** on the menu).
 Each level opens with its chapter on the intro card and closes with an outro on the level-complete screen, and the epilogue follows the last level.
-The prologue and epilogue are in `src/levels/Story.js`, and each chapter is the `story` field in its level file.
+All of the story text is in `src/levels/Story.js` (chapters are keyed by level id), so the level files stay untouched.
 
 ## Levels
 

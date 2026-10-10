@@ -4,12 +4,6 @@ export default {
   name: 'Neon Diner',
   tagline: 'Rain-soaked cyberpunk diner, open all night.',
   mechanic: 'Every station at once, impatient night-owl customers and random power surges that overclock a cooker, cooking twice as fast and burning twice as fast.',
-  story: {
-    chapter: 'Chapter 3',
-    title: 'The last diner downtown',
-    text: 'The Neon Diner is the last independent kitchen in the shadow of the MegaMunch tower, and its wiring is falling apart. Survive one all-night shift and you\'ll have enough saved to buy back The Golden Ladle.',
-    outro: 'Dawn breaks over the city and the diner is still standing, and still full.',
-  },
   theme: 'cyber',
   lighting: 'neon',
   weather: 'rain',

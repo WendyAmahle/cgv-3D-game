@@ -1,6 +1,6 @@
 import { events } from '../core/Events.js';
 import { RECIPES } from '../gameplay/Recipes.js';
-import { EPILOGUE } from '../levels/Story.js';
+import { CHAPTERS, EPILOGUE } from '../levels/Story.js';
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -70,8 +70,8 @@ export class Screens {
     $('#introNumber').textContent = `Level ${index + 1}`;
     $('#introName').textContent = level.name;
     $('#introTagline').textContent = level.tagline;
-    $('#introChapter').textContent = `${level.story.chapter} · ${level.story.title}`;
-    $('#introStory').textContent = level.story.text;
+    $('#introChapter').textContent = `${CHAPTERS[level.id].chapter} · ${CHAPTERS[level.id].title}`;
+    $('#introStory').textContent = CHAPTERS[level.id].text;
     $('#introMechanic').textContent = level.mechanic;
     $('#introGoal').textContent = `Earn $${level.targetMoney} in ${Math.round(level.duration / 60 * 10) / 10} minutes. Lose if ${level.maxMisses} customers walk out.`;
     const unique = [...new Set(level.recipes)];
@@ -89,7 +89,7 @@ export class Screens {
   showComplete(level, stats, isLast) {
     $('#completeTitle').textContent = isLast ? 'You conquered every kitchen!' : `${level.name} cleared!`;
     // The last level's outro leads straight into the epilogue.
-    const lines = isLast ? [level.story.outro, ...EPILOGUE] : [level.story.outro];
+    const lines = isLast ? [CHAPTERS[level.id].outro, ...EPILOGUE] : [CHAPTERS[level.id].outro];
     $('#completeStory').replaceChildren(
       ...lines.map((line) => {
         const paragraph = document.createElement('p');

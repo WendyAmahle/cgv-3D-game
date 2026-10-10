@@ -1,6 +1,6 @@
-// The storyline: a prologue played before the player first sees the levels,
-// and an epilogue after the last one. Each level's own chapter lives in its
-// config file as `story` (shown on the intro and level-complete screens).
+// The storyline: a prologue shown right after loading, a chapter per level
+// (intro and level-complete screens) and an epilogue after the last level.
+// Kept out of the level config files, which other team members own.
 
 export const PROLOGUE = [
   {
@@ -36,6 +36,28 @@ export const PROLOGUE = [
     ],
   },
 ];
+
+// One chapter per level, keyed by the level's `id`.
+export const CHAPTERS = {
+  1: {
+    chapter: 'Chapter 1',
+    title: 'A truck called Hope',
+    text: 'Old Sam has parked his burger truck in Sunset Park for twenty years, but these days the lunch crowd walks straight past it to the MegaMunch kiosk. He tosses you the keys: "Show them what a real burger tastes like, kid."',
+    outro: 'The queue stretches past the fountain and the MegaMunch kiosk sits empty. Sam is grinning, and word of your burgers is already spreading across town.',
+  },
+  2: {
+    chapter: 'Chapter 2',
+    title: 'Lanterns after dark',
+    text: 'Auntie Mei\'s noodle bar in Lantern Alley is three rent cheques away from closing. She heard about the burger truck and needs a second pair of hands at the pot, because tonight the late-night crowd is coming back.',
+    outro: 'The last bowl is scraped clean and Auntie Mei turns off the lanterns with a full till. Before you leave she slips you a note: "The Neon Diner downtown is next. Be careful."',
+  },
+  3: {
+    chapter: 'Chapter 3',
+    title: 'The last diner downtown',
+    text: 'The Neon Diner is the last independent kitchen in the shadow of the MegaMunch tower, and its wiring is falling apart. Survive one all-night shift and you\'ll have enough saved to buy back The Golden Ladle.',
+    outro: 'Dawn breaks over the city and the diner is still standing, and still full.',
+  },
+};
 
 export const EPILOGUE = [
   'The truck, the noodle bar and the diner are all packed every night, and MegaMunch has quietly pulled its kiosks out of Port Saffron.',
