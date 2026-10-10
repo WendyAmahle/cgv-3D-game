@@ -18,6 +18,7 @@ import { MainMenu } from '../ui/MainMenu.js';
 import { PauseMenu } from '../ui/PauseMenu.js';
 import { Credits } from '../ui/Credits.js';
 import { Minimap } from '../ui/Minimap.js';
+import { StoryScreen } from '../ui/StoryScreen.js';
 import { KEYS, matches } from '../utils/Constants.js';
 import { assets } from '../utils/AssetLoader.js';
 
@@ -66,6 +67,8 @@ export class Game {
     this.menu = new MainMenu();
     this.pauseMenu = new PauseMenu();
     this.credits = new Credits();
+    this.story = new StoryScreen();
+    this.afterStory = null; // what Play / Level select do once the prologue ends
 
     this.quality = 'high';
     this.levelIndex = 0;
@@ -109,11 +112,17 @@ export class Game {
     });
 
     const on = (name, handler) => events.on(name, handler);
-    on('ui:play', () => this.openLevel(this.levels.highestUnlocked));
-    on('ui:levels', () => {
+    // The prologue plays the first time the player heads for the levels.
+    const afterStory = (action) => () => (this.story.seen ? action() : this.showStory(action));
+    on('ui:play', afterStory(() => this.openLevel(this.levels.highestUnlocked)));
+    on('ui:levels', afterStory(() => {
       this.menu.renderLevelCards(LEVELS, (index) => this.levels.isUnlocked(index));
       this.screens.show('levels', { returnTo: 'menu' });
-    });
+    }));
+    on('ui:story', () => this.showStory(() => this.screens.show('menu')));
+    on('ui:story-prev', () => this.story.go(-1));
+    on('ui:story-next', () => this.story.go(1) || this.finishStory());
+    on('ui:story-skip', () => this.finishStory());
     on('ui:select-level', ({ level }) => this.openLevel(Number(level)));
     on('ui:howto', () => this.screens.show('howto', { returnTo: this.state.is(STATES.PAUSED) ? 'pause' : 'menu' }));
     on('ui:credits', () => this.screens.show('credits', { returnTo: this.state.is(STATES.MENU) ? 'menu' : this.screens.current }));
@@ -161,7 +170,14 @@ export class Game {
     if (matches(code, KEYS.pause)) {
       if (this.state.is(STATES.PLAYING)) this.pause();
       else if (this.state.is(STATES.PAUSED) && this.screens.current === 'pause') this.resume();
+      else if (this.screens.current === 'story') this.finishStory();
       else if (['levels', 'howto', 'credits'].includes(this.screens.current)) this.screens.show(this.screens.returnTo);
+      return;
+    }
+
+    if (this.screens.current === 'story') {
+      if (code === 'ArrowRight') this.story.go(1) || this.finishStory();
+      else if (code === 'ArrowLeft') this.story.go(-1);
       return;
     }
 
@@ -231,6 +247,20 @@ export class Game {
     this.cameraController.autoOrbit = true;
     this.applyCutaway();
     this.audio.startMusic(LEVELS[index].music);
+  }
+
+  showStory(then) {
+    this.afterStory = then;
+    this.screens.show('story', { returnTo: 'menu' });
+    this.story.render(0);
+  }
+
+  finishStory() {
+    if (this.screens.current !== 'story') return;
+    this.story.markSeen();
+    const then = this.afterStory;
+    this.afterStory = null;
+    then?.();
   }
 
   async openLevel(index) {

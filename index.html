@@ -83,10 +83,25 @@
           <div class="buttons vertical">
             <button class="primary" data-action="play" id="playButton">Play</button>
             <button data-action="levels">Level select</button>
+            <button data-action="story">Story</button>
             <button data-action="howto">How to play</button>
             <button data-action="credits">Credits</button>
           </div>
           <p class="footnote">M mute · Esc pause</p>
+        </div>
+      </section>
+
+      <section id="screen-story" class="screen hidden">
+        <div class="card story-card">
+          <p class="eyebrow" id="storyEyebrow">Prologue</p>
+          <h2 id="storyTitle"></h2>
+          <div id="storyText" class="story-text"></div>
+          <div id="storyDots" class="story-dots"></div>
+          <div class="buttons">
+            <button data-action="story-prev" id="storyPrev">Back</button>
+            <button class="primary" data-action="story-next" id="storyNext">Next</button>
+            <button class="skip" data-action="story-skip">Skip story</button>
+          </div>
         </div>
       </section>
 
@@ -131,6 +146,10 @@
           <p class="eyebrow" id="introNumber">Level 1</p>
           <h2 id="introName"></h2>
           <p class="tagline small" id="introTagline"></p>
+          <blockquote class="chapter">
+            <span class="label" id="introChapter">Chapter 1</span>
+            <p id="introStory"></p>
+          </blockquote>
           <div class="intro-grid">
             <div><span class="label">New this shift</span><p id="introMechanic"></p></div>
             <div><span class="label">Goal</span><p id="introGoal"></p></div>
@@ -162,6 +181,7 @@
         <div class="card narrow">
           <p class="eyebrow">Shift complete</p>
           <h2 id="completeTitle">Level cleared!</h2>
+          <div id="completeStory" class="story-text"></div>
           <div id="completeStats" class="stats"></div>
           <div class="buttons">
             <button class="primary" data-action="next" id="nextButton">Next level</button>
