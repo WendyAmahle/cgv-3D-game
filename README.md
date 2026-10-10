@@ -34,6 +34,16 @@ A skippable prologue is the first screen after loading, before the main menu (re
 Each level opens with its chapter on the intro card and closes with an outro on the level-complete screen, and the epilogue follows the last level.
 The prologue and epilogue are in `src/levels/Story.js`, and each chapter is the `story` field in its level file.
 
+## Stars, trophies and rewards
+
+Inspired by Cooking Fever, all in `src/ui/` and driven by the event bus, so no gameplay code changes:
+
+- **Stars** (`Stars.js`): a cleared shift earns ★ for hitting the target, ★★ for beating it by 25% and ★★★ for beating it by 50% with at most one walkout (tune `STAR_RULES`). Best ratings show on the level cards and intro card.
+- **Trophies** (`Achievements.js`): 14 trophies (combos, fast service, clean shifts, one per chapter…) with a pop-up when earned, plus lifetime career stats, on the **Trophies** screen in the main menu.
+- **Serve rewards** (`HUD.js`): "+$12" floats up from the customer and a coin flies into the earnings panel with a cash-register sound.
+
+Stars and trophies are saved in the browser's localStorage.
+
 ## Levels
 
 | Level | Theme | What it adds |
