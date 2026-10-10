@@ -1,32 +1,15 @@
 import { PROLOGUE } from '../levels/Story.js';
-import { STORAGE_KEY } from '../utils/Constants.js';
 
 const $ = (selector) => document.querySelector(selector);
-const SEEN_KEY = `${STORAGE_KEY}:story-seen`;
 
-// The prologue pages shown before the player first sees the levels.
-// Remembers (per browser) that it has been watched so it plays only once.
+// The prologue pages, shown right after loading and before the main menu.
 export class StoryScreen {
   constructor() {
     this.page = 0;
-    try {
-      this.seen = localStorage.getItem(SEEN_KEY) === '1';
-    } catch {
-      this.seen = false;
-    }
   }
 
   get isLastPage() {
     return this.page === PROLOGUE.length - 1;
-  }
-
-  markSeen() {
-    this.seen = true;
-    try {
-      localStorage.setItem(SEEN_KEY, '1');
-    } catch {
-      // It'll just play again next visit.
-    }
   }
 
   // Returns false once there are no more pages in that direction.
@@ -58,7 +41,7 @@ export class StoryScreen {
       })
     );
     $('#storyPrev').disabled = page === 0;
-    $('#storyNext').textContent = this.isLastPage ? 'Let\'s cook!' : 'Next';
+    $('#storyNext').textContent = this.isLastPage ? 'Continue' : 'Next';
     $('#storyNext').focus({ preventScroll: true });
     // Re-trigger the card's entrance animation on every page turn.
     const card = $('#screen-story .card');

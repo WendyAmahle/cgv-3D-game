@@ -30,7 +30,7 @@ In dev builds the game object is available in the browser console as `window.gam
 MegaMunch Corp has pushed the little kitchens of Port Saffron out of business, including The Golden Ladle, your Gran Nandi's restaurant.
 With her recipe book and apron, you save three failing kitchens one shift at a time to earn enough to buy The Golden Ladle back.
 
-A skippable prologue plays the first time you press Play or Level select (rewatch it with **Story** on the main menu).
+A skippable prologue is the first screen after loading, before the main menu (rewatch it with **Story** on the menu).
 Each level opens with its chapter on the intro card and closes with an outro on the level-complete screen, and the epilogue follows the last level.
 The prologue and epilogue are in `src/levels/Story.js`, and each chapter is the `story` field in its level file.
 

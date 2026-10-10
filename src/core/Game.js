@@ -68,7 +68,7 @@ export class Game {
     this.pauseMenu = new PauseMenu();
     this.credits = new Credits();
     this.story = new StoryScreen();
-    this.afterStory = null; // what Play / Level select do once the prologue ends
+    this.afterStory = null; // where to go once the prologue ends
 
     this.quality = 'high';
     this.levelIndex = 0;
@@ -92,7 +92,8 @@ export class Game {
     this.chef = new Chef();
     this.scene.add(this.chef.root);
     this.cameraController.follow = this.chef.root;
-    await this.showMenu();
+    // The prologue is the first thing after loading, then the main menu.
+    await this.showMenu({ withStory: true });
   }
 
   // Downloads a group of assets (see utils/AssetLoader.js) behind the loading screen.
@@ -112,13 +113,11 @@ export class Game {
     });
 
     const on = (name, handler) => events.on(name, handler);
-    // The prologue plays the first time the player heads for the levels.
-    const afterStory = (action) => () => (this.story.seen ? action() : this.showStory(action));
-    on('ui:play', afterStory(() => this.openLevel(this.levels.highestUnlocked)));
-    on('ui:levels', afterStory(() => {
+    on('ui:play', () => this.openLevel(this.levels.highestUnlocked));
+    on('ui:levels', () => {
       this.menu.renderLevelCards(LEVELS, (index) => this.levels.isUnlocked(index));
       this.screens.show('levels', { returnTo: 'menu' });
-    }));
+    });
     on('ui:story', () => this.showStory(() => this.screens.show('menu')));
     on('ui:story-prev', () => this.story.go(-1));
     on('ui:story-next', () => this.story.go(1) || this.finishStory());
@@ -235,7 +234,7 @@ export class Game {
     this.audio.setSizzle(0);
   }
 
-  async showMenu() {
+  async showMenu({ withStory = false } = {}) {
     const index = this.levels.highestUnlocked;
     const request = ++this.request;
     if (!(await this.loadWorld(index, request))) return;
@@ -243,7 +242,8 @@ export class Game {
     this.controller.enabled = false;
     this.hud.hide();
     this.menu.setPlayLabel(LEVELS[index], index);
-    this.screens.show('menu', { returnTo: 'menu' });
+    if (withStory) this.showStory(() => this.screens.show('menu', { returnTo: 'menu' }));
+    else this.screens.show('menu', { returnTo: 'menu' });
     this.cameraController.autoOrbit = true;
     this.applyCutaway();
     this.audio.startMusic(LEVELS[index].music);
@@ -257,7 +257,6 @@ export class Game {
 
   finishStory() {
     if (this.screens.current !== 'story') return;
-    this.story.markSeen();
     const then = this.afterStory;
     this.afterStory = null;
     then?.();
