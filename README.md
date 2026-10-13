@@ -82,6 +82,12 @@ Realistic props, textures, HDRI skies and characters live in `public/assets/` an
 
 - **Poly Haven** (CC0): scanned burger buns, crates, cutting board, cash register, bins, picnic tables, street lamps, plants, lanterns, stools, barrels, barriers, a modular apartment facade kit (assembled into the Level 3 street in `src/world/City.js`) and aircon units; PBR textures (grass, paving, tiles, wood, cobblestone, asphalt, corrugated iron); HDRI skies for each level.
 - **Characters**: Mixamo's Michelle and X Bot, and a Ready Player Me avatar (from the three.js examples). X Bot's animations are retargeted onto the other skeletons in `src/world/Characters.js`, and avatar outfits are recoloured per customer.
+- **Sound** (CC0, `public/assets/audio/`): recordings from BigSoundBank, OpenGameArt (rain) and Kenney, played by `src/audio/AudioManager.js`:
+  - Cooking loops follow what is busy (grill sizzle, fryer oil, boiling pot, pouring).
+  - Game events play one-shots: plates, bin, kitchen timer, buzzer, counter bell, register and coins on a serve, alarm, applause.
+  - The chef's footsteps change with the floor (concrete or wood).
+  - Each level has its own ambience (`ambience` in its level file): park birds, night insects over the city, rain.
+  - In Level 3, lightning flashes are followed by thunder, and passing cars and horns are positioned in 3D around the camera.
 
 `node scripts/fetch-assets.mjs` re-downloads everything. If an asset fails to load, the game falls back to procedural models. Every asset is listed in the in-game credits (`src/ui/Credits.js`).
 
@@ -91,7 +97,7 @@ Realistic props, textures, HDRI skies and characters live in `public/assets/` an
 - **New ingredient model**: add a builder in `BUILDERS` in `src/world/Food.js`.
 - **New asset**: add it to `scripts/fetch-assets.mjs` and a group in `src/utils/AssetLoader.js`, then use `assets.model(key)` or `pbr(textureId, repeat)`.
 - **New station type**: add the logic class in `src/gameplay/Stations.js` and the mesh in `src/world/Stations.js`.
-- **Real audio file**: see the comment at the top of `src/audio/AudioManager.js`.
+- **New sound**: put the `.ogg` in `public/assets/audio/`, add it to `SAMPLES` (one-shot) or `LOOPS` (looping bed) in `src/audio/AudioManager.js`, and map a game event to it in `EVENT_SOUNDS`.
 - **Any external asset, library or code sample**: add it to `CREDITS` in `src/ui/Credits.js`. The brief requires every one to be credited in-game.
 
 ## Performance
