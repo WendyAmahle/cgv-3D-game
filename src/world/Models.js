@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createFoodMesh, createPlateMesh as createPlate } from './Food.js';
+import { MIX_SHOTS, SYRUPS, mixColor, mixKey } from '../gameplay/Recipes.js';
 
 // Item meshes (see Food.js), plus labels, order bubbles and the selection ring.
 // Customers live in Characters.js.
@@ -27,6 +28,25 @@ export function setLiquidFill(object, fill) {
   const material = object.userData.liquidMaterial;
   if (material) material.uniforms.uFill.value = fill;
   if (object.userData.ice) object.userData.ice.visible = fill > 0.7;
+}
+
+// Cocktail glass: one layer per poured shot (plus the one being poured),
+// swirled together as `mix` goes 0 → 1. See shaders/mix.frag.glsl.
+export function setMixVisual(object, { fill, shots, pending, mix, spin }) {
+  const material = object.userData.mixMaterial;
+  if (!material) return;
+  const { uniforms } = material;
+  const layers = pending ? [...shots, pending] : shots;
+  layers.forEach((syrup, index) => uniforms.uLayers.value[index].setHex(SYRUPS[syrup].color));
+  uniforms.uLayerCount.value = layers.length;
+  uniforms.uFill.value = fill;
+  uniforms.uMix.value = mix;
+  uniforms.uSpin.value = spin;
+
+  // The "molecular pearl" garnish appears once the drink is blended.
+  const garnish = object.userData.garnish;
+  garnish.visible = mix >= 1 && shots.length === MIX_SHOTS;
+  if (garnish.visible) garnish.userData.material.emissive.setHex(mixColor(mixKey(shots)));
 }
 
 // ------------------------------------------------------------- sprites / UI

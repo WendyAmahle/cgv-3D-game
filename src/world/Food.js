@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { canvasTexture, mat, noiseNormalMap, physical, surfaces } from '../graphics/Materials.js';
-import { createCookingMaterial, createLiquidMaterial } from '../graphics/Shaders.js';
+import { createCookingMaterial, createLiquidMaterial, createMixMaterial } from '../graphics/Shaders.js';
 import { ITEMS } from '../gameplay/Recipes.js';
 import { assets } from '../utils/AssetLoader.js';
 
@@ -461,9 +461,41 @@ function buildBowl(type) {
   return result;
 }
 
+// Level 3 molecular cocktail: a tall glass whose layered liquid is drawn by the
+// mix shader, with a glowing "molecular pearl" garnish once it's blended.
+// Scene graph: glass group → liquid (mix shader), glass shell, garnish → stick + pearl.
+function buildCocktail() {
+  const glass = new THREE.Mesh(
+    cached('cocktail-glass', () => lathe([[0, 0], [0.11, 0], [0.115, 0.015], [0.13, 0.46], [0.122, 0.46], [0.104, 0.03], [0, 0.03]], 40)),
+    surfaces.glass()
+  );
+  glass.castShadow = true;
+
+  const mixMaterial = createMixMaterial({ bottom: -0.2, top: 0.2 });
+  const liquid = new THREE.Mesh(cached('cocktail-liquid', () => new THREE.CylinderGeometry(0.118, 0.1, 0.4, 32, 1, true)), mixMaterial);
+  liquid.position.y = 0.235;
+
+  const garnish = new THREE.Group();
+  const pearlMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0xffffff, emissiveIntensity: 1.8, roughness: 0.2 });
+  const pearl = new THREE.Mesh(cached('cocktail-pearl', () => new THREE.SphereGeometry(0.034, 16, 12)), pearlMaterial);
+  pearl.position.y = 0.16;
+  const stick = mesh(cached('cocktail-stick', () => new THREE.CylinderGeometry(0.006, 0.006, 0.26, 6)), surfaces.chrome(), [0, 0.06, 0]);
+  garnish.add(stick, pearl);
+  garnish.position.set(0.04, 0.4, 0);
+  garnish.rotation.z = -0.25;
+  garnish.userData.material = pearlMaterial;
+  garnish.visible = false;
+
+  const result = group(0.46, liquid, glass, garnish);
+  result.userData.mixMaterial = mixMaterial;
+  result.userData.garnish = garnish;
+  return result;
+}
+
 // -------------------------------------------------------------- public
 
 const BUILDERS = {
+  cocktail: buildCocktail,
   bun: buildBun,
   patty: buildPatty,
   pork: buildPork,

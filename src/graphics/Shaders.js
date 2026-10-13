@@ -4,6 +4,7 @@ import cookingVertex from './shaders/cooking.vert.glsl?raw';
 import cookingFragment from './shaders/cooking.frag.glsl?raw';
 import liquidVertex from './shaders/liquid.vert.glsl?raw';
 import liquidFragment from './shaders/liquid.frag.glsl?raw';
+import mixFragment from './shaders/mix.frag.glsl?raw';
 import steamVertex from './shaders/steam.vert.glsl?raw';
 import steamFragment from './shaders/steam.frag.glsl?raw';
 import beamVertex from './shaders/beam.vert.glsl?raw';
@@ -74,6 +75,29 @@ export function createLiquidMaterial({ color, foam, bottom, top }) {
     },
     vertexShader: liquidVertex,
     fragmentShader: liquidFragment,
+    side: THREE.DoubleSide,
+  });
+}
+
+// Level 3 molecular cocktail: layered syrups that a vortex blends together.
+// Driven per glass by world/Models.js setMixVisual().
+export function createMixMaterial({ bottom, top }) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uTime,
+      uLightDir,
+      uLightColor,
+      uAmbient,
+      uFill: { value: 0 },
+      uBottom: { value: bottom },
+      uTop: { value: top },
+      uLayers: { value: [new THREE.Color(), new THREE.Color(), new THREE.Color(), new THREE.Color()] },
+      uLayerCount: { value: 0 },
+      uMix: { value: 0 },
+      uSpin: { value: 0 },
+    },
+    vertexShader: liquidVertex,
+    fragmentShader: mixFragment,
     side: THREE.DoubleSide,
   });
 }

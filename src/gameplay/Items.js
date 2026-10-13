@@ -1,10 +1,11 @@
 import { ITEMS, cookAmount, cookStage, itemTag, tagLabel } from './Recipes.js';
-import { createItemMesh, createPlateMesh, setCookVisual, setLiquidFill } from '../world/Models.js';
+import { createItemMesh, createPlateMesh, setCookVisual, setLiquidFill, setMixVisual } from '../world/Models.js';
 import { disposeObject } from '../utils/Dispose.js';
 
 // An item is plain data plus the mesh that shows it:
 //   { id, type, stage, cookTime, fill, heating, contents, mesh }
 // A plate is an item of type 'plate' whose `contents` is a list of items.
+// Cocktails also carry { shots, pending, mix, spin } (see MixerStation).
 
 let nextId = 1;
 
@@ -20,6 +21,7 @@ export function createItem(type) {
     contents: null,
     mesh: createItemMesh(type),
   };
+  if (def.mix) Object.assign(item, { shots: [], pending: null, mix: 0, spin: 0 });
   refreshItem(item);
   return item;
 }
@@ -41,7 +43,7 @@ export function addToPlate(plate, item) {
 // bowl or bottom bun first, fillings in the order added, the top bun last,
 // and drinks beside the food.
 export function layoutPlate(plate) {
-  const vessel = (item) => ITEMS[item.type].liquid?.vessel;
+  const vessel = (item) => ITEMS[item.type].liquid?.vessel ?? ITEMS[item.type].vessel;
   const cups = plate.contents.filter((item) => vessel(item) === 'cup');
   const bowls = plate.contents.filter((item) => vessel(item) === 'bowl');
   const buns = plate.contents.filter((item) => item.mesh.userData.bun);
@@ -82,6 +84,7 @@ export function refreshItem(item) {
   const def = ITEMS[item.type];
   if (def?.cook) setCookVisual(item.mesh, cookAmount(item.type, item.cookTime), item.heating ? 1 : 0);
   if (def?.liquid) setLiquidFill(item.mesh, item.fill);
+  if (def?.mix) setMixVisual(item.mesh, item);
 }
 
 export function itemTags(item) {
