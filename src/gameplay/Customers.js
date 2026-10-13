@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { events } from '../core/Events.js';
-import { RECIPES, matchesRecipe } from './Recipes.js';
-import { createOrderBubble } from '../world/Models.js';
+import { COCKTAILS, RECIPES, matchesRecipe, mixFormula, tagColor } from './Recipes.js';
+import { createOrderBubble, createOrderHologram } from '../world/Models.js';
 import { createCustomer } from '../world/Characters.js';
 import { disposeObject } from '../utils/Dispose.js';
 import { pick, randomRange } from '../utils/Constants.js';
@@ -52,7 +52,7 @@ export class CustomerManager {
 
     const { root, animator, height } = createCustomer(this.level.theme, nextCustomerId);
     root.position.set(side * ENTRY_DISTANCE, 0, 2.5);
-    const bubble = createOrderBubble(RECIPES[recipeId].name);
+    const bubble = createOrderDisplay(this.level, RECIPES[recipeId]);
     bubble.position.set(0, height + 0.45, 0);
     bubble.visible = false;
     root.add(bubble);
@@ -80,6 +80,7 @@ export class CustomerManager {
     const { model, animator } = customer;
     customer.time += dt;
     animator.update(dt);
+    customer.bubble.userData.update?.(dt);
 
     if (customer.state === 'arriving' || customer.state === 'leaving') {
       if (customer.state === 'arriving') this.target.set(0, 0, 0);
@@ -148,7 +149,8 @@ export class CustomerManager {
   leave(slot, happy) {
     const customer = slot.customer;
     customer.happy = happy;
-    customer.bubble.visible = false;
+    if (customer.bubble.userData.dismiss) customer.bubble.userData.dismiss();
+    else customer.bubble.visible = false;
     if (happy) {
       customer.state = 'thanking';
       customer.thanks = THANKS_TIME;
@@ -178,6 +180,18 @@ export class CustomerManager {
       if (slot.customer) this.remove(slot);
     }
   }
+}
+
+// What floats over a customer: a bubble, or in levels with
+// `orderDisplay: 'hologram'` (Level 3) a hologram that also shows a
+// cocktail's colour and recipe.
+function createOrderDisplay(level, recipe) {
+  if (level.orderDisplay !== 'hologram') return createOrderBubble(recipe.name);
+  const cocktail = recipe.ingredients.find((tag) => tagColor(tag) !== null);
+  if (!cocktail) return createOrderHologram(recipe.name);
+  const key = cocktail.split(':')[1];
+  const detail = recipe.ingredients.length === 1 ? mixFormula(key) : `with ${COCKTAILS[key]}`;
+  return createOrderHologram(recipe.name, { swatch: tagColor(cocktail), detail });
 }
 
 // Moves `model` towards `target` (slot-local), turning to face the way it walks.
