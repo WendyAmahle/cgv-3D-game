@@ -6,7 +6,9 @@
 //   item:place         { item }
 //   item:trash         { item }
 //   cook:start|done|burnt  { station, item }
-//   pour:start|done    { station }
+//   pour:start|done    { station }                    a drink, or one Mixology Bar shot
+//   mix:start          { station }                    Level 3 stirrer starts blending a cocktail
+//   mix:done           { station, item }              cocktail blended and ready
 //   order:new          { customer }                   customer reached the counter
 //   order:served       { customer, reward, tip, combo, position }
 //   order:wrong        { customer }

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { canvasTexture, mat, physical, surfaces, woodTexture } from '../graphics/Materials.js';
-import { ITEMS } from '../gameplay/Recipes.js';
+import { ITEMS, SYRUPS, SYRUP_KEYS } from '../gameplay/Recipes.js';
 import { LAYOUT } from '../utils/Constants.js';
 import { assets } from '../utils/AssetLoader.js';
 import { createItemMesh } from './Models.js';
@@ -241,6 +241,69 @@ const BUILDERS = {
     const lever = box(0.04, 0.16, 0.02, surfaces.castIron(), [0, 0.74, 0.2]);
     lever.rotation.x = -0.25;
     result.root.add(lever);
+    return result;
+  },
+
+  // Level 3 Mixology Bar: three syrup taps over a rail the glass slides along,
+  // and a magnetic stirrer under the middle tap that blends the drink.
+  // Scene graph: root → back panel, tray, stirrer, and one group per tap
+  // (canister, pipe, nozzle, ring light, pour stream). Each tap group is its own
+  // click/keyboard target; the glass rides a carriage that is re-parented to
+  // whichever tap it sits under, so clicking the glass picks that tap.
+  mixer() {
+    const result = view('Mixology Bar', 0.05);
+    const steel = surfaces.steel();
+    const dark = surfaces.darkSteel();
+    const chrome = surfaces.chrome();
+    const glassZ = 0.12;
+
+    result.root.add(box(1.45, 0.05, 0.62, steel, [0, 0.025, 0]));
+    result.root.add(box(1.4, 0.006, 0.56, mat(0xffffff, { map: grateTexture(), metalness: 0.6, roughness: 0.4 }), [0, 0.053, 0]));
+    // Kept low so the crates on the back counter stay visible behind it.
+    result.root.add(box(1.45, 0.62, 0.1, dark, [0, 0.31, -0.31]));
+    result.root.add(labelPlate('MIXOLOGY', { width: 0.9, background: '#0b0b10', color: '#ff4fe0', y: 0.42, z: -0.255 }));
+
+    const stirrer = new THREE.MeshStandardMaterial({ color: 0x0b0b10, emissive: 0x7c3aed, emissiveIntensity: 0.4, roughness: 0.3 });
+    result.root.add(cylinder(0.14, 0.15, 0.02, stirrer, [0, 0.062, glassZ], 32));
+
+    const taps = SYRUP_KEYS.map((syrup, index) => {
+      const { label, color } = SYRUPS[syrup];
+      const offset = (index - 1) * 0.45;
+      const root = new THREE.Group();
+      root.position.x = offset;
+      root.name = `mixer-tap-${syrup}`;
+
+      // Canister of glowing syrup on a pipe to the nozzle.
+      root.add(cylinder(0.095, 0.095, 0.36, surfaces.glass(), [0, 0.96, -0.14], 24));
+      const syrupMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: color, emissiveIntensity: 1.1, roughness: 0.3 });
+      root.add(cylinder(0.08, 0.08, 0.3, syrupMaterial, [0, 0.95, -0.14], 24));
+      root.add(cylinder(0.1, 0.1, 0.03, dark, [0, 1.15, -0.14], 24), cylinder(0.1, 0.1, 0.03, dark, [0, 0.77, -0.14], 24));
+      root.add(cylinder(0.016, 0.016, 0.1, chrome, [0, 0.71, -0.14], 10));
+      const arm = cylinder(0.016, 0.016, 0.28, chrome, [0, 0.67, -0.01], 10);
+      arm.rotation.x = Math.PI / 2;
+      root.add(arm);
+      root.add(cylinder(0.026, 0.018, 0.07, chrome, [0, 0.64, glassZ], 14));
+
+      const light = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: color, emissiveIntensity: 0.5 });
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.009, 8, 24), light);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(0, 0.61, glassZ);
+      root.add(ring);
+
+      const stream = cylinder(0.011, 0.011, 0.54, new THREE.MeshBasicMaterial({ color }), [0, 0.34, glassZ], 8);
+      stream.visible = false;
+      root.add(stream);
+
+      const hex = `#${new THREE.Color(color).getHexString()}`;
+      root.add(labelPlate(label.toUpperCase(), { width: 0.3, background: hex, color: '#0b0b10', y: 0.74, z: -0.035 }));
+      result.root.add(root);
+      return { syrup, offset, root, light, stream };
+    });
+
+    const carriage = new THREE.Object3D();
+    carriage.position.set(0, 0.075, glassZ);
+    taps[1].root.add(carriage);
+    Object.assign(result.parts, { taps, stirrer, carriage });
     return result;
   },
 

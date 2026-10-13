@@ -37,8 +37,9 @@ export class Gameplay {
   }
 
   // Everything the player can point at, for mouse picking and keyboard navigation.
+  // A station with `controls` (the Mixology Bar's taps) is targeted per control.
   buildTargets() {
-    const stationTargets = this.stations.map((station) => ({
+    const stationTargets = this.stations.flatMap((station) => station.controls ?? [station]).map((station) => ({
       kind: 'station',
       ref: station,
       row: station.config.row,
@@ -120,7 +121,8 @@ export class Gameplay {
     if (this.result || !this.player.isEmpty || target.kind !== 'station') return false;
     const station = target.ref;
     if (!station.canGive()) return false;
-    station.interact(this.player);
+    if (station.give) station.give(this.player);
+    else station.interact(this.player);
     return !this.player.isEmpty;
   }
 

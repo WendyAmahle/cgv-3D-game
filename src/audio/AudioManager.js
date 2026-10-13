@@ -22,6 +22,8 @@ const EVENT_SOUNDS = {
   'cook:burnt': 'burnt',
   'pour:start': 'pour',
   'pour:done': 'blip',
+  'mix:start': 'whirr',
+  'mix:done': 'ding',
   'order:new': 'bell',
   'order:served': 'serve',
   'order:wrong': 'wrong',
@@ -53,6 +55,12 @@ const SYNTH = {
   },
   pour: (a) => a.noise({ duration: 0.5, volume: 0.12, filter: 1400, slideTo: 3000 }),
   blip: (a) => a.tone({ freq: 1040, duration: 0.09, volume: 0.18, type: 'square' }),
+  // Magnetic stirrer spinning up and down under a fizz.
+  whirr: (a) => {
+    a.tone({ freq: 160, slideTo: 520, duration: 1.1, volume: 0.06, type: 'sawtooth' });
+    a.tone({ freq: 520, slideTo: 180, duration: 1.0, volume: 0.06, type: 'sawtooth', delay: 1.1 });
+    a.noise({ duration: 2.1, volume: 0.05, filter: 4000 });
+  },
   bell: (a) => {
     a.tone({ freq: 1568, duration: 0.6, volume: 0.15 });
     a.tone({ freq: 2093, duration: 0.5, volume: 0.1, delay: 0.12 });

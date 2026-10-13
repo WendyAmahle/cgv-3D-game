@@ -1,5 +1,5 @@
 import { events, say } from '../core/Events.js';
-import { ITEMS } from './Recipes.js';
+import { ITEMS, MIX_SHOTS, SYRUPS, mixColor, mixFormula, mixKey } from './Recipes.js';
 import {
   addToPlate,
   advanceCooking,
@@ -304,6 +304,227 @@ export class BoardStation extends Station {
   }
 }
 
+// ---- Level 3 Mixology Bar ---------------------------------------------------
+
+const SHOT_TIME = 0.45; // seconds to pour one shot once the glass is under the tap
+const BLEND_TIME = 2.2; // seconds on the magnetic stirrer
+const SLIDE_RATE = 12; // how fast the glass slides between taps
+
+// One syrup tap. Each tap is its own mouse/keyboard target (Gameplay builds
+// targets from a station's `controls`) and hands everything to its MixerStation.
+class MixerTap {
+  constructor(mixer, part) {
+    this.mixer = mixer;
+    this.part = part;
+    this.type = mixer.type;
+    this.config = { ...mixer.config, x: mixer.config.x + part.offset };
+    this.view = { root: part.root, label: `${SYRUPS[part.syrup].label} Tap` };
+  }
+
+  get name() {
+    return this.view.label;
+  }
+
+  interact(player) {
+    this.mixer.useTap(this, player);
+  }
+
+  give(player) {
+    this.mixer.give(player);
+  }
+
+  canGive() {
+    return this.mixer.canGive();
+  }
+
+  canAccept(item) {
+    return this.mixer.canAccept(item);
+  }
+
+  receiveBack(item) {
+    this.mixer.receiveBack(item, this);
+  }
+
+  status() {
+    return this.mixer.tapStatus(this);
+  }
+}
+
+// Molecular cocktails: click taps to pour shots of cyan, magenta and yellow
+// syrup (clicks queue up). After MIX_SHOTS shots the glass slides onto the
+// stirrer and the mix shader swirls the layers into one colour. The ratio of
+// shots decides the cocktail; pour order doesn't matter.
+export class MixerStation extends Station {
+  constructor(config, view) {
+    super(config, view);
+    this.carriage = view.parts.carriage;
+    this.controls = view.parts.taps.map((part) => new MixerTap(this, part));
+    this.home = this.controls[1]; // the stirrer sits under the middle tap
+    this.at = this.home;
+    this.queue = []; // taps clicked while another shot is pouring
+    this.pour = null; // { tap, time }
+  }
+
+  get blending() {
+    return Boolean(this.item) && this.item.shots.length === MIX_SHOTS && this.item.mix < 1;
+  }
+
+  get busy() {
+    return Boolean(this.pour) || this.queue.length > 0 || this.blending;
+  }
+
+  get ready() {
+    return Boolean(this.item) && this.item.mix >= 1;
+  }
+
+  // Shots poured, pouring and queued.
+  get planned() {
+    return this.item ? this.item.shots.length + (this.pour ? 1 : 0) + this.queue.length : 0;
+  }
+
+  // Slides the glass to `tap` (snaps there if `snap`).
+  moveTo(tap, snap = false) {
+    if (this.at !== tap) {
+      this.view.root.updateWorldMatrix(true, true);
+      tap.part.root.attach(this.carriage);
+      this.at = tap;
+    }
+    if (snap) this.carriage.position.x = 0;
+  }
+
+  place(item, tap = this.at) {
+    this.item = item;
+    this.moveTo(tap, true);
+    item.mesh.position.set(0, 0, 0);
+    item.mesh.rotation.set(0, 0, 0);
+    this.carriage.add(item.mesh);
+  }
+
+  takeItem() {
+    this.queue.length = 0;
+    this.pour = null;
+    this.controls.forEach((tap) => (tap.part.stream.visible = false));
+    return super.takeItem();
+  }
+
+  useTap(tap, player) {
+    const held = player.held;
+    if (held && ITEMS[held.type]?.mix && !this.item) {
+      this.place(player.release(), tap);
+      events.emit('item:place', { item: this.item });
+      return;
+    }
+    if (this.ready) {
+      if (!player.isEmpty) say('Free your hands to take the drink.');
+      else player.hold(this.takeItem());
+      return;
+    }
+    if (this.blending && !this.pour && !this.queue.length) {
+      say('Blending… nearly there.');
+      return;
+    }
+    if (this.planned >= MIX_SHOTS) {
+      say(`That glass is full: ${MIX_SHOTS} shots per drink.`);
+      return;
+    }
+    if (!this.item) this.place(createItem('cocktail'), tap);
+    this.queue.push(tap);
+  }
+
+  give(player) {
+    if (this.canGive()) player.hold(this.takeItem());
+  }
+
+  canGive() {
+    return Boolean(this.item) && !this.busy;
+  }
+
+  canAccept(item) {
+    return !this.item && Boolean(ITEMS[item.type]?.mix);
+  }
+
+  receiveBack(item, tap = this.at) {
+    if (this.item) disposeItem(item);
+    else this.place(item, tap);
+  }
+
+  update(dt) {
+    const carriage = this.carriage;
+    carriage.position.x *= Math.exp(-dt * SLIDE_RATE);
+    const arrived = Math.abs(carriage.position.x) < 0.02;
+    const item = this.item;
+
+    if (item && !this.pour && this.queue.length) {
+      const next = this.queue[0];
+      if (this.at !== next) this.moveTo(next);
+      else if (arrived) {
+        this.queue.shift();
+        this.pour = { tap: next, time: 0 };
+        item.pending = next.part.syrup;
+        next.part.stream.visible = true;
+        events.emit('pour:start', { station: this });
+      }
+    }
+
+    if (this.pour) {
+      this.pour.time += dt;
+      const progress = Math.min(1, this.pour.time / SHOT_TIME);
+      item.fill = (item.shots.length + progress) / MIX_SHOTS;
+      if (progress >= 1) {
+        item.shots.push(item.pending);
+        item.pending = null;
+        this.pour.tap.part.stream.visible = false;
+        this.pour = null;
+        events.emit('pour:done', { station: this });
+      }
+    } else if (this.blending && !this.queue.length) {
+      if (this.at !== this.home) this.moveTo(this.home);
+      else if (arrived) this.stir(item, dt);
+    }
+
+    if (item) refreshItem(item);
+    this.updateLights();
+  }
+
+  stir(item, dt) {
+    if (item.mix === 0) {
+      this.view.parts.stirrer.emissive.setHex(mixColor(mixKey(item.shots)));
+      events.emit('mix:start', { station: this });
+    }
+    item.mix = Math.min(1, item.mix + dt / BLEND_TIME);
+    item.spin = Math.sqrt(Math.sin(Math.PI * item.mix));
+    item.mesh.rotation.y += dt * 14 * item.spin;
+    if (item.mix >= 1) {
+      item.spin = 0;
+      events.emit('mix:done', { station: this, item });
+      say(`${itemLabel(item)} is ready! Drag it to a customer or the board.`);
+    }
+  }
+
+  updateLights() {
+    for (const tap of this.controls) {
+      const pouring = this.pour?.tap === tap;
+      const queued = this.queue.includes(tap);
+      tap.part.light.emissiveIntensity = pouring ? 2.4 : queued ? 1.4 : 0.5;
+    }
+    const spin = this.item?.spin ?? 0;
+    const stirrer = this.view.parts.stirrer;
+    stirrer.emissiveIntensity = 0.4 + spin * 2.2;
+    if (!this.item) stirrer.emissive.setHex(0x7c3aed);
+  }
+
+  tapStatus(tap) {
+    const label = SYRUPS[tap.part.syrup].label.toLowerCase();
+    const item = this.item;
+    if (!item) return `Click to pour a shot of ${label} (${MIX_SHOTS} shots per drink)`;
+    if (this.ready) return `${itemLabel(item)}: drag it to a customer`;
+    if (this.blending && !this.pour && !this.queue.length) return `Blending ${Math.floor(item.mix * 100)}%`;
+    const poured = item.shots.length ? mixFormula(mixKey(item.shots)) : 'empty';
+    const queued = this.queue.length ? ` · ${this.queue.length} queued` : '';
+    return `Shots ${item.shots.length}/${MIX_SHOTS}: ${poured}${queued}`;
+  }
+}
+
 export class TrashStation extends Station {
   canGive() {
     return false;
@@ -334,6 +555,7 @@ const STATION_TYPES = {
   fryer: CookerStation,
   pot: CookerStation,
   dispenser: DispenserStation,
+  mixer: MixerStation,
   board: BoardStation,
   trash: TrashStation,
 };
