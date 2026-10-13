@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { STREET } from '../utils/Constants.js';
+import { events } from '../core/Events.js';
+import { pick, STREET } from '../utils/Constants.js';
 import { canvasTexture, physical, surfaces } from '../graphics/Materials.js';
 import { createBeamMaterial } from '../graphics/Shaders.js';
 import { createCustomer } from './Characters.js';
@@ -210,6 +211,7 @@ function buildBus() {
 // ---------------------------------------------------------------- traffic
 
 const wrap = (value, size) => ((value % size) + size) % size;
+const PASS_LEAD = 3.1; // s from the start of a pass-by sound to its loudest moment (AudioManager)
 
 // Adds the cars to `parent` and returns an update(dt) that drives them. Each
 // car cruises at its own speed but brakes for the one ahead in its lane, so
@@ -229,6 +231,7 @@ export function buildTraffic(parent) {
     });
     return { ...lane, cars };
   });
+  let hornTimer = 8 + Math.random() * 10;
 
   return (dt) => {
     for (const lane of lanes) {
@@ -246,10 +249,25 @@ export function buildTraffic(parent) {
         const target = Math.min(car.cruise, Math.max(0, (gap - 3) * 1.2));
         car.speed += (target - car.speed) * Math.min(1, dt * 2);
         if (leader && gap < 1.5) car.speed = Math.min(car.speed, leader.speed);
+        // Distance still to drive to the diner's front (x = 0), before and
+        // after this step: crossing PASS_LEAD seconds out starts the pass-by
+        // sound, so its loudest moment lands as the car goes past.
+        const before = -car.x * lane.direction;
         car.x += lane.direction * car.speed * dt;
+        const after = -car.x * lane.direction;
+        const lead = PASS_LEAD * car.speed;
+        if (before > lead && after <= lead) events.emit('traffic:pass', { object: car.group, heavy: car.length > 8 });
         if (car.x * lane.direction > STREET.halfLength) car.x -= lane.direction * span;
         car.group.position.x = car.x;
       }
+    }
+
+    // Now and then somebody leans on the horn, somewhere near the diner.
+    hornTimer -= dt;
+    if (hornTimer <= 0) {
+      hornTimer = 15 + Math.random() * 25;
+      const nearby = lanes.flatMap((lane) => lane.cars).filter((car) => Math.abs(car.x) < 25);
+      if (nearby.length) events.emit('traffic:horn', { object: pick(nearby).group });
     }
   };
 }

@@ -14,6 +14,8 @@ export default {
   theme: 'cyber',
   lighting: 'neon',
   weather: 'rain',
+  ambience: { rain: 0.9, city: 0.35 }, // rain on the street, the city at night; cars and thunder come from the world
+  footsteps: 'concrete',
   post: { bloom: 0.55, threshold: 1.1, bloomRadius: 0.4, saturation: 1.15, vignette: 0.45, tint: 0xf0e6ff },
   exposure: 1.0,
   music: { tempo: 128, root: 50, scale: [0, 3, 7, 10, 12, 15], progression: [0, -2, -4, -5], wave: 'sawtooth' },

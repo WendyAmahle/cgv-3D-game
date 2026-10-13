@@ -23,6 +23,10 @@
 //   ui:<action>        { ...button dataset }          any [data-action] button
 //   hud:coin           {}                             serve coin reached the earnings panel
 //   achievement:unlocked { trophy }                   ui/Achievements.js
+//   chef:step          {}                             the chef took a step (footstep sound)
+//   traffic:pass       { object, heavy }              a car is about to pass the diner (Level 3)
+//   traffic:horn       { object }                     a car sounds its horn
+//   weather:thunder    { delay }                      lightning struck; thunder after `delay` s
 export class EventBus {
   constructor() {
     this.handlers = new Map();

@@ -7,6 +7,16 @@
 // download): public/assets/models/food_truck/ — "Food Truck" by sandrafaki,
 // CC BY 4.0, https://sketchfab.com/3d-models/food-truck-9a179f9803734a3e95630727b9db3477
 // (glTF download, textures resized to 1024px with @gltf-transform/cli).
+//
+// Also not fetched here (they come as zip archives): in public/assets/audio/,
+// ambience/rain.ogg is track 3 of "Rain (loopable)" by Ylmir (CC0,
+// https://opengameart.org/content/rain-loopable), and the sfx/ files not in
+// BIGSOUNDBANK below are from Kenney's CC0 packs (kenney.nl/assets/
+// impact-sounds, interface-sounds, rpg-audio): step-concrete-N =
+// footstep_concrete_00(N-1), step-wood-N = footstep_wood_00(N-1), place-N =
+// impactPlate_light_00(N-1), bounce = impactGeneric_light_000, metal =
+// impactMetal_light_001, click = click_002, error = error_006, pop = pluck_001,
+// confirm = confirmation_002, pickup = handleSmallLeather, coins = handleCoins2.
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 
@@ -32,6 +42,16 @@ const HDRIS = ['greenwich_park', 'cobblestone_street_night', 'shanghai_bund'];
 // three.js example models (Mixamo / Ready Player Me characters).
 const THREE_EXAMPLES = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r170/examples/models/gltf';
 const CHARACTERS = { 'Michelle.glb': 'Michelle.glb', 'Xbot.glb': 'Xbot.glb', 'Avatar.glb': 'readyplayer.me.glb' };
+
+// BigSoundBank (CC0) — https://bigsoundbank.com — file in audio/ -> sound number.
+const BIGSOUNDBANK = {
+  'sfx/grill-sizzle': '0144', 'sfx/fryer': '2506', 'sfx/pot-boil': '0491', 'sfx/pour-soda': '0117',
+  'sfx/pour-broth': '1155', 'sfx/counter-bell': '2530', 'sfx/register-beep': '1417', 'sfx/timer-ding': '0082',
+  'sfx/buzzer': '1586', 'sfx/alarm': '0035', 'sfx/trash': '1523', 'sfx/applause': '0812',
+  'sfx/car-pass-1': '2987', 'sfx/car-pass-2': '2996', 'sfx/horn': '3506',
+  'sfx/thunder-1': '3113', 'sfx/thunder-2': '3114', 'sfx/thunder-3': '3115',
+  'ambience/park': '2457', 'ambience/night-insects': '0425', 'ambience/city-night': '0680',
+};
 
 async function download(url, file) {
   if (existsSync(file)) return;
@@ -69,6 +89,10 @@ for (const id of HDRIS) {
 
 for (const [name, source] of Object.entries(CHARACTERS)) {
   await download(`${THREE_EXAMPLES}/${source}`, path.join(ROOT, 'characters', name));
+}
+
+for (const [name, id] of Object.entries(BIGSOUNDBANK)) {
+  await download(`https://bigsoundbank.com/UPLOAD/ogg/${id}.ogg`, path.join(ROOT, 'audio', `${name}.ogg`));
 }
 
 console.log('done');

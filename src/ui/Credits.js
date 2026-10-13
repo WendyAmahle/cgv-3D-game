@@ -88,6 +88,32 @@ export const CREDITS = [
   polyHaven('Greenwich Park', 'Andreas Mischok', 'greenwich_park', 'HDRI sky and lighting'),
   polyHaven('Cobblestone Street Night', 'Greg Zaal & Jenelle van Heerden', 'cobblestone_street_night', 'HDRI sky and lighting'),
   polyHaven('Shanghai Bund', 'Greg Zaal', 'shanghai_bund', 'HDRI sky and lighting'),
+  {
+    name: 'Sound recordings',
+    author: 'Joseph Sardin, BigSoundBank',
+    source: 'https://bigsoundbank.com',
+    license: 'CC0 (public domain)',
+    use:
+      'Frying Pan 2 (#0144), Frying Bath 2 (#2506), Big Broth in a Pot (#0491), Glass of Soda (#0117), Hot Water in Mug (#1155), ' +
+      'Counter Bell 2 (#2530), Beep of a Cash Register (#1417), Timer 2 (#0082), Buzzer 4 (#1586), Electronic Alarm Buzzer 1 (#0035), ' +
+      'Garbage Bag in Container (#1523), Applause about 25-50 people 1 (#0812), Car Passing 50km/h 3 and 12 (#2987, #2996), Horn 3 (#3506), ' +
+      'Thunder 2, 3 and 4 (#3113-#3115), City Garden Atmosphere (#2457), Song of Nocturnal Insect 2 (#0425), Paris by Night (#0680). ' +
+      'Cooking, pouring, serving and street sounds and the level ambiences.',
+  },
+  {
+    name: 'Rain (loopable)',
+    author: 'Ylmir, via OpenGameArt',
+    source: 'https://opengameart.org/content/rain-loopable',
+    license: 'CC0',
+    use: 'Level 3 rain ambience (track 3).',
+  },
+  {
+    name: 'Impact Sounds, Interface Sounds and RPG Audio',
+    author: 'Kenney (www.kenney.nl)',
+    source: 'https://kenney.nl/assets/impact-sounds',
+    license: 'CC0',
+    use: 'Footsteps on concrete and wood, plates set down, pick-up, coins, clicks, error and trophy sounds (kenney.nl/assets/interface-sounds, kenney.nl/assets/rpg-audio).',
+  },
 ];
 
 export const TEAM = [
@@ -100,7 +126,7 @@ export const TEAM = [
 export const ORIGINAL_WORK = [
   'Food, stations, serving counters, noodle bar and diner buildings are modelled procedurally by the team (the scanned bun is sliced in code).',
   'Animation retargeting from X Bot onto the other skeletons is our own code.',
-  'All sound effects and music are synthesised at runtime with the Web Audio API.',
+  'Music and the jingles (level complete, level failed, trophy) are synthesised at runtime with the Web Audio API; the sound mixing, seamless looping and 3D positioning of the recorded sounds are our own code.',
   'Custom GLSL shaders: cooking (injected into the PBR material), liquid fill, molecular cocktail mixing, steam, particles, sky and colour-grade/heat-haze.',
 ];
 
