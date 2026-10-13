@@ -511,10 +511,7 @@ const DECOR = {
       wall: iron,
     });
 
-    // Wet asphalt: low roughness so neon and the skyline reflect in it.
-    const asphalt = pbr('asphalt_02', [12, 12], 0x1f2937, { color: 0x4b5563, roughness: 0.35, metalness: 0.2 });
-    root.add(groundPatch(asphalt, 28));
-
+    // The ground (pavements, road and traffic) comes with the street below.
     for (const side of [-1, 1]) root.add(box(0.2, 4.2, 6.6, iron, [side * 7.2, 2.1, -1.1]));
     const roof = box(14.6, 0.25, 6.8, surfaces.darkSteel(), [0, 4.3, -1.2]);
     root.add(roof);
@@ -541,14 +538,15 @@ const DECOR = {
 
     place(root, 'utilityBox', [-8.2, 0, 1.2], { rotation: Math.PI / 2 });
     place(root, 'utilityBox', [8.3, 0, -0.5], { rotation: -Math.PI / 2 });
-    place(root, 'barrier', [-9.5, 0, 6], { rotation: 0.3 });
+    place(root, 'barrier', [-13, 0, 5.9], { rotation: 0.05 }); // along the kerb, clear of the customers' path
     place(root, 'wetFloorSign', [3.2, 0, 4.6], { rotation: 0.6, scale: 1.3 });
     place(root, 'trashCan', [-8.4, 0, 4], { rotation: 0.8 });
     for (const x of [-6.2, 6.2]) place(root, 'metalStool', [x, 0, LAYOUT.customerZ]);
     place(root, 'wallLamp', [-7.35, 2.6, 0.5], { rotation: -Math.PI / 2, scale: 1.2 });
     place(root, 'wallLamp', [7.35, 2.6, 0.5], { rotation: Math.PI / 2, scale: 1.2 });
 
-    // Real apartment buildings, shops, signs and cables around the street.
+    // The street outside: road with traffic, pavements with people walking
+    // by, apartment buildings, shops, signs and a skyline of lit towers.
     const street = buildNeonStreet(root);
 
     return (dt, time) => {

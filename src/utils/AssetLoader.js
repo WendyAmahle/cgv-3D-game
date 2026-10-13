@@ -56,7 +56,7 @@ const GROUPS = {
       facadeKit: 'modular_urban_apartments_facade',
       aircon: 'exterior_aircon_unit',
     },
-    textures: ['asphalt_02', 'corrugated_iron_02', 'rubber_tiles'],
+    textures: ['asphalt_02', 'corrugated_iron_02', 'rubber_tiles', 'patterned_paving'],
   },
 };
 
