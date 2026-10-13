@@ -31,6 +31,7 @@ export class Chef {
     this.root.add(this.marker);
 
     this.speed = 0;
+    this.stride = 0; // metres walked since the last footstep sound
     this.yaw = 0;
     this.busy = 0; // seconds left of a one-shot reaction
     this.binX = Infinity;
@@ -72,6 +73,11 @@ export class Chef {
     const distance = goalX - position.x;
     const step = Math.sign(distance) * Math.min(Math.abs(distance), WALK_SPEED * dt, Math.abs(distance) * dt * 6);
     position.x += step;
+    this.stride += Math.abs(step);
+    if (this.stride > 0.65) {
+      this.stride = 0;
+      events.emit('chef:step');
+    }
     this.speed = THREE.MathUtils.lerp(this.speed, Math.abs(step) / Math.max(dt, 1e-4), 1 - Math.exp(-dt * 10));
 
     // Face the target, or the direction of travel while walking.
