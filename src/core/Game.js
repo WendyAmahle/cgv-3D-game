@@ -241,7 +241,7 @@ export class Game {
     this.gameplay.dispose();
     this.gameplay = null;
     this.controller.clear();
-    this.audio.setSizzle(0);
+    this.audio.setCooking();
   }
 
   async showMenu({ withStory = false } = {}) {
@@ -257,6 +257,7 @@ export class Game {
     this.cameraController.autoOrbit = true;
     this.applyCutaway();
     this.audio.startMusic(LEVELS[index].music);
+    this.audio.setLevelAudio(LEVELS[index]);
   }
 
   showStory(then) {
@@ -291,6 +292,7 @@ export class Game {
     this.screens.showIntro(level, index, this.stars.get(level.id));
     this.state.set(STATES.INTRO);
     this.audio.startMusic(level.music);
+    this.audio.setLevelAudio(level);
   }
 
   beginShift() {
@@ -307,7 +309,7 @@ export class Game {
     this.controller.cancelDrag();
     this.state.set(STATES.PAUSED);
     this.controller.enabled = false;
-    this.audio.setSizzle(0);
+    this.audio.setCooking();
     this.screens.show('pause', { returnTo: 'pause' });
   }
 
@@ -323,7 +325,7 @@ export class Game {
     this.levels.unlockAfter(this.levelIndex);
     this.state.set(STATES.LEVEL_COMPLETE);
     this.controller.enabled = false;
-    this.audio.setSizzle(0);
+    this.audio.setCooking();
     const isLast = this.levelIndex === LEVELS.length - 1;
     const level = LEVELS[this.levelIndex];
     const stars = rateShift(level, this.gameplay.stats);
@@ -335,7 +337,7 @@ export class Game {
     this.controller.cancelDrag();
     this.state.set(STATES.GAME_OVER);
     this.controller.enabled = false;
-    this.audio.setSizzle(0);
+    this.audio.setCooking();
     this.screens.showGameOver(this.gameplay.stats, reason);
   }
 
@@ -401,14 +403,21 @@ export class Game {
       this.gameplay.update(dt);
       this.controller.update(dt, time);
       this.player.update(dt, time);
-      const busyCookers = this.gameplay.stations.filter((station) => station.item && station.accepts).length;
-      this.audio.setSizzle(busyCookers);
+      // Cooking noise per kind of cooker in use (grill sizzle, fryer oil,
+      // boiling pot) and for drinks being poured.
+      const cooking = {};
+      for (const station of this.gameplay.stations) {
+        const kind = station.pouring ? 'pour' : station.item && station.accepts ? station.type : null;
+        if (kind) cooking[kind] = (cooking[kind] ?? 0) + 1;
+      }
+      this.audio.setCooking(cooking);
       if (this.gameplay) this.hud.update(this.gameplay, this.controller, this.camera);
     }
 
     const selected = this.controller.selected;
     if (selected) this.cameraController.setFocus(selected.focus.getWorldPosition(this.focusPoint), selected.kind);
     this.cameraController.update(dt, time);
+    this.audio.updateListener(this.camera);
 
     this.post.setHeatSources(this.effects.heatSources());
     this.post.render(dt);
