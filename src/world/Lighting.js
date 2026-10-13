@@ -58,6 +58,9 @@ export function applyLighting(presetName, scene, root, theme, themeName) {
     const skybox = new GroundedSkybox(hdri, theme.skybox.height, theme.skybox.radius);
     skybox.position.y = theme.skybox.height - 0.01;
     skybox.material.fog = false;
+    // Always drawn first: it doesn't write depth, so anything below its
+    // photographed ground (Level 3's sunken road) still draws over it.
+    skybox.renderOrder = -10;
     root.add(skybox);
   } else {
     scene.environment = null;
