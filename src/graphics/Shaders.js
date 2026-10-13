@@ -6,6 +6,8 @@ import liquidVertex from './shaders/liquid.vert.glsl?raw';
 import liquidFragment from './shaders/liquid.frag.glsl?raw';
 import steamVertex from './shaders/steam.vert.glsl?raw';
 import steamFragment from './shaders/steam.frag.glsl?raw';
+import beamVertex from './shaders/beam.vert.glsl?raw';
+import beamFragment from './shaders/beam.frag.glsl?raw';
 import particleVertex from './shaders/particle.vert.glsl?raw';
 import particleFragment from './shaders/particle.frag.glsl?raw';
 import skyVertex from './shaders/sky.vert.glsl?raw';
@@ -87,6 +89,24 @@ export function createSteamMaterial(color = 0xffffff) {
     fragmentShader: steamFragment,
     transparent: true,
     depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+}
+
+// Volumetric headlight cone for Level 3's traffic (additive, so the beams of
+// passing cars brighten whatever is behind them).
+export function createBeamMaterial(color = 0xfff3dc, intensity = 0.16) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uTime,
+      uIntensity: { value: intensity },
+      uColor: { value: new THREE.Color(color) },
+    },
+    vertexShader: beamVertex,
+    fragmentShader: beamFragment,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
     side: THREE.DoubleSide,
   });
 }
