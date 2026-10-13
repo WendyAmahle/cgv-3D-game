@@ -8,6 +8,25 @@ export const LAYOUT = {
   customerZ: 2.9,
 };
 
+// Level 3's street: a two-lane road running along x in front of the diner,
+// sunk below the pavements on both sides. Cars keep left, as on South African
+// roads, so +x traffic uses the lane nearer the diner.
+export const STREET = {
+  roadY: -0.15,
+  kerbNearZ: 6.6, // diner-side kerb (customers walk in along z ≈ 5.4)
+  kerbFarZ: 13.6,
+  facadeZ: 18.6, // shopfronts across the road
+  halfLength: 64, // cars wrap around at x = ±halfLength
+  lanes: [
+    { z: 8.35, direction: 1 },
+    { z: 11.85, direction: -1 },
+  ],
+  walkways: [
+    { z: 15.0, direction: 1 },
+    { z: 16.2, direction: -1 },
+  ],
+};
+
 // Objects on this layer are drawn only by the minimap camera.
 export const MINIMAP_LAYER = 1;
 
