@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { createFoodMesh, createPlateMesh as createPlate } from './Food.js';
 import { MIX_SHOTS, SYRUPS, mixColor, mixKey } from '../gameplay/Recipes.js';
+import { createHologramMaterial } from '../graphics/Shaders.js';
 
 // Item meshes (see Food.js), plus labels, order bubbles and the selection ring.
 // Customers live in Characters.js.
@@ -96,6 +97,85 @@ export function createOrderBubble(text) {
   result.userData.setPatience = (ratio) => {
     fill.scale.x = Math.max(0.001, barWidth * ratio);
     fill.material.color.setHSL(0.33 * ratio, 0.85, 0.5);
+  };
+  return result;
+}
+
+// Level 3: the order as a hologram projected over the customer.
+// Scene graph: group → emitter disc → light cone → panel (hologram shader,
+// billboarded in the vertex stage). Same userData.setPatience API as the
+// bubble, plus update(dt) to animate and dismiss() to fizzle it out.
+//   swatch: a cocktail's colour (sRGB hex) or null; detail: a second line.
+export function createOrderHologram(text, { swatch = null, detail = '' } = {}) {
+  const width = 1.5;
+  const height = detail ? 0.56 : 0.4;
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = Math.round((512 * height) / width);
+  const ctx = canvas.getContext('2d');
+  const font = '"Segoe UI", Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(255,255,255,0.8)';
+  ctx.shadowBlur = 8;
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `800 ${detail ? 50 : 56}px ${font}`;
+  ctx.fillText(text.toUpperCase(), 256, detail ? canvas.height * 0.36 : canvas.height / 2, 470);
+  if (detail) {
+    ctx.font = `600 30px ${font}`;
+    const y = canvas.height * 0.72;
+    const textWidth = Math.min(ctx.measureText(detail).width, 380);
+    const x = swatch === null ? 256 : 256 + 22;
+    ctx.fillText(detail, x, y, 380);
+    if (swatch !== null) {
+      ctx.shadowColor = `#${swatch.toString(16).padStart(6, '0')}`;
+      ctx.fillStyle = ctx.shadowColor;
+      ctx.beginPath();
+      ctx.arc(x - textWidth / 2 - 26, y, 15, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+
+  const material = createHologramMaterial(map, width / height);
+  const panel = new THREE.Mesh(new THREE.PlaneGeometry(width, height), material);
+  panel.position.y = 0.32 + height / 2;
+  panel.frustumCulled = false; // the vertex stage moves it (billboard)
+  panel.renderOrder = 20;
+
+  const emitterMaterial = new THREE.MeshBasicMaterial({ color: 0x22d3ee, toneMapped: false });
+  const emitter = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.03, 20), emitterMaterial);
+  const coneMaterial = new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.1, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+  const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.08, 0.3, 24, 1, true), coneMaterial);
+  cone.position.y = 0.17;
+
+  const result = new THREE.Group();
+  result.add(emitter, cone, panel);
+  for (const mesh of [emitter, cone, panel]) mesh.raycast = () => {}; // clicks go to the customer
+
+  const { uniforms } = material;
+  const [calm, warn, alarm] = [0x22d3ee, 0xff9f1c, 0xff1f3d].map((hex) => new THREE.Color(hex));
+  const tint = new THREE.Color();
+  let dismissing = false;
+  // Same teal → amber → red ramp as the shader's urgencyColor().
+  result.userData.setPatience = (ratio) => {
+    const urgency = 1 - ratio;
+    uniforms.uUrgency.value = urgency;
+    if (urgency < 0.6) tint.lerpColors(calm, warn, THREE.MathUtils.smoothstep(urgency, 0.3, 0.6));
+    else tint.lerpColors(warn, alarm, THREE.MathUtils.smoothstep(urgency, 0.6, 0.85));
+    emitterMaterial.color.copy(tint);
+    coneMaterial.color.copy(tint);
+  };
+  result.userData.update = (dt) => {
+    if (!result.visible) return;
+    const target = dismissing ? 0 : 1;
+    uniforms.uFade.value = THREE.MathUtils.clamp(uniforms.uFade.value + Math.sign(target - uniforms.uFade.value) * dt * (dismissing ? 2.5 : 3), 0, 1);
+    coneMaterial.opacity = 0.1 * uniforms.uFade.value;
+    if (dismissing && uniforms.uFade.value === 0) result.visible = false;
+  };
+  result.userData.dismiss = () => {
+    dismissing = true;
   };
   return result;
 }
