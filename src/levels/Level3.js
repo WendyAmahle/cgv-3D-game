@@ -1,9 +1,10 @@
-// Level 3 — Cyberpunk Diner: every station, fast customers, power-surge events.
+// Level 3 — Cyberpunk Diner: every station, fast customers, power-surge events
+// and molecular mixology (cocktails blended from syrup shots at the Mixology Bar).
 export default {
   id: 3,
   name: 'Neon Diner',
   tagline: 'Rain-soaked cyberpunk diner, open all night.',
-  mechanic: 'Every station at once, impatient night-owl customers and random power surges that overclock a cooker, cooking twice as fast and burning twice as fast.',
+  mechanic: 'Molecular mixology: pour shots of cyan, magenta and yellow syrup in the right ratio and the stirrer blends them into a cocktail. Plus every station at once, impatient night-owl customers and random power surges that overclock a cooker.',
   story: {
     chapter: 'Chapter 3',
     title: 'The last diner downtown',
@@ -24,7 +25,7 @@ export default {
   spawnInterval: [6, 9],
   patience: [38, 48],
   overclock: { interval: [18, 26], duration: 8 },
-  recipes: ['megaStack', 'neonCombo', 'cyberRamen', 'fries', 'neonCombo'],
+  recipes: ['megaStack', 'neonCombo', 'cyberRamen', 'fries', 'deepSpace', 'solarFlare', 'toxicLime', 'ultraviolet'],
 
   stations: [
     { type: 'crate', item: 'bun', row: 'back', x: -5.4 },
@@ -39,7 +40,7 @@ export default {
     { type: 'pot', row: 'front', x: -1.8 },
     { type: 'board', row: 'front', x: 0 },
     { type: 'dispenser', item: 'broth', row: 'front', x: 1.8 },
-    { type: 'dispenser', item: 'neonSoda', row: 'front', x: 3.6 },
+    { type: 'mixer', row: 'front', x: 3.6 },
     { type: 'trash', row: 'front', x: 5.4 },
   ],
 };

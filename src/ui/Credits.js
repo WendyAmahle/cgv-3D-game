@@ -101,7 +101,7 @@ export const ORIGINAL_WORK = [
   'Food, stations, serving counters, noodle bar and diner buildings are modelled procedurally by the team (the scanned bun is sliced in code).',
   'Animation retargeting from X Bot onto the other skeletons is our own code.',
   'All sound effects and music are synthesised at runtime with the Web Audio API.',
-  'Custom GLSL shaders: cooking (injected into the PBR material), liquid fill, steam, particles, sky and colour-grade/heat-haze.',
+  'Custom GLSL shaders: cooking (injected into the PBR material), liquid fill, molecular cocktail mixing, steam, particles, sky and colour-grade/heat-haze.',
 ];
 
 export class Credits {

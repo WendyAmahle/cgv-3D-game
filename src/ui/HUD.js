@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { RECIPES, tagLabel } from '../gameplay/Recipes.js';
+import { RECIPES, tagColor, tagLabel } from '../gameplay/Recipes.js';
 import { itemLabel } from '../gameplay/Items.js';
 import { events } from '../core/Events.js';
 
@@ -107,6 +107,8 @@ export class HUD {
           const chip = document.createElement('span');
           chip.className = 'chip';
           chip.textContent = tagLabel(tag);
+          const swatch = tagColor(tag);
+          if (swatch !== null) chip.style.boxShadow = `inset 6px 0 0 #${swatch.toString(16).padStart(6, '0')}`;
           chips.append(chip);
         }
         this.el.tickets.append(element);

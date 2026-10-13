@@ -111,11 +111,15 @@ export const RECIPES = {
   },
   neonCombo: {
     name: 'Neon Combo',
-    ingredients: ['bun', 'patty:cooked', 'potato:cooked', 'neonSoda'],
-    price: 28,
+    ingredients: ['bun', 'patty:cooked', 'potato:cooked', 'cocktail:c2m2'],
+    price: 32,
   },
   cyberRamen: { name: 'Cyber Ramen', ingredients: ['broth', 'noodles:cooked', 'egg'], price: 20 },
   fries: { name: 'Fries', ingredients: ['potato:cooked'], price: 8 },
+  deepSpace: { name: 'Deep Space', ingredients: ['cocktail:c2m2'], price: 15 },
+  solarFlare: { name: 'Solar Flare', ingredients: ['cocktail:m1y3'], price: 15 },
+  toxicLime: { name: 'Toxic Lime', ingredients: ['cocktail:c2y2'], price: 15 },
+  ultraviolet: { name: 'Ultraviolet', ingredients: ['cocktail:c1m3'], price: 15 },
 };
 
 export function cookStage(type, seconds) {
