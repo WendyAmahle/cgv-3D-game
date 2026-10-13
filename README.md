@@ -50,7 +50,7 @@ Stars and trophies are saved in the browser's localStorage.
 | --- | --- | --- |
 | 1 Burger Truck | Daylight park | Core loop: grill → assemble → serve, plus drinks |
 | 2 Lantern Noodle Bar | Night, lanterns, fireflies | Boiling pot and broth, 3 customers at once, rush hour halfway through |
-| 3 Neon Diner | Cyberpunk, rain, bloom | Every station, fast, impatient customers, random "power surge" overclock events |
+| 3 Neon Diner | Cyberpunk city street at night, rain, bloom | Every station, fast, impatient customers, random "power surge" overclock events. The diner faces a road with live traffic (cars keep left), people walk past the shops across the road, and lit towers make up the skyline (`src/world/City.js`, `src/world/Traffic.js`) |
 
 Each level is a plain config file in `src/levels/`: stations, recipes, timings, theme, lighting, post-processing and music.
 
@@ -71,6 +71,7 @@ Everything talks through the event bus in `src/core/Events.js` (see the list of 
 - **cooking**: injected into three.js's physically based material (`cooking_pars`, `cooking.vert`, `cooking.frag`), so food keeps real lighting, shadows and reflections. `uCook` (0 raw → 1 cooked → 2 burnt) drives uneven browning, grill marks, roughness (wet raw meat, dry burnt meat) and embers. The vertex stage shrinks/puffs the food and sizzles it while `uHeat` is on.
 - **liquid**: `uFill` sets a sloshing liquid level inside cups and bowls, with foam and bubbles.
 - **steam**: a noise-driven column above active cookers.
+- **beam**: volumetric headlight cones on Level 3's cars (additive, fading with distance and at the edges, with rain streaking through the light).
 - **particle**: soft point sprites for steam, smoke, sparks, rain, fireflies and the serve burst.
 - **sky**: gradient dome with twinkling stars.
 - **grade** (post-processing): screen-space heat haze above cookers, colour grade, vignette and a red flash on mistakes.
