@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { events } from './Events.js';
+import { events, say } from './Events.js';
 import { GameState, STATES } from './GameState.js';
 import { LEVELS, LevelManager } from './LevelManager.js';
 import { Gameplay } from '../gameplay/Gameplay.js';
@@ -303,6 +303,8 @@ export class Game {
     this.controller.enabled = true;
     this.state.set(STATES.PLAYING);
     events.emit('level:start', { level: LEVELS[this.levelIndex] });
+    // Mute is remembered between visits, so say so rather than play in silence.
+    if (this.audio.muted) say('Sound is off: press M or the 🔇 button to turn it on.');
   }
 
   pause() {
