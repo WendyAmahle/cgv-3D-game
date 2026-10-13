@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { events } from '../core/Events.js';
 import { assets } from '../utils/AssetLoader.js';
 import { STREET } from '../utils/Constants.js';
 import { canvasTexture, mat, pbr, physical, surfaces } from '../graphics/Materials.js';
@@ -558,6 +559,7 @@ export function buildNeonStreet(root) {
 
   const traffic = buildTraffic(street);
   const pedestrians = buildPedestrians(street, BUS_STOP_X);
+  const storm = buildLightning(street);
   root.add(street);
 
   return (dt, time) => {
@@ -568,5 +570,27 @@ export function buildNeonStreet(root) {
     beacon.emissiveIntensity = time % 1.6 < 0.25 ? 4 : 0.15;
     traffic(dt);
     pedestrians(dt, time);
+    storm(dt);
+  };
+}
+
+// Lightning over the city every so often: a cold flicker of light across the
+// whole scene, then the thunder rolls in a moment later (the further away the
+// strike, the longer the gap), played by audio/AudioManager.js.
+function buildLightning(street) {
+  const flash = new THREE.HemisphereLight(0xdfe6ff, 0x404060, 0);
+  street.add(flash);
+  let timer = 10 + Math.random() * 10;
+  let age = Infinity; // seconds since the last strike
+  return (dt) => {
+    timer -= dt;
+    if (timer <= 0) {
+      timer = 18 + Math.random() * 22;
+      age = 0;
+      events.emit('weather:thunder', { delay: 0.4 + Math.random() * 2.2 });
+    }
+    age += dt;
+    // Two quick flickers, the second one brighter.
+    flash.intensity = age < 0.07 ? 1.6 : age > 0.14 && age < 0.26 ? 2.6 * (1 - (age - 0.14) / 0.12) : 0;
   };
 }
