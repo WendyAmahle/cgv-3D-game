@@ -341,11 +341,14 @@ const DECOR = {
   truck(root, level, cutaway) {
     // Open-air serving counters in front of the parked truck: no shell floor
     // (the paving runs underneath) and no back wall (the truck replaces it).
+    const brushedSteel = physical(0xb8bec6, { metalness: 1, roughness: 0.62, anisotropy: 0.5, anisotropyRotation: Math.PI / 2 });
     buildShell(root, {
       floor: null,
-      counterBody: surfaces.steel(),
-      counterTop: surfaces.steel(),
-      counterFront: surfaces.steel(),
+      // Brushed rather than polished: under full sun the polished steel
+      // mirrored the bright sky into large white highlights.
+      counterBody: brushedSteel,
+      counterTop: brushedSteel,
+      counterFront: brushedSteel,
       wall: null,
     });
 
