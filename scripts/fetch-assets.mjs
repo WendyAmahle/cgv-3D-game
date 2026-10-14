@@ -44,7 +44,7 @@ const MODELS = [
   'portable_generator', 'hand_truck', 'trashbag', 'water_manhole_cover', 'barrel_03',
 ];
 const TEXTURES = [
-  'leafy_grass', 'patterned_paving', 'long_white_tiles', 'metal_plate',
+  'patterned_paving',
   'japanese_cedar_planks', 'cobblestone_pavement', 'dark_wooden_planks', 'wood_table',
   'asphalt_02', 'corrugated_iron_02', 'rubber_tiles',
 ];
