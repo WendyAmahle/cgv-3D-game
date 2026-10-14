@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { canvasTexture, mat, noiseNormalMap, physical, surfaces } from '../graphics/Materials.js';
-import { createCookingMaterial, createLiquidMaterial } from '../graphics/Shaders.js';
+import { createCookingMaterial, createLiquidMaterial, createMixMaterial } from '../graphics/Shaders.js';
 import { ITEMS } from '../gameplay/Recipes.js';
 import { assets } from '../utils/AssetLoader.js';
 
@@ -14,6 +14,7 @@ const COOKING = {
   pork: { raw: 0xeab0a6, cooked: 0xb87142, burnt: 0x2b1a12, marks: 1, roughness: [0.4, 0.5, 0.95] },
   potato: { raw: 0xf1e1b0, cooked: 0xdb9d36, burnt: 0x3c2410, marks: 0, roughness: [0.5, 0.55, 0.9] },
   noodles: { raw: 0xeadcae, cooked: 0xf2d67e, burnt: 0xcfc69c, marks: 0, roughness: [0.75, 0.3, 0.55] },
+  steak: { raw: 0xa36bff, cooked: 0x6a2f3c, burnt: 0x160c12, marks: 1, roughness: [0.3, 0.55, 0.95] },
 };
 
 // ------------------------------------------------------------------ helpers
@@ -279,6 +280,25 @@ function buildPatty() {
   );
 }
 
+// Level 3 plasma steak: the patty profile stretched into a thick oval slab,
+// glowing faintly violet (the plasma), with the cooking shader's marks as the
+// laser's sear lines.
+function buildSteak() {
+  return cookable(
+    'steak',
+    (material) => {
+      const geometry = cached('steak', () => pattyGeometry().clone().scale(1.35, 1.35, 0.95));
+      return group(0.135, mesh(geometry, material));
+    },
+    {
+      emissive: 0x5b21b6,
+      emissiveIntensity: 0.45,
+      normalMap: noiseNormalMap('meat', { scale: 24, strength: 3 }),
+      normalScale: new THREE.Vector2(0.8, 0.8),
+    }
+  );
+}
+
 function buildPork() {
   return cookable(
     'pork',
@@ -461,12 +481,45 @@ function buildBowl(type) {
   return result;
 }
 
+// Level 3 molecular cocktail: a tall glass whose layered liquid is drawn by the
+// mix shader, with a glowing "molecular pearl" garnish once it's blended.
+// Scene graph: glass group → liquid (mix shader), glass shell, garnish → stick + pearl.
+function buildCocktail() {
+  const glass = new THREE.Mesh(
+    cached('cocktail-glass', () => lathe([[0, 0], [0.11, 0], [0.115, 0.015], [0.13, 0.46], [0.122, 0.46], [0.104, 0.03], [0, 0.03]], 40)),
+    surfaces.glass()
+  );
+  glass.castShadow = true;
+
+  const mixMaterial = createMixMaterial({ bottom: -0.2, top: 0.2 });
+  const liquid = new THREE.Mesh(cached('cocktail-liquid', () => new THREE.CylinderGeometry(0.118, 0.1, 0.4, 32, 1, true)), mixMaterial);
+  liquid.position.y = 0.235;
+
+  const garnish = new THREE.Group();
+  const pearlMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0xffffff, emissiveIntensity: 1.8, roughness: 0.2 });
+  const pearl = new THREE.Mesh(cached('cocktail-pearl', () => new THREE.SphereGeometry(0.034, 16, 12)), pearlMaterial);
+  pearl.position.y = 0.16;
+  const stick = mesh(cached('cocktail-stick', () => new THREE.CylinderGeometry(0.006, 0.006, 0.26, 6)), surfaces.chrome(), [0, 0.06, 0]);
+  garnish.add(stick, pearl);
+  garnish.position.set(0.04, 0.4, 0);
+  garnish.rotation.z = -0.25;
+  garnish.userData.material = pearlMaterial;
+  garnish.visible = false;
+
+  const result = group(0.46, liquid, glass, garnish);
+  result.userData.mixMaterial = mixMaterial;
+  result.userData.garnish = garnish;
+  return result;
+}
+
 // -------------------------------------------------------------- public
 
 const BUILDERS = {
+  cocktail: buildCocktail,
   bun: buildBun,
   patty: buildPatty,
   pork: buildPork,
+  steak: buildSteak,
   potato: buildFries,
   noodles: buildNoodles,
   lettuce: buildLettuce,

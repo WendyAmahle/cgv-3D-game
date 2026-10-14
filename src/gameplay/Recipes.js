@@ -28,12 +28,75 @@ export const ITEMS = {
     cook: { station: 'pot', cookedAt: 6, burntAt: 13 },
     stages: { raw: 'Dry Noodles', cooked: 'Noodles', burnt: 'Soggy Noodles' },
   },
+  // Level 3: seared one side at a time under the Laser Searer, flipped in
+  // between (item.sides = seconds on each side). cookedAt/burntAt are per side.
+  steak: {
+    label: 'Plasma Steak',
+    cook: { station: 'laser', cookedAt: 4, burntAt: 9, sides: true },
+    stages: { raw: 'Raw Plasma Steak', half: 'Half-Seared Plasma Steak', cooked: 'Seared Plasma Steak', burnt: 'Charred Plasma Steak' },
+  },
 
   cola: { label: 'Cola', liquid: { vessel: 'cup', pourTime: 3, color: 0x4a1f0a, foam: 0xe8d3b0 } },
   tea: { label: 'Green Tea', liquid: { vessel: 'cup', pourTime: 3, color: 0x8fb34a, foam: 0xd9ecb0 } },
   broth: { label: 'Broth', liquid: { vessel: 'bowl', pourTime: 4, color: 0xb9773a, foam: 0xf1d9a8 } },
   neonSoda: { label: 'Neon Soda', liquid: { vessel: 'cup', pourTime: 2.5, color: 0x19e3ff, foam: 0xe0fbff } },
+
+  // Level 3 molecular cocktail: built shot by shot at the Mixology Bar
+  // (item.shots holds the syrup keys in pour order, item.mix 0 → 1 blended).
+  cocktail: { label: 'Cocktail', mix: true, vessel: 'cup' },
 };
+
+// ---- Molecular mixology (Level 3) ------------------------------------------
+
+export const MIX_SHOTS = 4; // shots in a full glass
+export const SYRUP_KEYS = ['c', 'm', 'y'];
+export const SYRUPS = {
+  c: { label: 'Cyan', color: 0x00e5ff },
+  m: { label: 'Magenta', color: 0xff2bd6 },
+  y: { label: 'Yellow', color: 0xffd60a },
+};
+
+// Cocktails by mix key (shot counts in c, m, y order; pour order doesn't matter).
+export const COCKTAILS = {
+  c2m2: 'Deep Space',
+  m1y3: 'Solar Flare',
+  c2y2: 'Toxic Lime',
+  c1m3: 'Ultraviolet',
+};
+
+// 'c2m2' for two cyan and two magenta shots.
+export function mixKey(shots) {
+  return SYRUP_KEYS.map((key) => [key, shots.filter((shot) => shot === key).length])
+    .filter(([, count]) => count)
+    .map(([key, count]) => `${key}${count}`)
+    .join('');
+}
+
+// 'c2m2' → '2 Cyan + 2 Magenta'
+export function mixFormula(key) {
+  return [...key.matchAll(/([a-z])(\d)/g)].map(([, syrup, count]) => `${count} ${SYRUPS[syrup].label}`).join(' + ');
+}
+
+// Blended colour of a mix as an sRGB hex: the same subtractive mixing as the
+// cocktail shader (weighted geometric mean in linear space, like dyes absorbing light).
+export function mixColor(key) {
+  const toLinear = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  const toSrgb = (c) => (c <= 0.0031308 ? c * 12.92 : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
+  const sums = [0, 0, 0];
+  let total = 0;
+  for (const [, syrup, count] of key.matchAll(/([a-z])(\d)/g)) {
+    const hex = SYRUPS[syrup].color;
+    [16, 8, 0].forEach((shift, channel) => {
+      sums[channel] += Number(count) * Math.log(Math.max(toLinear(((hex >> shift) & 255) / 255), 0.03));
+    });
+    total += Number(count);
+  }
+  if (!total) return 0xffffff;
+  const [r, g, b] = sums.map((sum) => Math.round(toSrgb(Math.exp(sum / total)) * 255));
+  return (r << 16) | (g << 8) | b;
+}
+
+const cocktailTag = (item) => (item.shots.length === MIX_SHOTS && item.mix >= 1 ? mixKey(item.shots) : 'unfinished');
 
 export const RECIPES = {
   // Level 1 — Burger Truck
@@ -55,11 +118,16 @@ export const RECIPES = {
   },
   neonCombo: {
     name: 'Neon Combo',
-    ingredients: ['bun', 'patty:cooked', 'potato:cooked', 'neonSoda'],
-    price: 28,
+    ingredients: ['bun', 'patty:cooked', 'potato:cooked', 'cocktail:c2m2'],
+    price: 32,
   },
-  cyberRamen: { name: 'Cyber Ramen', ingredients: ['broth', 'noodles:cooked', 'egg'], price: 20 },
   fries: { name: 'Fries', ingredients: ['potato:cooked'], price: 8 },
+  plasmaSteak: { name: 'Plasma Steak', ingredients: ['steak:cooked'], price: 18 },
+  plasmaPlatter: { name: 'Plasma Platter', ingredients: ['steak:cooked', 'potato:cooked', 'cocktail:c1m3'], price: 36 },
+  deepSpace: { name: 'Deep Space', ingredients: ['cocktail:c2m2'], price: 15 },
+  solarFlare: { name: 'Solar Flare', ingredients: ['cocktail:m1y3'], price: 15 },
+  toxicLime: { name: 'Toxic Lime', ingredients: ['cocktail:c2y2'], price: 15 },
+  ultraviolet: { name: 'Ultraviolet', ingredients: ['cocktail:c1m3'], price: 15 },
 };
 
 export function cookStage(type, seconds) {
@@ -76,14 +144,44 @@ export function cookAmount(type, seconds) {
   return 1 + Math.min(1, (seconds - cookedAt) / (burntAt - cookedAt));
 }
 
+// Two-sided searing (plasma steak): raw → half (one side done) → cooked
+// (both done); any side left under the laser until burntAt chars it.
+export function searStage(type, [first, second]) {
+  const { cookedAt, burntAt } = ITEMS[type].cook;
+  if (first >= burntAt || second >= burntAt) return 'burnt';
+  if (first >= cookedAt && second >= cookedAt) return 'cooked';
+  return first >= cookedAt ? 'half' : 'raw';
+}
+
+// uCook for the cooking shader: each seared side browns half the steak, and a
+// side left on well past done starts to char.
+export function searAmount(type, [first, second]) {
+  const { cookedAt, burntAt } = ITEMS[type].cook;
+  const browned = (Math.min(first, cookedAt) + Math.min(second, cookedAt)) / (2 * cookedAt);
+  const charStart = (cookedAt + burntAt) / 2;
+  const charred = Math.min(1, Math.max(0, Math.max(first, second) - charStart) / (burntAt - charStart));
+  return charred > 0 ? Math.max(browned, 1 + charred) : browned;
+}
+
 export function itemTag(item) {
+  if (ITEMS[item.type].mix) return `${item.type}:${cocktailTag(item)}`;
   return ITEMS[item.type].cook ? `${item.type}:${item.stage}` : item.type;
 }
 
 export function tagLabel(tag) {
   const [type, stage] = tag.split(':');
   const def = ITEMS[type];
+  if (def.mix) {
+    if (stage === 'unfinished') return 'Unfinished Mix';
+    return `${COCKTAILS[stage] ?? 'Mystery Mix'} (${mixFormula(stage)})`;
+  }
   return stage ? def.stages[stage] : def.label;
+}
+
+// Swatch colour for an order chip, or null for ordinary ingredients.
+export function tagColor(tag) {
+  const [type, stage] = tag.split(':');
+  return ITEMS[type]?.mix && stage !== 'unfinished' ? mixColor(stage) : null;
 }
 
 export function matchesRecipe(tags, recipeId) {

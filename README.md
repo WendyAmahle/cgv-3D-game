@@ -16,7 +16,7 @@ In dev builds the game object is available in the browser console as `window.gam
 | Input | Action |
 | --- | --- |
 | Mouse drag | Drag and drop items: crate → grill → board → customer, drinks → board, anything → bin |
-| Mouse click | Start pouring a drink; click a customer to hear their order |
+| Mouse click | Start pouring a drink, pour a Mixology Bar shot or flip a steak on the Laser Searer; click a customer to hear their order |
 | A/D · W/S (or arrows) | Move the selection · switch between the back counter, front counter and customers |
 | Space / Enter | Use the selected station / serve the selected customer |
 | X | Throw away the held item |
@@ -50,7 +50,7 @@ Stars and trophies are saved in the browser's localStorage.
 | --- | --- | --- |
 | 1 Burger Truck | Daylight park | Core loop: grill → assemble → serve, plus drinks |
 | 2 Lantern Noodle Bar | Night, lanterns, fireflies | Boiling pot and broth, 3 customers at once, rush hour halfway through |
-| 3 Neon Diner | Cyberpunk city street at night, rain, bloom | Every station, fast, impatient customers, random "power surge" overclock events. The diner faces a road with live traffic (cars keep left), people walk past the shops across the road, and lit towers make up the skyline (`src/world/City.js`, `src/world/Traffic.js`) |
+| 3 Neon Diner | Cyberpunk city street at night, rain, bloom | **Molecular mixology**: a Mixology Bar with cyan, magenta and yellow syrup taps. Click taps to pour 4 shots (clicks queue up, the glass slides to each tap), then the magnetic stirrer blends them; the shot ratio decides the cocktail (Deep Space = 2 cyan + 2 magenta, Solar Flare = 1 magenta + 3 yellow, Toxic Lime = 2 cyan + 2 yellow, Ultraviolet = 1 cyan + 3 magenta), and the Neon Combo needs one too. **Laser-seared plasma steaks**: the Laser Searer (replacing the boiling pot) sears one side by itself, you click to flip the steak and it sears the other; leave a side on too long and it chars (Plasma Steak, and the Plasma Platter with fries and an Ultraviolet). Orders float over customers as **holograms** that turn red and glitch as patience runs out. Plus fast, impatient customers, random "power surge" overclock events. The diner faces a road with live traffic (cars keep left), people walk past the shops across the road, and lit towers make up the skyline (`src/world/City.js`, `src/world/Traffic.js`) |
 
 Each level is a plain config file in `src/levels/`: stations, recipes, timings, theme, lighting, post-processing and music.
 
@@ -70,6 +70,8 @@ Everything talks through the event bus in `src/core/Events.js` (see the list of 
 
 - **cooking**: injected into three.js's physically based material (`cooking_pars`, `cooking.vert`, `cooking.frag`), so food keeps real lighting, shadows and reflections. `uCook` (0 raw → 1 cooked → 2 burnt) drives uneven browning, grill marks, roughness (wet raw meat, dry burnt meat) and embers. The vertex stage shrinks/puffs the food and sizzles it while `uHeat` is on.
 - **liquid**: `uFill` sets a sloshing liquid level inside cups and bowls, with foam and bubbles.
+- **mix** (`mix.frag.glsl`, reusing the liquid vertex stage): Level 3's molecular cocktails. Each poured shot is a layer of its syrup colour with rippling interfaces; as `uMix` goes 0 → 1 spiral streaks swirl the layers into one colour, blended subtractively (geometric mean, so cyan + magenta makes blue, not grey). `uSpin` makes the liquid climb the glass and fizz while the stirrer runs.
+- **hologram** (Level 3 order displays): a panel billboarded in the vertex stage (built in view space, so it always faces the camera) over each customer. The fragment stage adds scanlines, a rolling light band and a glowing frame, and `uUrgency` (the customer's impatience) turns it teal → amber → red with band glitches, a red/blue channel split and dropouts; `uFade` dissolves it in blocks when the order is served.
 - **steam**: a noise-driven column above active cookers.
 - **beam**: volumetric headlight cones on Level 3's cars (additive, fading with distance and at the edges, with rain streaking through the light).
 - **particle**: soft point sprites for steam, smoke, sparks, rain, fireflies and the serve burst.
