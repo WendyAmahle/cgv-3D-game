@@ -8,10 +8,14 @@ import { assets } from '../utils/AssetLoader.js';
 // scene as the backdrop; a key light adds sharp shadows and point lights add
 // local colour. Also feeds the custom shaders via sharedUniforms.
 const PRESETS = {
+  // The HDRI already lights the scene with its photographed sun and sky, so
+  // the hemisphere fill stays small and the key light moderate: with all
+  // three high, sunlit white surfaces were lit roughly twice over and
+  // clipped to featureless white.
   day: {
-    environmentIntensity: 1.1,
-    hemisphere: [0xdcefff, 0x7fae52, 0.3],
-    key: { color: 0xffe9c2, intensity: 3.1, position: [8, 12, 7] },
+    environmentIntensity: 0.85,
+    hemisphere: [0xdcefff, 0x7fae52, 0.12],
+    key: { color: 0xffe9c2, intensity: 2.5, position: [8, 12, 7] },
     points: [],
     shaderAmbient: 0.6,
     // The park (shrubs out to x=12, picnic tables out to z=8.5) is wider
