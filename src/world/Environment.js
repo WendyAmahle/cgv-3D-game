@@ -200,7 +200,7 @@ function festoon(from, to, sag, spacing = 0.55) {
   const count = Math.max(2, Math.floor(a.distanceTo(b) / spacing));
   const bulbs = new THREE.InstancedMesh(
     new THREE.SphereGeometry(0.045, 10, 8),
-    new THREE.MeshStandardMaterial({ color: 0xfff1d0, emissive: 0xffc46b, emissiveIntensity: 2.2, roughness: 0.3 }),
+    new THREE.MeshStandardMaterial({ color: 0xfff1d0, emissive: 0xffc46b, emissiveIntensity: 1.8, roughness: 0.3 }),
     count
   );
   const matrix = new THREE.Matrix4();
