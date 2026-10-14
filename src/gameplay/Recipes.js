@@ -184,6 +184,47 @@ export function tagColor(tag) {
   return ITEMS[type]?.mix && stage !== 'unfinished' ? mixColor(stage) : null;
 }
 
+// ---- Serving an order in parts ---------------------------------------------
+// Drinks (anything in a cup or glass) are served on their own; all the food,
+// fries included, arrives together as one plated dish.
+
+const isDrink = (tag) => {
+  const def = ITEMS[tag.split(':')[0]];
+  return (def?.liquid?.vessel ?? def?.vessel) === 'cup';
+};
+
+function sameTags(a, b) {
+  if (a.length !== b.length) return false;
+  const sortedB = [...b].sort();
+  return [...a].sort().every((tag, index) => tag === sortedB[index]);
+}
+
+// ['bun', 'patty:cooked', 'cola'] → [['bun', 'patty:cooked'], ['cola']]
+export function orderParts(ingredients) {
+  const food = ingredients.filter((tag) => !isDrink(tag));
+  const drinks = ingredients.filter(isDrink);
+  return [...(food.length ? [food] : []), ...drinks.map((drink) => [drink])];
+}
+
+// Which of the order's remaining `parts` does handing over `tags` complete?
+// Returns their indices, or null if the customer wouldn't take it: food must
+// be the whole dish, each drink must match one they're still waiting for.
+export function matchParts(parts, tags) {
+  const food = tags.filter((tag) => !isDrink(tag));
+  const used = [];
+  if (food.length) {
+    const index = parts.findIndex((part) => !isDrink(part[0]) && sameTags(part, food));
+    if (index < 0) return null;
+    used.push(index);
+  }
+  for (const drink of tags.filter(isDrink)) {
+    const index = parts.findIndex((part, i) => !used.includes(i) && part.length === 1 && part[0] === drink);
+    if (index < 0) return null;
+    used.push(index);
+  }
+  return used.length ? used : null;
+}
+
 export function matchesRecipe(tags, recipeId) {
   const wanted = [...RECIPES[recipeId].ingredients].sort();
   const given = [...tags].sort();

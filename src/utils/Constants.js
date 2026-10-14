@@ -36,6 +36,11 @@ export const STORAGE_KEY = 'bistro-rush-progress-v1';
 // Set to false before the final submission so levels unlock in order.
 export const UNLOCK_ALL_LEVELS = true;
 
+// Serving (all levels): drinks can be handed over on their own and the food
+// as one plate, in any order; the customer pays once everything has arrived.
+// Set to false to go back to serving the whole order at once.
+export const SERVE_DRINKS_SEPARATELY = true;
+
 // Keyboard bindings (KeyboardEvent.code values).
 export const KEYS = {
   left: ['KeyA', 'ArrowLeft'],
