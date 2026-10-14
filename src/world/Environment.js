@@ -335,6 +335,37 @@ function sakeBarrel(label, [x, y, z]) {
   return group;
 }
 
+// Height map of raised diamond-plate tread (the anti-slip steel on food
+// trucks), drawn procedurally and used as a bump map: each tile holds two
+// domed lozenges at right angles, so the pattern alternates when tiled.
+function diamondPlate() {
+  return canvasTexture('diamond-plate', 128, (ctx, size) => {
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, size, size);
+    const lozenge = (x, y, angle) => {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.scale(1, 0.24);
+      const radius = size * 0.2;
+      const dome = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+      dome.addColorStop(0, '#ffffff');
+      dome.addColorStop(0.6, '#cccccc');
+      dome.addColorStop(1, '#000000');
+      ctx.fillStyle = dome;
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    };
+    const q = size / 4;
+    lozenge(q, q, Math.PI / 4);
+    lozenge(3 * q, 3 * q, Math.PI / 4);
+    lozenge(3 * q, q, -Math.PI / 4);
+    lozenge(q, 3 * q, -Math.PI / 4);
+  }, [104, 8], THREE.NoColorSpace);
+}
+
 // ------------------------------------------------------------------ decor
 
 const DECOR = {
@@ -348,7 +379,7 @@ const DECOR = {
       // mirrored the bright sky into large white highlights.
       counterBody: brushedSteel,
       counterTop: brushedSteel,
-      counterFront: brushedSteel,
+      counterFront: physical(0xb8bec6, { metalness: 1, roughness: 0.5, bumpMap: diamondPlate(), bumpScale: 2.5 }),
       wall: null,
     });
 
