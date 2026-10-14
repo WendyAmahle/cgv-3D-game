@@ -33,6 +33,21 @@ canvas {
   display: none !important;
 }
 
+/* Fade to black between the levels in the main-menu slideshow. */
+#menuFade {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: #000;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+
+#menuFade.on {
+  opacity: 1;
+}
+
 #ui {
   position: fixed;
   inset: 0;
