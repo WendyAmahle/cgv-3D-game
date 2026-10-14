@@ -13,6 +13,7 @@
 //   mix:start          { station }                    Level 3 stirrer starts blending a cocktail
 //   mix:done           { station, item }              cocktail blended and ready
 //   order:new          { customer }                   customer reached the counter
+//   order:partial      { customer, delivered }        part of an order handed over (a drink or the food)
 //   order:served       { customer, reward, tip, combo, position }
 //   order:wrong        { customer }
 //   order:missed       { customer }                   customer walked out

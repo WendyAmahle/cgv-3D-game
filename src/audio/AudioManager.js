@@ -69,6 +69,7 @@ const EVENT_SOUNDS = {
   'mix:done': ['ding'],
   'order:new': ['orderUp'],
   'order:served': ['counterBell', ['register', 0.15], ['coins', 0.3]],
+  'order:partial': ['place', ['blip', 0.08]],
   'order:wrong': ['wrong'],
   'order:missed': ['miss'],
   'overclock:start': ['alarm'],

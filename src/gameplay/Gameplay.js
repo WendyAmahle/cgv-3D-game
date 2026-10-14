@@ -6,6 +6,9 @@ import { CustomerManager } from './Customers.js';
 import { disposeItem, itemLabel, itemTags } from './Items.js';
 import { pick, randomRange } from '../utils/Constants.js';
 
+// The parts of a customer's order not served yet, e.g. 'Bun + Cooked Patty + Cola'.
+const stillWanted = (customer) => customer.parts.flat().map(tagLabel).join(' + ');
+
 // One shift in one level: stations, customers, timer, money and win/lose.
 // `world` comes from LevelManager.build(): { stations: [{config, view}], customerSlots }.
 // `physics` (Physics.js) takes over items that are thrown or dropped.
@@ -62,7 +65,7 @@ export class Gameplay {
         const customer = slot.customer;
         if (!customer) return 'Nobody here yet';
         if (customer.state !== 'waiting') return customer.state === 'arriving' ? 'Arriving…' : 'Leaving';
-        return RECIPES[customer.recipeId].ingredients.map(tagLabel).join(' + ');
+        return stillWanted(customer);
       },
     }));
 
@@ -85,7 +88,7 @@ export class Gameplay {
 
     const recipe = RECIPES[customer.recipeId];
     if (this.player.isEmpty) {
-      say(`They want ${recipe.name}: ${recipe.ingredients.map(tagLabel).join(' + ')}`);
+      say(`They want ${recipe.name}: ${stillWanted(customer)}`);
       return;
     }
 
@@ -93,11 +96,18 @@ export class Gameplay {
     if (!outcome.ok) {
       this.stats.combo = 0;
       events.emit('order:wrong', { customer });
-      say(`"That's not what I ordered!" They want ${recipe.name}.`);
+      say(`"That's not what I ordered!" They still want ${stillWanted(customer)}.`);
       return;
     }
 
     disposeItem(this.player.release());
+
+    // Part of the order (a drink, or the food): they keep waiting for the rest.
+    if (!outcome.complete) {
+      events.emit('order:partial', { customer, delivered: outcome.delivered });
+      say(`${outcome.delivered.map(tagLabel).join(' + ')} delivered. Still waiting for ${stillWanted(customer)}.`);
+      return;
+    }
 
     const tip = Math.round(recipe.price * 0.5 * outcome.ratio);
     const reward = recipe.price + tip;
