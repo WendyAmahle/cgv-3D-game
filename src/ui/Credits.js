@@ -107,6 +107,13 @@ export const CREDITS = [
     use: 'Main menu music.',
   },
   {
+    name: 'Bouncer',
+    author: 'Of Far Different Nature, via OpenGameArt',
+    source: 'https://opengameart.org/content/bouncer-0',
+    license: 'CC0',
+    use: 'Level 3 music. Re-encoded to a smaller Ogg file, otherwise unmodified.',
+  },
+  {
     name: 'Rain (loopable)',
     author: 'Ylmir, via OpenGameArt',
     source: 'https://opengameart.org/content/rain-loopable',
@@ -132,7 +139,7 @@ export const TEAM = [
 export const ORIGINAL_WORK = [
   'Food, stations, serving counters, noodle bar and diner buildings are modelled procedurally by the team (the scanned bun is sliced in code).',
   'Animation retargeting from X Bot onto the other skeletons is our own code.',
-  'Level music and the jingles (level complete, level failed, trophy) are synthesised at runtime with the Web Audio API; the sound mixing, seamless looping and 3D positioning of the recorded sounds are our own code.',
+  'Level 1 and 2 music and the jingles (level complete, level failed, trophy) are synthesised at runtime with the Web Audio API; the sound mixing, seamless looping and 3D positioning of the recorded sounds are our own code.',
   'Custom GLSL shaders: cooking (injected into the PBR material), liquid fill, molecular cocktail mixing, order holograms, steam, particles, sky and colour-grade/heat-haze.',
 ];
 

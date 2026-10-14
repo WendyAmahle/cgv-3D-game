@@ -453,14 +453,16 @@ export class AudioManager {
 
   // `music` is either a level's synth config ({ tempo, root, scale,
   // progression, wave }) or a recorded track ({ file, volume }) that loops.
+  // A track can also carry synth settings to fall back on if its file fails.
   startMusic(music) {
     this.stopMusic();
     this.music = music;
     if (!this.ctx) return; // starts on unlock()
-    if (music.file) {
-      this.playMusicFile(music);
-      return;
-    }
+    if (music.file) this.playMusicFile(music);
+    else this.startSynthMusic();
+  }
+
+  startSynthMusic() {
     this.step = 0;
     this.nextNoteTime = this.ctx.currentTime + 0.1;
     this.musicTimer = setInterval(() => this.scheduleMusic(), 25);
@@ -487,6 +489,7 @@ export class AudioManager {
         this.buffers[music.file] = await this.ctx.decodeAudioData(await response.arrayBuffer());
       } catch (error) {
         console.warn(`Could not load music "${music.file}"`, error);
+        if (this.music === music && music.tempo && !this.musicTimer) this.startSynthMusic();
         return;
       }
     }

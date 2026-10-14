@@ -19,6 +19,9 @@
 // confirm = confirmation_002, pickup = handleSmallLeather, coins = handleCoins2.
 // music/lofi-loop.ogg (main menu) is "Lofi Hip Hop Loop" by omfgdude (CC0,
 // https://opengameart.org/sites/default/files/LofiLoop_2.ogg), saved as-is.
+// music/bouncer.ogg (Level 3) is "Bouncer" by Of Far Different Nature (CC0,
+// https://opengameart.org/content/bouncer-0), the MP3
+// re-encoded with `ffmpeg -i in.mp3 -map_metadata -1 -c:a libvorbis -q:a 3`.
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 

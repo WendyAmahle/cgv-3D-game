@@ -27,7 +27,7 @@ import { assets } from '../utils/AssetLoader.js';
 const CAMERA_KEYS = { Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4 };
 const SLIDE_SECONDS = 5; // how long each level is shown behind the main menu
 const SLIDE_FADE_MS = 450; // matches the #menuFade transition in style.css
-// Recorded track behind the main menu (credited in ui/Credits.js); levels keep their own music.
+// Recorded track behind the main menu (credited in ui/Credits.js); each level sets its own music.
 const MENU_MUSIC = { file: 'music/lofi-loop', volume: 2 };
 
 // Owns the renderer and main loop, and moves between menu → intro → playing →
