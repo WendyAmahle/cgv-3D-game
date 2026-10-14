@@ -1,4 +1,4 @@
-import { ITEMS, cookAmount, cookStage, itemTag, tagLabel } from './Recipes.js';
+import { ITEMS, cookAmount, cookStage, itemTag, searAmount, tagLabel } from './Recipes.js';
 import { createItemMesh, createPlateMesh, setCookVisual, setLiquidFill, setMixVisual } from '../world/Models.js';
 import { disposeObject } from '../utils/Dispose.js';
 
@@ -22,6 +22,7 @@ export function createItem(type) {
     mesh: createItemMesh(type),
   };
   if (def.mix) Object.assign(item, { shots: [], pending: null, mix: 0, spin: 0 });
+  if (def.cook?.sides) Object.assign(item, { sides: [0, 0], flipped: false, flip: 0 });
   refreshItem(item);
   return item;
 }
@@ -82,7 +83,10 @@ export function advanceCooking(item, dt) {
 
 export function refreshItem(item) {
   const def = ITEMS[item.type];
-  if (def?.cook) setCookVisual(item.mesh, cookAmount(item.type, item.cookTime), item.heating ? 1 : 0);
+  if (def?.cook) {
+    const amount = def.cook.sides ? searAmount(item.type, item.sides) : cookAmount(item.type, item.cookTime);
+    setCookVisual(item.mesh, amount, item.heating ? 1 : 0);
+  }
   if (def?.liquid) setLiquidFill(item.mesh, item.fill);
   if (def?.mix) setMixVisual(item.mesh, item);
 }

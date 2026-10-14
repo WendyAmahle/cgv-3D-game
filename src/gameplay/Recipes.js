@@ -28,6 +28,13 @@ export const ITEMS = {
     cook: { station: 'pot', cookedAt: 6, burntAt: 13 },
     stages: { raw: 'Dry Noodles', cooked: 'Noodles', burnt: 'Soggy Noodles' },
   },
+  // Level 3: seared one side at a time under the Laser Searer, flipped in
+  // between (item.sides = seconds on each side). cookedAt/burntAt are per side.
+  steak: {
+    label: 'Plasma Steak',
+    cook: { station: 'laser', cookedAt: 4, burntAt: 9, sides: true },
+    stages: { raw: 'Raw Plasma Steak', half: 'Half-Seared Plasma Steak', cooked: 'Seared Plasma Steak', burnt: 'Charred Plasma Steak' },
+  },
 
   cola: { label: 'Cola', liquid: { vessel: 'cup', pourTime: 3, color: 0x4a1f0a, foam: 0xe8d3b0 } },
   tea: { label: 'Green Tea', liquid: { vessel: 'cup', pourTime: 3, color: 0x8fb34a, foam: 0xd9ecb0 } },
@@ -134,6 +141,25 @@ export function cookAmount(type, seconds) {
   const { cookedAt, burntAt } = ITEMS[type].cook;
   if (seconds < cookedAt) return seconds / cookedAt;
   return 1 + Math.min(1, (seconds - cookedAt) / (burntAt - cookedAt));
+}
+
+// Two-sided searing (plasma steak): raw → half (one side done) → cooked
+// (both done); any side left under the laser until burntAt chars it.
+export function searStage(type, [first, second]) {
+  const { cookedAt, burntAt } = ITEMS[type].cook;
+  if (first >= burntAt || second >= burntAt) return 'burnt';
+  if (first >= cookedAt && second >= cookedAt) return 'cooked';
+  return first >= cookedAt ? 'half' : 'raw';
+}
+
+// uCook for the cooking shader: each seared side browns half the steak, and a
+// side left on well past done starts to char.
+export function searAmount(type, [first, second]) {
+  const { cookedAt, burntAt } = ITEMS[type].cook;
+  const browned = (Math.min(first, cookedAt) + Math.min(second, cookedAt)) / (2 * cookedAt);
+  const charStart = (cookedAt + burntAt) / 2;
+  const charred = Math.min(1, Math.max(0, Math.max(first, second) - charStart) / (burntAt - charStart));
+  return charred > 0 ? Math.max(browned, 1 + charred) : browned;
 }
 
 export function itemTag(item) {
