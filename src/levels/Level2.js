@@ -24,9 +24,13 @@ export default {
   targetMoney: 120,
   maxMisses: 5,
   customerSlots: 3,
-  spawnInterval: [7, 10],
-  patience: [50, 62],
-  rushHour: { at: 0.55, spawnScale: 0.65 },
+  // Patience and pacing tuned for the slowest recipes in the game (4 s broth,
+  // 6 s noodles, 4 s pork, bowl first) sharing one pot and one grill.
+  spawnInterval: [8.5, 12],
+  patience: [78, 96],
+  patienceGrace: 4, // seconds the bar stays full after a customer reaches the counter
+  wrongOrderPenalty: 2, // seconds of patience lost for a wrong dish (default 4)
+  rushHour: { at: 0.55, spawnScale: 0.75 },
   recipes: ['shoyuRamen', 'chashuRamen', 'chashuRamen', 'greenTea', 'shoyuRamen'],
 
   stations: [

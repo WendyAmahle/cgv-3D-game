@@ -180,6 +180,14 @@ canvas {
   font-weight: 700;
 }
 
+/* Last 10 seconds of patience, beside the price. */
+.ticket .seconds {
+  margin-left: auto;
+  margin-right: 8px;
+  color: #dc2626;
+  font-weight: 700;
+}
+
 .chips {
   display: flex;
   flex-wrap: wrap;

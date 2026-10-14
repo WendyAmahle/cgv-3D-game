@@ -72,6 +72,7 @@ const EVENT_SOUNDS = {
   'order:served': ['counterBell', ['register', 0.15], ['coins', 0.3]],
   'order:wrong': ['wrong'],
   'order:missed': ['miss'],
+  'order:urgent': ['impatient'],
   'overclock:start': ['alarm'],
   'rush:start': ['alarm'],
   'level:complete': ['fanfare', ['applause', 0.3]],
@@ -133,6 +134,8 @@ const SYNTH = {
     a.tone({ freq: 247, duration: 0.2, volume: 0.2, type: 'square', delay: 0.14 });
   },
   miss: (a) => a.tone({ freq: 300, slideTo: 90, duration: 0.7, volume: 0.25, type: 'sawtooth' }),
+  // A customer running out of patience: two soft ticks, like fingers tapping the counter.
+  impatient: (a) => [0, 0.12].forEach((delay) => a.tone({ freq: 660, duration: 0.07, volume: 0.12, type: 'triangle', delay })),
   alarm: (a) => [0, 0.25, 0.5].forEach((delay) => a.tone({ freq: 700, slideTo: 1100, duration: 0.2, volume: 0.15, type: 'square', delay })),
   fanfare: (a) => [60, 64, 67, 72, 76, 79, 84].forEach((note, index) => a.tone({ freq: midi(note), duration: 0.3, volume: 0.2, type: 'triangle', delay: index * 0.1 })),
   coins: (a) => {
