@@ -179,6 +179,17 @@ canvas {
   background: rgba(31, 41, 55, 0.1);
 }
 
+/* Already handed over to the customer (drinks can arrive before the food). */
+.chip.done {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.chip.done::before {
+  content: '✓ ';
+  color: #16a34a;
+}
+
 .chip.large {
   font-size: 0.85rem;
   padding: 4px 12px;
