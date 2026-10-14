@@ -2,7 +2,7 @@
 export default {
   id: 2,
   name: 'Lantern Noodle Bar',
-  tagline: 'Late-night noodle bar under paper lanterns.',
+  tagline: 'Late-night noodle bar on a Tokyo side street.',
   mechanic: 'Boil noodles in the pot, ladle broth into bowls and juggle three customers at once. Halfway through, rush hour hits.',
   story: {
     chapter: 'Chapter 2',
@@ -12,11 +12,11 @@ export default {
   },
   theme: 'izakaya',
   lighting: 'night',
-  weather: 'fireflies',
+  weather: 'none',
   ambience: { insects: 0.3, city: 0.25 }, // crickets over a distant city
-  footsteps: 'wood',
-  post: { bloom: 0.45, threshold: 1.1, saturation: 1.05, vignette: 0.4, tint: 0xfff0e0 },
-  exposure: 0.8,
+  footsteps: 'concrete', // slate-tile floor
+  post: { bloom: 0.6, threshold: 1.0, bloomRadius: 0.45, saturation: 1.12, vignette: 0.35, tint: 0xf3f0ff },
+  exposure: 0.9,
   // "Japanese Modern Loop" (credited in ui/Credits.js); the synth settings play if it fails to load.
   music: { file: 'music/japanese-modern-loop', volume: 3, tempo: 92, root: 57, scale: [0, 3, 5, 7, 10, 12], progression: [0, -4, -2, 0], wave: 'sine' },
 

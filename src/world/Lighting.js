@@ -19,16 +19,21 @@ const PRESETS = {
     // clipped/popped shadows at the edges.
     shadowExtent: 20,
   },
+  // Level 2's Tokyo street: cool moonlight, red glow from the paper
+  // lanterns, warm white work lights over the counters and pink/cyan neon
+  // spilling in from the signs either side.
   night: {
-    environmentIntensity: 0.4,
-    hemisphere: [0x8090c0, 0x3a2a30, 0.25],
-    key: { color: 0x9fb4ff, intensity: 0.5, position: [-6, 10, 6] },
+    environmentIntensity: 0.35,
+    hemisphere: [0x7080c0, 0x2a2434, 0.5],
+    key: { color: 0xa8b8ff, intensity: 0.6, position: [-6, 10, 6] },
     points: [
-      { color: 0xffa347, intensity: 5, distance: 9, position: [-3.5, 2.9, 3.3] },
-      { color: 0xffa347, intensity: 5, distance: 9, position: [3.5, 2.9, 3.3] },
-      { color: 0xffd8a0, intensity: 4, distance: 8, position: [0, 3.2, 0.1] },
-      { color: 0xffd8a0, intensity: 2.5, distance: 7, position: [-4.5, 3.2, 0.1] },
-      { color: 0xffd8a0, intensity: 2.5, distance: 7, position: [4.5, 3.2, 0.1] },
+      { color: 0xff4a2e, intensity: 4, distance: 7, position: [-3.5, 2.9, 3.3] },
+      { color: 0xff4a2e, intensity: 4, distance: 7, position: [3.5, 2.9, 3.3] },
+      { color: 0xfff0dc, intensity: 5, distance: 8, position: [0, 3.2, 0.1] },
+      { color: 0xfff0dc, intensity: 3, distance: 7, position: [-4.5, 3.2, 0.1] },
+      { color: 0xfff0dc, intensity: 3, distance: 7, position: [4.5, 3.2, 0.1] },
+      { color: 0xff3d9a, intensity: 10, distance: 12, position: [-9.5, 3.2, 3.5] },
+      { color: 0x38c8ff, intensity: 10, distance: 12, position: [9.5, 3.2, 3.5] },
     ],
     shaderAmbient: 0.6,
   },
@@ -53,6 +58,10 @@ export function applyLighting(presetName, scene, root, theme, themeName) {
   if (hdri) {
     scene.environment = hdri;
     scene.environmentIntensity = preset.environmentIntensity;
+  } else {
+    scene.environment = null;
+  }
+  if (hdri && theme.skybox) {
     scene.background = null;
     scene.fog = null;
     const skybox = new GroundedSkybox(hdri, theme.skybox.height, theme.skybox.radius);
@@ -63,7 +72,7 @@ export function applyLighting(presetName, scene, root, theme, themeName) {
     skybox.renderOrder = -10;
     root.add(skybox);
   } else {
-    scene.environment = null;
+    // No photo backdrop: the level's own sky dome and fog (see Environment.js).
     scene.fog = new THREE.Fog(theme.fog.color, theme.fog.near, theme.fog.far);
     scene.background = new THREE.Color(theme.fog.color);
   }

@@ -1,14 +1,16 @@
 import * as THREE from 'three';
 import { LAYOUT } from '../utils/Constants.js';
 import { assets } from '../utils/AssetLoader.js';
-import { canvasTexture, mat, noiseNormalMap, pbr, physical, surfaces, windowsTexture } from '../graphics/Materials.js';
+import { canvasTexture, gridTexture, mat, noiseNormalMap, pbr, physical, surfaces, woodTexture } from '../graphics/Materials.js';
 import { RECIPES } from '../gameplay/Recipes.js';
 import { createSky } from './Sky.js';
 import { buildStationView } from './Stations.js';
 import { buildNeonStreet } from './City.js';
+import { buildTokyoStreet, menuTagTexture, signTexture } from './Alley.js';
 import { createTextSprite } from './Models.js';
 
-// Per-level visual identity. `sky` is only used if the HDRI fails to load.
+// Per-level visual identity. `sky` is used if the HDRI fails to load or the
+// level has no photo backdrop (`skybox: null`).
 export const THEMES = {
   truck: {
     palette: { accent: 0xc1121f, trim: 0xf8fafc },
@@ -18,9 +20,11 @@ export const THEMES = {
   },
   izakaya: {
     palette: { accent: 0x1e2a44, trim: 0x2a1a10 },
-    sky: { top: 0x050818, bottom: 0x1a2240, glow: 0x3b2a5a, stars: 1 },
-    fog: { color: 0x0e1224, near: 20, far: 60 },
-    skybox: { height: 10, radius: 60 },
+    sky: { top: 0x04060f, bottom: 0x1a1830, glow: 0x6a2a5a, stars: 0.15 },
+    fog: { color: 0x1a1830, near: 24, far: 110 },
+    // No photo backdrop: the HDRI (a European street) only lights the scene,
+    // and the Tokyo street in world/Alley.js surrounds the stall instead.
+    skybox: null,
   },
   cyber: {
     palette: { accent: 0xff2bd6, trim: 0x00f0ff },
@@ -289,6 +293,48 @@ function buildCustomerSlots(root, count) {
   });
 }
 
+// Straw-wrapped sake barrel (komodaru) with a brewery label and rope bands.
+function sakeBarrel(label, [x, y, z]) {
+  const wrap = canvasTexture(`komodaru-${label}`, 256, (ctx, size) => {
+    ctx.fillStyle = '#e9dfc4';
+    ctx.fillRect(0, 0, size, size);
+    for (let i = 0; i < 900; i += 1) {
+      ctx.fillStyle = `rgba(120,95,50,${Math.random() * 0.25})`;
+      ctx.fillRect(Math.random() * size, Math.random() * size, 1, 6 + Math.random() * 14);
+    }
+    ctx.fillStyle = '#7a2a1a';
+    for (const y of [18, size - 26]) ctx.fillRect(0, y, size, 8); // rope bands
+    ctx.fillStyle = '#b91c1c';
+    ctx.beginPath();
+    ctx.arc(size * 0.25, size / 2, 46, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = '700 64px "Yu Mincho", "MS Mincho", serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.save();
+    ctx.translate(size * 0.25, size / 2);
+    ctx.scale(0.55, 1); // the wrap is stretched round the barrel
+    ctx.fillText(label, 0, 2);
+    ctx.restore();
+    ctx.fillStyle = '#1b1410';
+    ctx.font = '700 40px "Yu Mincho", "MS Mincho", serif';
+    ctx.save();
+    ctx.translate(size * 0.62, size / 2);
+    ctx.scale(0.55, 1);
+    ctx.fillText('清酒', 0, 0);
+    ctx.restore();
+  });
+  const group = new THREE.Group();
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.4, 0.88, 24), [mat(0xffffff, { map: wrap, roughness: 0.95 }), mat(0x5a3b22, { roughness: 0.8 }), mat(0x5a3b22, { roughness: 0.8 })]);
+  barrel.position.y = 0.44;
+  barrel.castShadow = barrel.receiveShadow = true;
+  group.add(barrel);
+  group.position.set(x, y, z);
+  group.rotation.y = -0.6;
+  return group;
+}
+
 // ------------------------------------------------------------------ decor
 
 const DECOR = {
@@ -399,34 +445,71 @@ const DECOR = {
   },
 
   izakaya(root, level, cutaway) {
-    const cedar = pbr('japanese_cedar_planks', [4, 2], 0x8a5a36);
-    const counterWood = pbr('wood_table', [4, 1], 0x6b4423, { roughness: 0.6 });
+    // A Tokyo noodle bar: white plaster between dark timber posts, pale
+    // hinoki counter tops over dark-stained cedar and a slate-tile floor, so
+    // the stall doesn't read as one block of brown wood.
+    const darkTimber = pbr('japanese_cedar_planks', [4, 2], 0x2e2522, { color: 0x4a3a34 });
+    const hinoki = mat(0xffffff, { map: woodTexture(0xdcbf94, [4, 1]), roughness: 0.42 });
+    const plaster = mat(0xe8e2d4, { roughness: 0.92, normalMap: noiseNormalMap('plaster', { scale: 24, strength: 0.8 }) });
     buildShell(root, {
-      floor: pbr('dark_wooden_planks', [6, 3], 0x3e2a1c),
-      counterBody: cedar,
-      counterTop: counterWood,
-      counterFront: cedar,
-      wall: cedar,
+      floor: mat(0xffffff, { map: gridTexture(0x3b3f47, 0x1f2227, [14, 6]), roughness: 0.55 }),
+      counterBody: darkTimber,
+      counterTop: hinoki,
+      counterFront: darkTimber,
+      wall: plaster,
     });
-    root.add(groundPatch(pbr('cobblestone_pavement', [16, 16], 0x55555f), 26));
 
-    for (const side of [-1, 1]) root.add(box(0.25, 4.2, 6.6, cedar, [side * 7.2, 2.1, -1.1]));
+    // Timber frame over the plaster: posts, a rail below the menu and a top beam.
+    const posts = mat(0x2a201c, { roughness: 0.7 });
+    for (const x of [-7.35, -4.4, -1.9, 1.9, 4.4, 7.35]) root.add(box(0.22, 4.3, 0.14, posts, [x, 2.15, LAYOUT.backWallZ + 0.2]));
+    root.add(box(15, 0.16, 0.14, posts, [0, 1.95, LAYOUT.backWallZ + 0.2]), box(15, 0.2, 0.14, posts, [0, 4.15, LAYOUT.backWallZ + 0.2]));
+    for (const side of [-1, 1]) {
+      root.add(box(0.25, 4.2, 6.6, plaster, [side * 7.2, 2.1, -1.1]));
+      for (const z of [2.15, -4.3]) root.add(box(0.32, 4.3, 0.3, posts, [side * 7.2, 2.15, z]));
+    }
+
+    // Paper menu tags hung along the wall either side of the menu board.
+    const tags = [
+      ['らーめん', 800], ['ちゃーしゅー', 1100], ['味玉', 150], ['のり', 100],
+      ['ぎょうざ', 400], ['やきとり', 300], ['えだまめ', 300], ['緑茶', 200],
+    ];
+    tags.forEach(([text, price], index) => {
+      const tag = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 1.0), mat(0xffffff, { map: menuTagTexture(text, price), roughness: 0.9 }));
+      const side = index < 4 ? -1 : 1;
+      tag.position.set(side * (2.5 + (index % 4) * 0.45), 3.0, LAYOUT.backWallZ + 0.17);
+      root.add(tag);
+    });
+
+    // Vertical neon "ramen" signs on the front pillars.
+    const neonSign = signTexture('ラーメン', '#ff3d6e', { vertical: true });
+    for (const side of [-1, 1]) {
+      const sign = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.42, 1.7),
+        new THREE.MeshStandardMaterial({ map: neonSign, emissive: 0xffffff, emissiveMap: neonSign, emissiveIntensity: 1.8, roughness: 0.4 })
+      );
+      sign.position.set(side * 7.2, 1.55, 2.32);
+      root.add(sign);
+    }
     const roofTiles = physical(0x1c1c22, { roughness: 0.55, normalMap: noiseNormalMap('tiles', { scale: 12, strength: 2 }) });
     const roof = box(16, 0.3, 8, roofTiles, [0, 4.4, -1.0]);
     roof.rotation.x = -0.08;
-    const eave = box(16, 0.18, 0.6, mat(0x2a1a10), [0, 4.05, 2.8]);
+    const eave = box(16, 0.18, 0.6, mat(0x1a1a1f), [0, 4.05, 2.8]);
     root.add(roof, eave);
     cutaway.push(roof, eave);
 
     // Noren curtain strips that sway.
-    const norenTexture = canvasTexture('noren', 256, (ctx, size) => {
+    // The square texture is stretched across a 1.8 x 0.95 strip, so the
+    // character is drawn squeezed to come out with its true proportions.
+    const norenTexture = canvasTexture('noren-men', 256, (ctx, size) => {
       ctx.fillStyle = '#1e2a44';
       ctx.fillRect(0, 0, size, size);
       ctx.fillStyle = '#f8fafc';
       ctx.font = '700 150px "Yu Mincho", "MS Mincho", serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('麺', size / 2, size / 2 + 10);
+      ctx.translate(size / 2, size / 2 + 10);
+      ctx.scale(0.95 / 1.8, 1);
+      ctx.fillText('麺', 0, 0);
     });
     const cloth = physical(0xffffff, { map: norenTexture, side: THREE.DoubleSide, roughness: 0.9, sheen: 0.6, normalMap: noiseNormalMap('fabric', { scale: 64, strength: 0.6 }) });
     const noren = [];
@@ -481,23 +564,20 @@ const DECOR = {
 
     place(root, 'lantern', [-6.2, LAYOUT.counterTopY, LAYOUT.frontRowZ + 0.2], { scale: 1.4 });
     place(root, 'lantern', [6.2, LAYOUT.counterTopY, LAYOUT.frontRowZ + 0.2], { scale: 1.4 });
-    place(root, 'barrel', [-8.2, 0, 2.6], { scale: 1.1 });
-    place(root, 'barrel', [-8.9, 0, 1.6], { rotation: 1, scale: 1.1 });
-    place(root, 'barrel', [-8.5, 0.96, 2.1], { rotation: 2, scale: 1.1 });
-    place(root, 'barrel', [8.4, 0, 2.4], { rotation: 0.4, scale: 1.1 });
+    // Straw-wrapped sake barrels (komodaru) stacked by the door.
+    for (const [x, y, z, label] of [[-8.2, 0, 2.6, '菊'], [-8.95, 0, 1.75, '福'], [-8.55, 0.9, 2.2, '鶴'], [8.4, 0, 2.4, '菊']]) {
+      root.add(sakeBarrel(label, [x, y, z]));
+    }
     for (const x of [-6, 6]) place(root, 'woodStool', [x, 0, LAYOUT.customerZ], { rotation: x * 0.1 });
 
-    // Street buildings with warm windows.
-    for (let index = 0; index < 8; index += 1) {
-      const side = index % 2 ? 1 : -1;
-      const height = 5 + (index % 3) * 2;
-      root.add(box(5, height, 5, new THREE.MeshStandardMaterial({ color: 0x2a2320, emissive: 0xffffff, emissiveIntensity: 0.5, emissiveMap: windowsTexture(0x1a1412, 0xffb45a, index + 1) }), [side * (13 + (index % 4) * 6), height / 2, -9 - Math.floor(index / 2) * 5]));
-    }
+    // The Tokyo side street around the stall (world/Alley.js).
+    const street = buildTokyoStreet(root);
 
     return (dt, time) => {
       noren.forEach((strip, index) => {
         strip.rotation.x = -0.06 + Math.sin(time * 1.6 + index * 0.7) * 0.06;
       });
+      street(dt, time);
     };
   },
 
@@ -562,8 +642,8 @@ export function buildEnvironment(level) {
   const root = new THREE.Group();
   root.name = `level-${level.id}`;
 
+  if (!assets.hdri(level.theme) || !theme.skybox) root.add(createSky(theme.sky));
   if (!assets.hdri(level.theme)) {
-    root.add(createSky(theme.sky));
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), mat(0x6b7280, { roughness: 0.95 }));
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
