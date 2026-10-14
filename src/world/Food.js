@@ -14,7 +14,7 @@ const COOKING = {
   pork: { raw: 0xeab0a6, cooked: 0xb87142, burnt: 0x2b1a12, marks: 1, roughness: [0.4, 0.5, 0.95] },
   potato: { raw: 0xf1e1b0, cooked: 0xdb9d36, burnt: 0x3c2410, marks: 0, roughness: [0.5, 0.55, 0.9] },
   noodles: { raw: 0xeadcae, cooked: 0xf2d67e, burnt: 0xcfc69c, marks: 0, roughness: [0.75, 0.3, 0.55] },
-  steak: { raw: 0xa36bff, cooked: 0x6a2f3c, burnt: 0x160c12, marks: 1, roughness: [0.3, 0.55, 0.95] },
+  steak: { raw: 0xb3404c, cooked: 0x5e3322, burnt: 0x1a1210, marks: 1, roughness: [0.3, 0.6, 0.95] },
 };
 
 // ------------------------------------------------------------------ helpers
@@ -280,9 +280,8 @@ function buildPatty() {
   );
 }
 
-// Level 3 plasma steak: the patty profile stretched into a thick oval slab,
-// glowing faintly violet (the plasma), with the cooking shader's marks as the
-// laser's sear lines.
+// Level 3 steak: the patty profile stretched into a thick oval slab, with the
+// cooking shader's marks as the laser's sear lines.
 function buildSteak() {
   return cookable(
     'steak',
@@ -290,12 +289,7 @@ function buildSteak() {
       const geometry = cached('steak', () => pattyGeometry().clone().scale(1.35, 1.35, 0.95));
       return group(0.135, mesh(geometry, material));
     },
-    {
-      emissive: 0x5b21b6,
-      emissiveIntensity: 0.45,
-      normalMap: noiseNormalMap('meat', { scale: 24, strength: 3 }),
-      normalScale: new THREE.Vector2(0.8, 0.8),
-    }
+    { normalMap: noiseNormalMap('meat', { scale: 24, strength: 3 }), normalScale: new THREE.Vector2(0.8, 0.8) }
   );
 }
 
