@@ -17,7 +17,9 @@ export default {
   footsteps: 'concrete',
   post: { bloom: 0.4, threshold: 0.95, bloomRadius: 0.45, saturation: 1.15, vignette: 0.35, tint: 0xfff3df },
   exposure: 1.05,
-  music: { tempo: 116, root: 60, scale: [0, 2, 4, 7, 9, 12], progression: [0, 5, 7, 5], wave: 'triangle' },
+  // Recorded track, with the synth tune as a fallback if it fails to load.
+  // Volume 2.4 brings its -15.3 dB mean level in line with the other tracks.
+  music: { file: 'music/feel-good-island', volume: 2.4, tempo: 116, root: 60, scale: [0, 2, 4, 7, 9, 12], progression: [0, 5, 7, 5], wave: 'triangle' },
 
   duration: 150,
   targetMoney: 70,

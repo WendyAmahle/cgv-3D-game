@@ -114,6 +114,13 @@ export const CREDITS = [
     use: 'Level 2 music. Made 7 dB louder and re-encoded to Ogg, otherwise unmodified.',
   },
   {
+    name: 'Feel Good Island Loop',
+    author: 'Brandon Morris (Brandon75689), loop edit by AntumDeluge, via OpenGameArt',
+    source: 'https://opengameart.org/content/feel-good-island-loop',
+    license: 'CC0 / OGA-BY 3.0 (dual licensed)',
+    use: 'Burger Truck (Level 1) music. Saved as-is.',
+  },
+  {
     name: 'Bouncer',
     author: 'Of Far Different Nature, via OpenGameArt',
     source: 'https://opengameart.org/content/bouncer-0',

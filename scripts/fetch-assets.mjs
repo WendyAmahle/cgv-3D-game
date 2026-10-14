@@ -22,6 +22,9 @@
 // music/japanese-modern-loop.ogg (Level 2) is "Japanese Modern Loop" by F_kaiba
 // (CC BY 4.0, https://opengameart.org/content/japanese-modern-loop), the MP3
 // re-encoded with `ffmpeg -i in.mp3 -map_metadata -1 -af volume=7dB -c:a libvorbis -q:a 3`.
+// music/feel-good-island.ogg (Level 1) is "Feel Good Island Loop" by Brandon
+// Morris, loop edit by AntumDeluge (CC0 / OGA-BY 3.0,
+// https://opengameart.org/sites/default/files/feel_good_island_loop_0.ogg), saved as-is.
 // music/bouncer.ogg (Level 3) is "Bouncer" by Of Far Different Nature (CC0,
 // https://opengameart.org/content/bouncer-0), the MP3
 // re-encoded with `ffmpeg -i in.mp3 -map_metadata -1 -c:a libvorbis -q:a 3`.
