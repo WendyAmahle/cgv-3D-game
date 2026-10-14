@@ -36,7 +36,7 @@ export class Gameplay {
     const trash = this.stations.find((station) => station.type === 'trash');
     // The bin's opening, for throws. Station roots sit directly under the level root at the origin.
     this.bin = trash && { rim: trash.view.root.position.clone().add({ x: 0, y: 0.98, z: 0 }), radius: 0.26 };
-    this.unsubscribe = events.on('order:missed', () => this.onMissed());
+    this.unsubscribe = events.on('order:missed', ({ customer }) => this.onMissed(customer));
   }
 
   // Everything the player can point at, for mouse picking and keyboard navigation.
@@ -193,10 +193,19 @@ export class Gameplay {
     this.binHeld();
   }
 
-  onMissed() {
+  // A customer walked out. If they'd already been handed part of their order
+  // (say, the drink), they pay that share of the price, without a tip.
+  onMissed(customer) {
     this.stats.missed += 1;
     this.stats.combo = 0;
-    say('A customer walked out!');
+    const recipe = RECIPES[customer.recipeId];
+    const paid = Math.round((recipe.price * customer.delivered.length) / recipe.ingredients.length);
+    if (paid > 0) {
+      this.stats.money += paid;
+      say(`A customer walked out, but paid $${paid} for what they got.`);
+    } else {
+      say('A customer walked out!');
+    }
     if (this.stats.missed >= this.level.maxMisses) this.finish(false, 'Too many customers walked out.');
   }
 
