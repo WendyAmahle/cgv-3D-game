@@ -149,9 +149,13 @@ const BUILDERS = {
     return result;
   },
 
-  grill() {
+  // `label` (name in the HUD) and `plate` ({ text, background, color, width }
+  // for the sign on the front) let a level dedicate the grill, e.g. Level 2's
+  // chashu searing grill.
+  grill(config) {
+    const plate = { text: 'GRILL', background: '#1f2937', color: '#f8fafc', width: 0.42, ...config.plate };
     const glow = new THREE.MeshStandardMaterial({ color: 0x1a0a05, emissive: 0xffffff, emissiveMap: coalTexture(), emissiveIntensity: 0.25, roughness: 0.9 });
-    const result = view('Grill', 0.4, { glow });
+    const result = view(config.label ?? 'Grill', 0.4, { glow });
     const steel = surfaces.steel();
     result.root.add(box(1.1, 0.26, 0.9, steel, [0, 0.13, 0]));
     result.root.add(box(1.1, 0.3, 0.04, steel, [0, 0.4, -0.43])); // splash guard
@@ -164,7 +168,7 @@ const BUILDERS = {
     }
     result.root.add(box(0.98, 0.03, 0.03, iron, [0, 0.36, 0.38]), box(0.98, 0.03, 0.03, iron, [0, 0.36, -0.38]));
     result.root.add(knobs(3, 0.6, 0.12, 0.47));
-    result.root.add(labelPlate('GRILL', { background: '#1f2937', color: '#f8fafc', y: 0.21, z: 0.452 }));
+    result.root.add(labelPlate(plate.text, { background: plate.background, color: plate.color, width: plate.width, y: 0.21, z: 0.452 }));
     return result;
   },
 
