@@ -77,6 +77,17 @@
       </section>
 
       <!-- Screens -->
+      <!-- Browsers only allow sound after a click or key press, so the game
+           asks for one before the story and menu (core/Game.js). -->
+      <section id="screen-start" class="screen hidden" data-action="begin">
+        <div class="card title-card">
+          <p class="eyebrow">COMS3006A · Computer Graphics &amp; Visualisation</p>
+          <h1>Bistro Rush</h1>
+          <p class="tagline">Culinary Mayhem</p>
+          <p class="start-prompt">Click anywhere or press any key to start</p>
+        </div>
+      </section>
+
       <section id="screen-menu" class="screen hidden">
         <div class="card title-card">
           <p class="eyebrow">COMS3006A · Computer Graphics &amp; Visualisation</p>

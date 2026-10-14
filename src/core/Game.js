@@ -134,6 +134,7 @@ export class Game {
       this.achievements.render(this.stars.total, LEVELS.length * 3);
       this.screens.show('trophies', { returnTo: 'menu' });
     });
+    on('ui:begin', () => this.begin());
     on('ui:story',() => this.showStory(() => this.screens.show('menu')));
     on('ui:story-prev', () => this.story.go(-1) || this.finishStory());
     on('ui:story-next', () => this.story.go(1) || this.finishStory());
@@ -177,6 +178,11 @@ export class Game {
 
   onKey(event) {
     const code = event.code;
+
+    if (this.screens.current === 'start') {
+      this.begin();
+      return;
+    }
 
     if (matches(code, KEYS.mute)) {
       this.toggleMute();
@@ -260,7 +266,8 @@ export class Game {
     this.controller.enabled = false;
     this.hud.hide();
     this.menu.setPlayLabel(LEVELS[index], index);
-    if (withStory) this.showStory(() => this.screens.show('menu', { returnTo: 'menu' }));
+    // On first launch: the start screen, then the prologue, then the menu.
+    if (withStory) this.screens.show('start');
     else this.screens.show('menu', { returnTo: 'menu' });
     this.cameraController.autoOrbit = true;
     this.applyCutaway();
@@ -351,6 +358,13 @@ export class Game {
   clearMenuWorlds() {
     this.menuWorlds.forEach(({ world }) => this.levels.dispose(world));
     this.menuWorlds.clear();
+  }
+
+  // The click or key press that leaves the start screen also unlocks the
+  // sound (see bindEvents), so the music is already playing for the story.
+  begin() {
+    if (this.screens.current !== 'start') return;
+    this.showStory(() => this.screens.show('menu', { returnTo: 'menu' }));
   }
 
   showStory(then) {
