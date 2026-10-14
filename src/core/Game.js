@@ -128,7 +128,7 @@ export class Game {
       this.screens.show('trophies', { returnTo: 'menu' });
     });
     on('ui:story',() => this.showStory(() => this.screens.show('menu')));
-    on('ui:story-prev', () => this.story.go(-1));
+    on('ui:story-prev', () => this.story.go(-1) || this.finishStory());
     on('ui:story-next', () => this.story.go(1) || this.finishStory());
     on('ui:story-skip', () => this.finishStory());
     on('ui:select-level', ({ level }) => this.openLevel(Number(level)));
