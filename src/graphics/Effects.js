@@ -3,7 +3,7 @@ import { events } from '../core/Events.js';
 import { createParticleMaterial, createSteamMaterial } from './Shaders.js';
 import { disposeObject } from '../utils/Dispose.js';
 
-const COOKERS = new Set(['grill', 'fryer', 'pot']);
+const COOKERS = new Set(['grill', 'fryer', 'pot', 'laser']);
 const random = (min, max) => min + Math.random() * (max - min);
 
 // CPU-simulated particles drawn as one THREE.Points with the custom particle shader.
@@ -218,9 +218,9 @@ export class Effects {
       const overclocked = station.overclock > 0;
 
       fx.heat += ((station.item ? 1 : 0) - fx.heat) * Math.min(1, dt * 3);
-      fx.steam.rate = stage === 'raw' || stage === 'cooked' ? (fx.type === 'pot' ? 12 : 10) : 0;
+      fx.steam.rate = stage && stage !== 'burnt' ? (fx.type === 'pot' ? 12 : 10) : 0;
       fx.smoke.rate = stage === 'burnt' ? 18 : 0;
-      fx.sparks.rate = overclocked ? 40 : 0;
+      fx.sparks.rate = overclocked ? 40 : station.firing ? 25 : 0; // power surge, or the Level 3 laser
       fx.column.material.uniforms.uIntensity.value = fx.heat * (stage === 'burnt' ? 0.4 : 1);
 
       if (fx.glow) {

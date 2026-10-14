@@ -7,6 +7,9 @@
 //   item:trash         { item }
 //   cook:start|done|burnt  { station, item }
 //   pour:start|done    { station }                    a drink, or one Mixology Bar shot
+//   laser:fire         { station }                    Level 3 Laser Searer starts searing
+//   laser:flipReady    { station, item }              first side seared, flip the steak
+//   laser:flip         { station }                    the player flipped the steak
 //   mix:start          { station }                    Level 3 stirrer starts blending a cocktail
 //   mix:done           { station, item }              cocktail blended and ready
 //   order:new          { customer }                   customer reached the counter

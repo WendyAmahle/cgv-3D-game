@@ -1,5 +1,5 @@
 import { events, say } from '../core/Events.js';
-import { ITEMS, MIX_SHOTS, SYRUPS, mixColor, mixFormula, mixKey } from './Recipes.js';
+import { ITEMS, MIX_SHOTS, SYRUPS, mixColor, mixFormula, mixKey, searStage } from './Recipes.js';
 import {
   addToPlate,
   advanceCooking,
@@ -153,7 +153,12 @@ export class CookerStation extends Station {
     if (!this.item) return;
 
     const speed = this.overclock > 0 ? 2.2 : 1;
-    const changed = advanceCooking(this.item, dt * speed);
+    this.cook(dt * speed);
+  }
+
+  // Advances the food on the heat by `dt` (already sped up by a power surge).
+  cook(dt) {
+    const changed = advanceCooking(this.item, dt);
     if (changed === 'cooked') events.emit('cook:done', { station: this, item: this.item });
     if (changed === 'burnt') events.emit('cook:burnt', { station: this, item: this.item });
   }
@@ -167,6 +172,106 @@ export class CookerStation extends Station {
     }
     if (this.item.stage === 'cooked') return `Ready! Grab it before it burns${surge}`;
     return 'Burnt! Bin it';
+  }
+}
+
+// ---- Level 3 Laser Searer ----------------------------------------------------
+
+const FLIP_TIME = 0.4; // seconds the flip animation takes (the laser pauses)
+
+// Plasma steaks are seared one side at a time: the laser sears the top, the
+// player clicks to flip the steak, the laser sears the other side, then the
+// player drags it off. Leaving a side under the laser too long chars it.
+// The laser fires by itself, so the chef is free to work elsewhere meanwhile.
+export class LaserStation extends CookerStation {
+  constructor(config, view) {
+    super(config, view);
+    this.time = 0;
+    this.wasFiring = false;
+  }
+
+  get firing() {
+    return Boolean(this.item) && this.item.flip === 0 && this.item.stage !== 'burnt';
+  }
+
+  get canFlip() {
+    return Boolean(this.item) && this.item.stage === 'half' && !this.item.flipped && this.item.flip === 0;
+  }
+
+  place(item) {
+    super.place(item);
+    if (item.flipped) {
+      item.mesh.rotation.x = Math.PI;
+      item.mesh.position.y = item.mesh.userData.height;
+    }
+  }
+
+  // Click: flip the steak when its first side is done; otherwise as any cooker.
+  interact(player) {
+    if (player.isEmpty && this.canFlip) {
+      this.item.flipped = true;
+      this.item.flip = FLIP_TIME;
+      events.emit('laser:flip', { station: this });
+      return;
+    }
+    super.interact(player);
+  }
+
+  // Dragging always takes the steak off, even when it's waiting to be flipped.
+  give(player) {
+    super.interact(player);
+  }
+
+  cook(dt) {
+    const item = this.item;
+    if (item.flip > 0) {
+      item.flip = Math.max(0, item.flip - dt);
+      const t = 1 - item.flip / FLIP_TIME;
+      item.mesh.rotation.x = Math.PI * t;
+      item.mesh.position.y = Math.sin(Math.PI * t) * 0.35 + item.mesh.userData.height * t;
+      return;
+    }
+
+    const before = item.stage;
+    item.sides[item.flipped ? 1 : 0] += dt;
+    item.stage = searStage(item.type, item.sides);
+    refreshItem(item);
+    if (item.stage === before) return;
+    if (item.stage === 'half') {
+      events.emit('laser:flipReady', { station: this, item });
+      say('One side seared: click the Laser Searer to flip the steak!');
+    }
+    if (item.stage === 'cooked') events.emit('cook:done', { station: this, item });
+    if (item.stage === 'burnt') events.emit('cook:burnt', { station: this, item });
+  }
+
+  update(dt) {
+    super.update(dt);
+    this.time += dt;
+    const { head, beam, light } = this.view.parts;
+    const firing = this.firing;
+    if (firing && !this.wasFiring) events.emit('laser:fire', { station: this });
+    this.wasFiring = firing;
+
+    // The head sweeps the beam across the steak, faster during a power surge.
+    beam.visible = firing;
+    if (firing) head.position.x = Math.sin(this.time * (this.overclock > 0 ? 10 : 5)) * 0.24;
+    else head.position.x *= Math.exp(-dt * 4);
+    light.intensity = firing ? 2.5 + 2.5 * Math.abs(Math.sin(this.time * 37)) : 0;
+  }
+
+  status() {
+    const item = this.item;
+    const surge = this.overclock > 0 ? ' · OVERCLOCKED' : '';
+    if (!item) return `${surge ? 'OVERCLOCKED · ' : ''}Empty: drop a plasma steak here`;
+    const { cookedAt } = ITEMS[item.type].cook;
+    const side = item.flipped ? 1 : 0;
+    const percent = Math.min(99, Math.floor((item.sides[side] / cookedAt) * 100));
+    if (item.flip > 0) return 'Flipping…';
+    if (item.stage === 'burnt') return 'Charred! Bin it';
+    if (item.stage === 'cooked') return `Seared! Drag it off before it chars${surge}`;
+    if (this.canFlip) return `Side 1 seared: click to flip it!${surge}`;
+    return `Searing side ${side + 1}: ${percent}%${surge}`;
   }
 }
 
@@ -554,6 +659,7 @@ const STATION_TYPES = {
   grill: CookerStation,
   fryer: CookerStation,
   pot: CookerStation,
+  laser: LaserStation,
   dispenser: DispenserStation,
   mixer: MixerStation,
   board: BoardStation,

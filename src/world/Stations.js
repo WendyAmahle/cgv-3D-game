@@ -107,6 +107,23 @@ const grateTexture = () =>
     for (let x = 6; x < size; x += 12) ctx.fillRect(x, 8, 5, size - 16);
   });
 
+// Magenta grid etched into the Laser Searer's plate (lit by parts.glow).
+const laserGridTexture = () =>
+  canvasTexture('laser-grid', 256, (ctx, size) => {
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, size, size);
+    ctx.strokeStyle = '#ff3d8b';
+    ctx.lineWidth = 3;
+    for (let i = 16; i < size; i += 32) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i, size);
+      ctx.moveTo(0, i);
+      ctx.lineTo(size, i);
+      ctx.stroke();
+    }
+  });
+
 const BUILDERS = {
   crate(config) {
     const item = ITEMS[config.item];
@@ -244,6 +261,50 @@ const BUILDERS = {
     return result;
   },
 
+  // Level 3 Laser Searer: a glowing grid plate under a gantry. The laser head
+  // slides along the crossbar, sweeping its beam across the steak.
+  // Scene graph: root → base, grid plate (parts.glow), posts, crossbar,
+  // head (parts.head) → lens, beam group (parts.beam: core, glow, hit spot)
+  // and a point light (parts.light) that flashes the diner while it fires.
+  laser() {
+    const glow = new THREE.MeshStandardMaterial({ color: 0x0b0710, emissive: 0xffffff, emissiveMap: laserGridTexture(), emissiveIntensity: 0.25, roughness: 0.25, metalness: 0.4 });
+    const result = view('Laser Searer', 0.27, { glow });
+    const dark = surfaces.darkSteel();
+    const chrome = surfaces.chrome();
+    result.root.add(box(1.05, 0.24, 0.86, dark, [0, 0.12, 0]));
+    result.root.add(box(0.9, 0.02, 0.7, glow, [0, 0.25, 0]));
+    for (const x of [-0.49, 0.49]) result.root.add(box(0.06, 0.9, 0.06, chrome, [x, 0.7, 0]));
+    result.root.add(box(1.04, 0.06, 0.08, chrome, [0, 1.15, 0]));
+
+    const laserColor = 0xff3d8b;
+    const head = new THREE.Group();
+    head.position.y = 1.05;
+    head.add(box(0.16, 0.14, 0.16, dark));
+    head.add(cylinder(0.035, 0.045, 0.03, new THREE.MeshBasicMaterial({ color: laserColor, toneMapped: false }), [0, -0.08, 0], 16));
+
+    // Beam from the lens (y −0.09 in the head) down to the plate (y −0.77).
+    const beam = new THREE.Group();
+    const length = 0.68;
+    const additive = (opacity) => new THREE.MeshBasicMaterial({ color: laserColor, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+    beam.add(cylinder(0.011, 0.011, length, new THREE.MeshBasicMaterial({ color: 0xffd6e8, toneMapped: false }), [0, -0.09 - length / 2, 0], 8));
+    beam.add(cylinder(0.04, 0.04, length, additive(0.28), [0, -0.09 - length / 2, 0], 12, true));
+    const hit = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 8), additive(0.8));
+    hit.position.y = -0.09 - length;
+    beam.add(hit);
+    beam.traverse((object) => (object.userData.noShadow = true));
+    beam.visible = false;
+    head.add(beam);
+
+    const light = new THREE.PointLight(laserColor, 0, 4, 2);
+    light.position.y = -0.6;
+    head.add(light);
+    result.root.add(head);
+
+    result.root.add(labelPlate('LASER', { background: '#1f0b1a', color: '#ff7ab6', y: 0.13, z: 0.432 }));
+    Object.assign(result.parts, { head, beam, light });
+    return result;
+  },
+
   // Level 3 Mixology Bar: three syrup taps over a rail the glass slides along,
   // and a magnetic stirrer under the middle tap that blends the drink.
   // Scene graph: root → back panel, tray, stirrer, and one group per tap
@@ -358,7 +419,7 @@ export function buildStationView(config, palette) {
   result.root.name = `station-${config.type}`;
   result.root.traverse((object) => {
     if (object.isMesh) {
-      object.castShadow = true;
+      object.castShadow = !object.userData.noShadow; // light beams cast no shadow
       object.receiveShadow = true;
     }
   });

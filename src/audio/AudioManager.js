@@ -62,6 +62,9 @@ const EVENT_SOUNDS = {
   'cook:done': ['ding'],
   'cook:burnt': ['burnt'],
   'pour:done': ['blip'],
+  'laser:fire': ['zap'],
+  'laser:flipReady': ['ding'],
+  'laser:flip': ['place'],
   'mix:start': ['whirr'],
   'mix:done': ['ding'],
   'order:new': ['orderUp'],
@@ -108,6 +111,11 @@ const SYNTH = {
     a.tone({ freq: 140, slideTo: 90, duration: 0.5, volume: 0.25, type: 'sawtooth' });
   },
   blip: (a) => a.tone({ freq: 1040, duration: 0.09, volume: 0.12, type: 'square' }),
+  // Laser Searer powering up: a falling sawtooth sweep with a crackle.
+  zap: (a) => {
+    a.tone({ freq: 1800, slideTo: 260, duration: 0.3, volume: 0.08, type: 'sawtooth' });
+    a.noise({ duration: 0.35, volume: 0.06, filter: 5000 });
+  },
   // Magnetic stirrer spinning up and down under a fizz.
   whirr: (a) => {
     a.tone({ freq: 160, slideTo: 520, duration: 1.1, volume: 0.06, type: 'sawtooth' });
