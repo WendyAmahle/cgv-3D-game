@@ -13,7 +13,7 @@ export default {
   theme: 'izakaya',
   lighting: 'night',
   weather: 'none',
-  ambience: { insects: 0.3, city: 0.25 }, // crickets over a distant city
+  ambience: { insects: 0.1, city: 0.25 }, // faint crickets over a distant city
   footsteps: 'concrete', // slate-tile floor
   post: { bloom: 0.6, threshold: 1.0, bloomRadius: 0.45, saturation: 1.12, vignette: 0.35, tint: 0xf3f0ff },
   exposure: 0.9,
