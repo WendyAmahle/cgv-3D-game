@@ -61,7 +61,6 @@ export const CREDITS = [
   polyHaven('Street Lamp 02', 'Josh Dean', 'street_lamp_02', '3D model'),
   polyHaven('Concrete Road Barrier', 'Amal Kumar', 'concrete_road_barrier', '3D model'),
   polyHaven('Metal Stool 01', 'Ulan Cabanilla', 'metal_stool_01', '3D model'),
-  polyHaven('Wet Floor Sign 01', 'Fran Calvente', 'WetFloorSign_01', '3D model'),
   polyHaven('Modular Urban Apartments Facade', 'James Ray Cock', 'modular_urban_apartments_facade', '3D model (Level 3 street buildings)'),
   polyHaven('Exterior Aircon Unit', 'Monsta3D', 'exterior_aircon_unit', '3D model'),
   polyHaven('Standing Chalkboard 01', 'ParzivalCG', 'standing_chalkboard_01', '3D model (Burger Truck sidewalk menu sign)'),
@@ -74,10 +73,7 @@ export const CREDITS = [
   polyHaven('Trashbag', 'Benny Weimer', 'trashbag', '3D model (Burger Truck rubbish)'),
   polyHaven('Water Manhole Cover', 'Raunox', 'water_manhole_cover', '3D model (Burger Truck paving detail)'),
   polyHaven('Barrel 03', 'Serhii Khromov', 'barrel_03', '3D model (Burger Truck props)'),
-  polyHaven('Leafy Grass', 'Charlotte Baglioni', 'leafy_grass', 'PBR texture'),
   polyHaven('Patterned Paving', 'Charlotte Baglioni', 'patterned_paving', 'PBR texture'),
-  polyHaven('Long White Tiles', 'Jenelle van Heerden & Sergej Majboroda', 'long_white_tiles', 'PBR texture'),
-  polyHaven('Metal Plate', 'Rob Tuytel', 'metal_plate', 'PBR texture'),
   polyHaven('Japanese Cedar Planks', 'Charlotte Baglioni & Rico Cilliers', 'japanese_cedar_planks', 'PBR texture'),
   polyHaven('Cobblestone Pavement', 'Charlotte Baglioni', 'cobblestone_pavement', 'PBR texture'),
   polyHaven('Dark Wooden Planks', 'Amal Kumar', 'dark_wooden_planks', 'PBR texture'),
@@ -99,6 +95,34 @@ export const CREDITS = [
       'Garbage Bag in Container (#1523), Applause about 25-50 people 1 (#0812), Car Passing 50km/h 3 and 12 (#2987, #2996), Horn 3 (#3506), ' +
       'Thunder 2, 3 and 4 (#3113-#3115), City Garden Atmosphere (#2457), Song of Nocturnal Insect 2 (#0425), Paris by Night (#0680). ' +
       'Cooking, pouring, serving and street sounds and the level ambiences.',
+  },
+  {
+    name: 'Lofi Hip Hop Loop',
+    author: 'omfgdude, via OpenGameArt',
+    source: 'https://opengameart.org/content/lofi-hip-hop-loop',
+    license: 'CC0',
+    use: 'Main menu music.',
+  },
+  {
+    name: 'Japanese Modern Loop',
+    author: 'F_kaiba (Zuki_desu), via OpenGameArt',
+    source: 'https://opengameart.org/content/japanese-modern-loop',
+    license: 'CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/)',
+    use: 'Level 2 music. Made 7 dB louder and re-encoded to Ogg, otherwise unmodified.',
+  },
+  {
+    name: 'Feel Good Island Loop',
+    author: 'Brandon Morris (Brandon75689), loop edit by AntumDeluge, via OpenGameArt',
+    source: 'https://opengameart.org/content/feel-good-island-loop',
+    license: 'CC0 / OGA-BY 3.0 (dual licensed)',
+    use: 'Burger Truck (Level 1) music. Saved as-is.',
+  },
+  {
+    name: 'Bouncer',
+    author: 'Of Far Different Nature, via OpenGameArt',
+    source: 'https://opengameart.org/content/bouncer-0',
+    license: 'CC0',
+    use: 'Level 3 music. Re-encoded to a smaller Ogg file, otherwise unmodified.',
   },
   {
     name: 'Rain (loopable)',
@@ -126,7 +150,7 @@ export const TEAM = [
 export const ORIGINAL_WORK = [
   'Food, stations, serving counters, noodle bar and diner buildings are modelled procedurally by the team (the scanned bun is sliced in code).',
   'Animation retargeting from X Bot onto the other skeletons is our own code.',
-  'Music and the jingles (level complete, level failed, trophy) are synthesised at runtime with the Web Audio API; the sound mixing, seamless looping and 3D positioning of the recorded sounds are our own code.',
+  'Level 1 music and the jingles (level complete, level failed, trophy) are synthesised at runtime with the Web Audio API; the sound mixing, seamless looping and 3D positioning of the recorded sounds are our own code.',
   'Custom GLSL shaders: cooking (injected into the PBR material), liquid fill, molecular cocktail mixing, order holograms, steam, particles, sky and colour-grade/heat-haze.',
 ];
 

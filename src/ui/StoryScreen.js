@@ -40,7 +40,8 @@ export class StoryScreen {
         return dot;
       })
     );
-    $('#storyPrev').disabled = page === 0;
+    // On the first page, Back leaves the story instead of turning a page.
+    $('#storyPrev').textContent = page === 0 ? 'Back to menu' : 'Back';
     $('#storyNext').textContent = this.isLastPage ? 'Continue' : 'Next';
     $('#storyNext').focus({ preventScroll: true });
     // Re-trigger the card's entrance animation on every page turn.

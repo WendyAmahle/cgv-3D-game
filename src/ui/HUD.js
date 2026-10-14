@@ -38,7 +38,7 @@ export class HUD {
       tooltipStatus: $('#tooltipStatus'),
       banner: $('#banner'),
     };
-    this.tickets = new Map(); // customer id -> { element, fill }
+    this.tickets = new Map(); // customer id -> { element, fill, seconds }
     this.projected = new THREE.Vector3();
     this.popupPoint = new THREE.Vector3();
     this.toastTimer = null;
@@ -97,7 +97,7 @@ export class HUD {
         const element = document.createElement('div');
         element.className = 'ticket';
         element.innerHTML = `
-          <div class="ticket-head"><strong></strong><span class="price"></span></div>
+          <div class="ticket-head"><strong></strong><span class="seconds"></span><span class="price"></span></div>
           <div class="chips"></div>
           <div class="meter"><div class="meter-fill"></div></div>`;
         element.querySelector('strong').textContent = recipe.name;
@@ -113,7 +113,7 @@ export class HUD {
           return { tag, element: chip };
         });
         this.el.tickets.append(element);
-        ticket = { element, fill: element.querySelector('.meter-fill'), chips: chipList, delivered: 0 };
+        ticket = { element, fill: element.querySelector('.meter-fill'), seconds: element.querySelector('.seconds'), chips: chipList, delivered: 0 };
         this.tickets.set(customer.id, ticket);
       }
       // Tick off what's been handed over (a drink, or the plated food).
@@ -130,6 +130,7 @@ export class HUD {
       ticket.fill.style.width = `${ratio * 100}%`;
       ticket.fill.style.background = `hsl(${ratio * 120}, 80%, 50%)`;
       ticket.element.classList.toggle('urgent', ratio < 0.3);
+      ticket.seconds.textContent = customer.patience < 10 ? `${Math.ceil(customer.patience)}s` : '';
     }
   }
 

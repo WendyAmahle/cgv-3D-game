@@ -17,6 +17,17 @@
 // impactPlate_light_00(N-1), bounce = impactGeneric_light_000, metal =
 // impactMetal_light_001, click = click_002, error = error_006, pop = pluck_001,
 // confirm = confirmation_002, pickup = handleSmallLeather, coins = handleCoins2.
+// music/lofi-loop.ogg (main menu) is "Lofi Hip Hop Loop" by omfgdude (CC0,
+// https://opengameart.org/sites/default/files/LofiLoop_2.ogg), saved as-is.
+// music/japanese-modern-loop.ogg (Level 2) is "Japanese Modern Loop" by F_kaiba
+// (CC BY 4.0, https://opengameart.org/content/japanese-modern-loop), the MP3
+// re-encoded with `ffmpeg -i in.mp3 -map_metadata -1 -af volume=7dB -c:a libvorbis -q:a 3`.
+// music/feel-good-island.ogg (Level 1) is "Feel Good Island Loop" by Brandon
+// Morris, loop edit by AntumDeluge (CC0 / OGA-BY 3.0,
+// https://opengameart.org/sites/default/files/feel_good_island_loop_0.ogg), saved as-is.
+// music/bouncer.ogg (Level 3) is "Bouncer" by Of Far Different Nature (CC0,
+// https://opengameart.org/content/bouncer-0), the MP3
+// re-encoded with `ffmpeg -i in.mp3 -map_metadata -1 -c:a libvorbis -q:a 3`.
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 
@@ -27,13 +38,13 @@ const MODELS = [
   'hamburger_buns', 'wooden_crate_02', 'wooden_cutting_board', 'CashRegister_01',
   'wooden_picnic_table', 'street_lamp_01', 'metal_trash_can', 'shrub_02', 'potted_plant_02',
   'wooden_lantern_01', 'chinese_stool', 'wine_barrel_01',
-  'utility_box_02', 'street_lamp_02', 'concrete_road_barrier', 'metal_stool_01', 'WetFloorSign_01',
+  'utility_box_02', 'street_lamp_02', 'concrete_road_barrier', 'metal_stool_01',
   'modular_urban_apartments_facade', 'exterior_aircon_unit',
   'standing_chalkboard_01', 'outdoor_table_chair_set_01', 'plastic_monobloc_chair_01', 'painted_wooden_bench', 'planter_box_01',
   'portable_generator', 'hand_truck', 'trashbag', 'water_manhole_cover', 'barrel_03',
 ];
 const TEXTURES = [
-  'leafy_grass', 'patterned_paving', 'long_white_tiles', 'metal_plate',
+  'patterned_paving',
   'japanese_cedar_planks', 'cobblestone_pavement', 'dark_wooden_planks', 'wood_table',
   'asphalt_02', 'corrugated_iron_02', 'rubber_tiles',
 ];

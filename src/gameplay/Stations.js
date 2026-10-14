@@ -13,6 +13,8 @@ import {
 
 const MAX_PLATE_ITEMS = 6;
 
+const isBowl = (item) => ITEMS[item.type]?.liquid?.vessel === 'bowl';
+
 // Station logic. Visuals come from world/Stations.js as a `view`:
 //   { root, anchor, label, parts }
 // Items placed on a station are parented to view.anchor.
@@ -52,6 +54,11 @@ class Station {
   // Drag and drop: can `item` be dropped here?
   canAccept() {
     return false;
+  }
+
+  // Why canAccept(item) is false, shown to the player; '' for the generic message.
+  rejection() {
+    return '';
   }
 
   // A drag that started here was dropped somewhere invalid: take the item back.
@@ -330,6 +337,8 @@ export class DispenserStation extends Station {
 }
 
 // Assembly board: drop items onto the plate, pick the whole plate up to serve.
+// With `bowlFirst` in its config (Level 2), a bowl of broth has to go on the
+// plate before any food; drinks in cups can still go on at any time.
 export class BoardStation extends Station {
   constructor(config, view) {
     super(config, view);
@@ -342,7 +351,17 @@ export class BoardStation extends Station {
   }
 
   canAccept(item) {
-    return isPlate(item) ? this.plate.contents.length === 0 : this.plate.contents.length < MAX_PLATE_ITEMS;
+    if (isPlate(item)) return this.plate.contents.length === 0;
+    return this.plate.contents.length < MAX_PLATE_ITEMS && !this.needsBowl(item);
+  }
+
+  needsBowl(item) {
+    if (!this.config.bowlFirst || ITEMS[item.type]?.liquid) return false;
+    return !this.plate.contents.some(isBowl);
+  }
+
+  rejection(item) {
+    return this.needsBowl(item) ? 'Bowl first! Pour broth at the Broth Urn and put the bowl on the board.' : '';
   }
 
   receiveBack(item) {
@@ -377,6 +396,10 @@ export class BoardStation extends Station {
     }
 
     if (held) {
+      if (this.needsBowl(held)) {
+        say(this.rejection(held));
+        return;
+      }
       if (this.plate.contents.length >= MAX_PLATE_ITEMS) {
         say('That plate is full.');
         return;
@@ -400,7 +423,7 @@ export class BoardStation extends Station {
   }
 
   status() {
-    if (!this.plate.contents.length) return 'Empty plate';
+    if (!this.plate.contents.length) return this.config.bowlFirst ? 'Empty: start with a bowl of broth' : 'Empty plate';
     return itemLabel(this.plate).replace('Plate: ', '');
   }
 

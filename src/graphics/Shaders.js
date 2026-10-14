@@ -17,6 +17,11 @@ import skyVertex from './shaders/sky.vert.glsl?raw';
 import skyFragment from './shaders/sky.frag.glsl?raw';
 import fullscreenVertex from './shaders/fullscreen.vert.glsl?raw';
 import gradeFragment from './shaders/grade.frag.glsl?raw';
+import noiseChunk from './shaders/noise.glsl?raw';
+import boilVertex from './shaders/boil.vert.glsl?raw';
+import boilFragment from './shaders/boil.frag.glsl?raw';
+import plumeVertex from './shaders/plume.vert.glsl?raw';
+import plumeFragment from './shaders/plume.frag.glsl?raw';
 
 // Uniform objects shared by every custom material. Updating `.value` once per
 // frame (time) or per level (lighting) updates all of them.
@@ -156,6 +161,44 @@ export function createBeamMaterial(color = 0xfff3dc, intensity = 0.16) {
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+  });
+}
+
+// Level 2's pot water: churning surface + starch clouds + bubbles. Drive it with
+// uniforms.uBoil (how hard it boils) and uniforms.uStarch (0 clear → 2 foamy).
+export function createBoilMaterial({ radius, water = 0x2f4a52, cloudy = 0xd9cfb4 }) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uTime,
+      uLightDir,
+      uLightColor,
+      uAmbient,
+      uBoil: { value: 0.15 },
+      uStarch: { value: 0 },
+      uRadius: { value: radius },
+      uWater: { value: new THREE.Color(water) },
+      uCloudy: { value: new THREE.Color(cloudy) },
+    },
+    vertexShader: noiseChunk + boilVertex,
+    fragmentShader: noiseChunk + boilFragment,
+  });
+}
+
+// Level 2's steam plume: a camera-facing, domain-warped column of steam whose
+// amount follows uniforms.uIntensity.
+export function createPlumeMaterial({ color = 0xf4f1ee, tint = 0xffb6c8 } = {}) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uTime,
+      uIntensity: { value: 0.15 },
+      uColor: { value: new THREE.Color(color) },
+      uTint: { value: new THREE.Color(tint) },
+    },
+    vertexShader: plumeVertex,
+    fragmentShader: noiseChunk + plumeFragment,
+    transparent: true,
+    depthWrite: false,
     side: THREE.DoubleSide,
   });
 }

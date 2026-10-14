@@ -2,8 +2,8 @@
 export default {
   id: 2,
   name: 'Lantern Noodle Bar',
-  tagline: 'Late-night noodle bar under paper lanterns.',
-  mechanic: 'Boil noodles in the pot, ladle broth into bowls and juggle three customers at once. Halfway through, rush hour hits.',
+  tagline: 'Late-night noodle bar on a Tokyo side street.',
+  mechanic: 'Bowl first: click the Broth Urn to pour a bowl and drag it to the board. Boil noodles and sear chashu at the same time, and add them before they go soggy or char. Three customers at once; rush hour hits halfway.',
   story: {
     chapter: 'Chapter 2',
     title: 'Lanterns after dark',
@@ -12,20 +12,25 @@ export default {
   },
   theme: 'izakaya',
   lighting: 'night',
-  weather: 'fireflies',
-  ambience: { insects: 0.7, city: 0.25 }, // crickets over a distant city
-  footsteps: 'wood',
-  post: { bloom: 0.45, threshold: 1.1, saturation: 1.05, vignette: 0.4, tint: 0xfff0e0 },
-  exposure: 0.8,
-  music: { tempo: 92, root: 57, scale: [0, 3, 5, 7, 10, 12], progression: [0, -4, -2, 0], wave: 'sine' },
+  weather: 'none',
+  ambience: { insects: 0.1, city: 0.25 }, // faint crickets over a distant city
+  footsteps: 'concrete', // slate-tile floor
+  post: { bloom: 0.6, threshold: 1.0, bloomRadius: 0.45, saturation: 1.12, vignette: 0.35, tint: 0xf3f0ff },
+  exposure: 0.9,
+  // "Japanese Modern Loop" (credited in ui/Credits.js); the synth settings play if it fails to load.
+  music: { file: 'music/japanese-modern-loop', volume: 3, tempo: 92, root: 57, scale: [0, 3, 5, 7, 10, 12], progression: [0, -4, -2, 0], wave: 'sine' },
 
   duration: 165,
   targetMoney: 120,
   maxMisses: 5,
   customerSlots: 3,
-  spawnInterval: [7, 10],
-  patience: [50, 62],
-  rushHour: { at: 0.55, spawnScale: 0.65 },
+  // Patience and pacing tuned for the slowest recipes in the game (4 s broth,
+  // 6 s noodles, 4 s pork, bowl first) sharing one pot and one grill.
+  spawnInterval: [8.5, 12],
+  patience: [78, 96],
+  patienceGrace: 4, // seconds the bar stays full after a customer reaches the counter
+  wrongOrderPenalty: 2, // seconds of patience lost for a wrong dish (default 4)
+  rushHour: { at: 0.55, spawnScale: 0.75 },
   recipes: ['shoyuRamen', 'chashuRamen', 'chashuRamen', 'greenTea', 'shoyuRamen'],
 
   stations: [
@@ -33,10 +38,10 @@ export default {
     { type: 'crate', item: 'egg', row: 'back', x: -1.5 },
     { type: 'crate', item: 'pork', row: 'back', x: 1.5 },
     { type: 'crate', item: 'nori', row: 'back', x: 4.5 },
-    { type: 'pot', row: 'front', x: -5.3 },
-    { type: 'grill', row: 'front', x: -3.2 },
+    { type: 'pot', row: 'front', x: -5.3, boil: true },
+    { type: 'grill', row: 'front', x: -3.2, label: 'Chashu Searing Grill', plate: { text: 'CHASHU', background: '#991b1b', color: '#fff7ed', width: 0.6 } },
     { type: 'dispenser', item: 'broth', row: 'front', x: -1.05 },
-    { type: 'board', row: 'front', x: 1.1 },
+    { type: 'board', row: 'front', x: 1.1, bowlFirst: true },
     { type: 'dispenser', item: 'tea', row: 'front', x: 3.2 },
     { type: 'trash', row: 'front', x: 5.3 },
   ],

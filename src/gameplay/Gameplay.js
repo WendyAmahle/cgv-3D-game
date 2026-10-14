@@ -148,7 +148,7 @@ export class Gameplay {
   drop(target, source) {
     if (target && target !== source) {
       if (this.canDrop(target)) this.interact(target);
-      else say(`You can't put ${itemLabel(this.player.held).toLowerCase()} there.`);
+      else say(target.ref.rejection?.(this.player.held) || `You can't put ${itemLabel(this.player.held).toLowerCase()} there.`);
     }
     if (!this.player.isEmpty) this.returnHeld(source);
   }

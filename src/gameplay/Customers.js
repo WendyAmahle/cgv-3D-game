@@ -8,7 +8,7 @@ import { SERVE_DRINKS_SEPARATELY, pick, randomRange } from '../utils/Constants.j
 
 const WALK_SPEED = 1.5; // m/s, matches the walk animation
 const ENTRY_DISTANCE = 7;
-const WRONG_ORDER_PENALTY = 4; // seconds of patience lost
+const WRONG_ORDER_PENALTY = 4; // seconds of patience lost (default; a level can set wrongOrderPenalty)
 const THANKS_TIME = 1.4; // seconds spent nodding before leaving
 
 let nextCustomerId = 1;
@@ -74,6 +74,8 @@ export class CustomerManager {
       bubble,
       time: Math.random() * 10,
       fidget: 3 + Math.random() * 3,
+      grace: this.level.patienceGrace ?? 0, // seconds before patience starts draining
+      urgency: 0, // 1 once below 30% patience, 2 once below 15% (order:urgent)
     };
     return true;
   }
@@ -113,9 +115,17 @@ export class CustomerManager {
     }
 
     if (customer.state === 'waiting') {
-      customer.patience -= dt;
+      if (customer.grace > 0) customer.grace -= dt; // the bar stays full during the grace period
+      else customer.patience -= dt;
       const ratio = Math.max(0, customer.patience / customer.maxPatience);
       customer.bubble.userData.setPatience(ratio);
+
+      // Warn once as patience drops below 30%, and once more below 15%.
+      const urgency = ratio < 0.15 ? 2 : ratio < 0.3 ? 1 : 0;
+      if (urgency > customer.urgency) {
+        customer.urgency = urgency;
+        events.emit('order:urgent', { customer, ratio });
+      }
 
       // Impatient customers fidget: idle speeds up and they shake their head.
       if (ratio < 0.3) {
@@ -154,7 +164,7 @@ export class CustomerManager {
     const recipe = RECIPES[customer.recipeId];
     const indices = this.partsFor(customer, tags);
     if (!indices) {
-      customer.patience = Math.max(0.5, customer.patience - WRONG_ORDER_PENALTY);
+      customer.patience = Math.max(0.5, customer.patience - (this.level.wrongOrderPenalty ?? WRONG_ORDER_PENALTY));
       customer.animator.play('headShake', { then: 'idle' });
       return { ok: false, recipe };
     }

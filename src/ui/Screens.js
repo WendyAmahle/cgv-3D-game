@@ -5,7 +5,7 @@ import { STAR_RULES, nextStarHint, starString, starTargets } from './Stars.js';
 
 const $ = (selector) => document.querySelector(selector);
 
-const SCREENS = ['menu', 'story', 'levels', 'trophies', 'howto', 'intro', 'pause', 'complete', 'gameover', 'credits'];
+const SCREENS = ['start', 'menu', 'story', 'levels', 'trophies', 'howto', 'intro', 'pause', 'complete', 'gameover', 'credits'];
 
 function renderStats(container, stats) {
   const rows = [

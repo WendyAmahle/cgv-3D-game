@@ -25,6 +25,11 @@ import { KEYS, matches } from '../utils/Constants.js';
 import { assets } from '../utils/AssetLoader.js';
 
 const CAMERA_KEYS = { Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4 };
+const SLIDE_SECONDS = 5; // how long each level is shown behind the main menu
+const SLIDE_FADE_MS = 450; // matches the #menuFade transition in style.css
+// Recorded track behind the main menu (credited in ui/Credits.js); each level sets its own music.
+// The recording is quiet (about -20 LUFS), hence the high volume.
+const MENU_MUSIC = { file: 'music/lofi-loop', volume: 4 };
 
 // Owns the renderer and main loop, and moves between menu → intro → playing →
 // paused → complete / game over. Levels can be restarted without a page reload.
@@ -81,6 +86,8 @@ export class Game {
     this.focusPoint = new THREE.Vector3();
     this.chefTarget = new THREE.Vector3();
     this.request = 0; // guards against overlapping async level loads
+    this.slideshow = { index: 0, next: 0, swapping: false }; // main-menu background tour
+    this.menuWorlds = new Map(); // level index → hidden place kept built during the slideshow
   }
 
   async init() {
@@ -127,8 +134,9 @@ export class Game {
       this.achievements.render(this.stars.total, LEVELS.length * 3);
       this.screens.show('trophies', { returnTo: 'menu' });
     });
+    on('ui:begin', () => this.begin());
     on('ui:story',() => this.showStory(() => this.screens.show('menu')));
-    on('ui:story-prev', () => this.story.go(-1));
+    on('ui:story-prev', () => this.story.go(-1) || this.finishStory());
     on('ui:story-next', () => this.story.go(1) || this.finishStory());
     on('ui:story-skip', () => this.finishStory());
     on('ui:select-level', ({ level }) => this.openLevel(Number(level)));
@@ -171,6 +179,11 @@ export class Game {
   onKey(event) {
     const code = event.code;
 
+    if (this.screens.current === 'start') {
+      this.begin();
+      return;
+    }
+
     if (matches(code, KEYS.mute)) {
       this.toggleMute();
       return;
@@ -211,6 +224,7 @@ export class Game {
 
   // Returns false if a newer load started while this one waited for assets.
   async loadWorld(index, request) {
+    this.clearMenuWorlds();
     this.teardownGameplay();
     const level = LEVELS[index];
     await this.ensureAssets(level.theme, `Loading ${level.name}`);
@@ -252,12 +266,105 @@ export class Game {
     this.controller.enabled = false;
     this.hud.hide();
     this.menu.setPlayLabel(LEVELS[index], index);
-    if (withStory) this.showStory(() => this.screens.show('menu', { returnTo: 'menu' }));
+    // On first launch: the start screen, then the prologue, then the menu.
+    if (withStory) this.screens.show('start');
     else this.screens.show('menu', { returnTo: 'menu' });
     this.cameraController.autoOrbit = true;
     this.applyCutaway();
-    this.audio.startMusic(LEVELS[index].music);
+    this.audio.startMusic(MENU_MUSIC);
     this.audio.setLevelAudio(LEVELS[index]);
+    this.slideshow.index = index;
+    this.slideshow.next = this.timer.getElapsed() + SLIDE_SECONDS;
+    // Fetch the other levels quietly so the slideshow can show them too.
+    LEVELS.forEach((level) => assets.load(level.theme).catch(() => {}));
+  }
+
+  // Behind the main menu, cycles through every level's place (only the
+  // world changes; the music stays the same).
+  updateSlideshow(time) {
+    const slideshow = this.slideshow;
+    if (slideshow.swapping || time < slideshow.next) return;
+    slideshow.next = time + SLIDE_SECONDS;
+    for (let step = 1; step < LEVELS.length; step++) {
+      const index = (slideshow.index + step) % LEVELS.length;
+      if (assets.isLoaded(LEVELS[index].theme)) {
+        this.swapMenuLevel(index);
+        return;
+      }
+    }
+  }
+
+  async swapMenuLevel(index) {
+    const request = ++this.request;
+    const fade = document.querySelector('#menuFade');
+    this.slideshow.swapping = true;
+    fade.classList.add('on');
+    await new Promise((resolve) => setTimeout(resolve, SLIDE_FADE_MS));
+    // Bail if the player picked a level (or anything else loaded) meanwhile.
+    if (request === this.request) {
+      this.showMenuWorld(index);
+      this.cameraController.snap(this.timer.getElapsed());
+      // Compile the new place's shaders and upload its textures while still
+      // black, so it doesn't freeze on screen.
+      await this.renderer.compileAsync(this.scene, this.camera).catch(() => {});
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    }
+    this.slideshow.swapping = false;
+    this.slideshow.next = this.timer.getElapsed() + SLIDE_SECONDS;
+    fade.classList.remove('on');
+  }
+
+  // Swaps the menu background to another level. Places already shown are kept
+  // built (not disposed) while the menu is open, so coming back to them is
+  // instant instead of rebuilding and recompiling every shader.
+  showMenuWorld(index) {
+    const scene = this.scene;
+    const uniforms = ['uLightDir', 'uLightColor', 'uAmbient'];
+    this.menuWorlds.set(this.slideshow.index, {
+      world: this.world,
+      environment: scene.environment,
+      environmentIntensity: scene.environmentIntensity,
+      background: scene.background,
+      fog: scene.fog,
+      exposure: this.renderer.toneMappingExposure,
+      uniforms: uniforms.map((name) => sharedUniforms[name].value.clone()),
+    });
+    this.world.root.removeFromParent();
+
+    const level = LEVELS[index];
+    const cached = this.menuWorlds.get(index);
+    this.menuWorlds.delete(index);
+    if (cached) {
+      scene.add(cached.world.root);
+      scene.environment = cached.environment;
+      scene.environmentIntensity = cached.environmentIntensity;
+      scene.background = cached.background;
+      scene.fog = cached.fog;
+      this.renderer.toneMappingExposure = cached.exposure;
+      uniforms.forEach((name, i) => sharedUniforms[name].value.copy(cached.uniforms[i]));
+      this.world = cached.world;
+    } else {
+      this.renderer.toneMappingExposure = level.exposure ?? 1;
+      this.world = this.levels.build(level, scene);
+    }
+    this.effects.attach(this.world, level);
+    this.chef?.reset(level);
+    this.post.configure(level.post);
+    this.applyCutaway();
+    this.slideshow.index = index;
+  }
+
+  // Frees the slideshow's hidden places once the menu loads a level for real.
+  clearMenuWorlds() {
+    this.menuWorlds.forEach(({ world }) => this.levels.dispose(world));
+    this.menuWorlds.clear();
+  }
+
+  // The click or key press that leaves the start screen also unlocks the
+  // sound (see bindEvents), so the music is already playing for the story.
+  begin() {
+    if (this.screens.current !== 'start') return;
+    this.showStory(() => this.screens.show('menu', { returnTo: 'menu' }));
   }
 
   showStory(then) {
@@ -389,10 +496,13 @@ export class Game {
     const time = this.timer.getElapsed();
     const paused = this.state.is(STATES.PAUSED);
     const playing = this.state.is(STATES.PLAYING);
+    if (this.state.is(STATES.MENU) && this.screens.current === 'menu') this.updateSlideshow(time);
 
     if (!paused) {
       sharedUniforms.uTime.value = time;
-      this.world?.update(dt, time);
+      // Shift progress drives Level 1's time of day (world/Lighting.js).
+      const progress = this.gameplay ? Math.min(1, this.gameplay.elapsed / this.gameplay.level.duration) : 0;
+      this.world?.update(dt, time, progress);
       this.effects.update(dt, this.gameplay?.stations ?? []);
     }
 

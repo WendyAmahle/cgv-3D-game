@@ -44,9 +44,9 @@ export class LevelManager {
     const world = buildEnvironment(level);
     const lighting = applyLighting(level.lighting, scene, world.root, world.theme, level.theme);
     scene.add(world.root);
-    world.update = (dt, time) => {
+    world.update = (dt, time, progress) => {
       world.animate?.(dt, time);
-      lighting.update(dt, time);
+      lighting.update(dt, time, progress);
     };
     return world;
   }

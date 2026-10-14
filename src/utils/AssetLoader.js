@@ -36,14 +36,14 @@ const GROUPS = {
       handTruck: 'hand_truck',
       trashBag: 'trashbag',
       manhole: 'water_manhole_cover',
-      metalBarrel: 'barrel_03', // not `barrel`: the izakaya group already uses that key
+      metalBarrel: 'barrel_03',
     },
     textures: ['patterned_paving'],
   },
   izakaya: {
     hdri: 'cobblestone_street_night',
-    models: { lantern: 'wooden_lantern_01', woodStool: 'chinese_stool', barrel: 'wine_barrel_01' },
-    textures: ['japanese_cedar_planks', 'cobblestone_pavement', 'dark_wooden_planks', 'wood_table'],
+    models: { lantern: 'wooden_lantern_01', woodStool: 'chinese_stool' },
+    textures: ['japanese_cedar_planks', 'asphalt_02'],
   },
   cyber: {
     hdri: 'shanghai_bund',
@@ -52,7 +52,6 @@ const GROUPS = {
       wallLamp: 'street_lamp_02',
       barrier: 'concrete_road_barrier',
       metalStool: 'metal_stool_01',
-      wetFloorSign: 'WetFloorSign_01',
       facadeKit: 'modular_urban_apartments_facade',
       aircon: 'exterior_aircon_unit',
     },

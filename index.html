@@ -8,6 +8,7 @@
   </head>
   <body>
     <div id="app"></div>
+    <div id="menuFade"></div>
 
     <div id="ui">
       <!-- In-game HUD -->
@@ -76,6 +77,17 @@
       </section>
 
       <!-- Screens -->
+      <!-- Browsers only allow sound after a click or key press, so the game
+           asks for one before the story and menu (core/Game.js). -->
+      <section id="screen-start" class="screen hidden" data-action="begin">
+        <div class="card title-card">
+          <p class="eyebrow">COMS3006A · Computer Graphics &amp; Visualisation</p>
+          <h1>Bistro Rush</h1>
+          <p class="tagline">Culinary Mayhem</p>
+          <p class="start-prompt">Click anywhere or press any key to start</p>
+        </div>
+      </section>
+
       <section id="screen-menu" class="screen hidden">
         <div class="card title-card">
           <p class="eyebrow">COMS3006A · Computer Graphics &amp; Visualisation</p>
@@ -139,7 +151,7 @@
             <li><b>Drag and drop</b> everything with the mouse. The ring turns green where you can drop and red where you can't. Let go over empty space and you'll drop it on the floor, and it's wasted!</li>
             <li>Drag ingredients out of the crates on the back counter.</li>
             <li>Cook: drag patties/pork onto the grill, noodles into the pot, potatoes into the fryer. Drag them off when they're done, before they burn!</li>
-            <li>Click a dispenser to pour a drink or broth.</li>
+            <li>Click a dispenser to pour a drink or broth. At the Lantern Noodle Bar, the bowl of broth goes on the board <b>first</b>, before any noodles or toppings.</li>
             <li>Build the food on the <b>assembly board</b> and drag the whole plate to the customer. <b>Drinks</b> can go straight to the customer on their own, before or after the food: they're ticked off the order and the customer pays once everything has arrived.</li>
             <li>Faster service earns bigger tips and combos.</li>
             <li>Hit the earnings target before the shift ends, and don't let too many customers walk out.</li>

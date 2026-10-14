@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { events } from '../core/Events.js';
 
 // Web Audio sound: recorded sound effects and ambience (public/assets/audio/,
-// credited in ui/Credits.js) plus procedural music per level.
+// credited in ui/Credits.js), a recorded main-menu track and procedural
+// music per level.
 //
 // - One-shots (SAMPLES) play on game events. A sample can be a slice of a
 //   longer recording (offset/duration) and can have variants picked at random.
@@ -72,6 +73,7 @@ const EVENT_SOUNDS = {
   'order:partial': ['place', ['blip', 0.08]],
   'order:wrong': ['wrong'],
   'order:missed': ['miss'],
+  'order:urgent': ['impatient'],
   'overclock:start': ['alarm'],
   'rush:start': ['alarm'],
   'level:complete': ['fanfare', ['applause', 0.3]],
@@ -133,6 +135,8 @@ const SYNTH = {
     a.tone({ freq: 247, duration: 0.2, volume: 0.2, type: 'square', delay: 0.14 });
   },
   miss: (a) => a.tone({ freq: 300, slideTo: 90, duration: 0.7, volume: 0.25, type: 'sawtooth' }),
+  // A customer running out of patience: two soft ticks, like fingers tapping the counter.
+  impatient: (a) => [0, 0.12].forEach((delay) => a.tone({ freq: 660, duration: 0.07, volume: 0.12, type: 'triangle', delay })),
   alarm: (a) => [0, 0.25, 0.5].forEach((delay) => a.tone({ freq: 700, slideTo: 1100, duration: 0.2, volume: 0.15, type: 'square', delay })),
   fanfare: (a) => [60, 64, 67, 72, 76, 79, 84].forEach((note, index) => a.tone({ freq: midi(note), duration: 0.3, volume: 0.2, type: 'triangle', delay: index * 0.1 })),
   coins: (a) => {
@@ -176,6 +180,7 @@ export class AudioManager {
     this.footsteps = 'stepConcrete';
     this.music = null;
     this.musicTimer = null;
+    this.musicTrack = null; // { source, gain } while a recorded track plays
     try {
       this.muted = localStorage.getItem(MUTE_KEY) === '1';
     } catch {
@@ -450,11 +455,18 @@ export class AudioManager {
     return buffer;
   }
 
-  // `music` is a level's music config: { tempo, root, scale, progression, wave }.
+  // `music` is either a level's synth config ({ tempo, root, scale,
+  // progression, wave }) or a recorded track ({ file, volume }) that loops.
+  // A track can also carry synth settings to fall back on if its file fails.
   startMusic(music) {
     this.stopMusic();
     this.music = music;
     if (!this.ctx) return; // starts on unlock()
+    if (music.file) this.playMusicFile(music);
+    else this.startSynthMusic();
+  }
+
+  startSynthMusic() {
     this.step = 0;
     this.nextNoteTime = this.ctx.currentTime + 0.1;
     this.musicTimer = setInterval(() => this.scheduleMusic(), 25);
@@ -463,6 +475,38 @@ export class AudioManager {
   stopMusic() {
     clearInterval(this.musicTimer);
     this.musicTimer = null;
+    if (this.musicTrack) {
+      // Fade the recording out rather than cutting it off.
+      const { source, gain } = this.musicTrack;
+      const time = this.ctx.currentTime;
+      gain.gain.setTargetAtTime(0, time, 0.25);
+      source.stop(time + 1.5);
+      this.musicTrack = null;
+    }
+  }
+
+  async playMusicFile(music) {
+    if (!this.buffers[music.file]) {
+      try {
+        const response = await fetch(`${BASE}${music.file}.ogg`);
+        if (!response.ok) throw new Error(response.status);
+        this.buffers[music.file] = await this.ctx.decodeAudioData(await response.arrayBuffer());
+      } catch (error) {
+        console.warn(`Could not load music "${music.file}"`, error);
+        if (this.music === music && music.tempo && !this.musicTimer) this.startSynthMusic();
+        return;
+      }
+    }
+    if (this.music !== music || this.musicTrack) return; // the music changed while loading
+    const source = this.ctx.createBufferSource();
+    source.buffer = this.buffers[music.file];
+    source.loop = true;
+    const gain = this.ctx.createGain();
+    gain.gain.value = 0;
+    gain.gain.setTargetAtTime(music.volume ?? 1, this.ctx.currentTime, 0.6); // fade in
+    source.connect(gain).connect(this.musicBus);
+    source.start();
+    this.musicTrack = { source, gain };
   }
 
   scheduleMusic() {

@@ -33,6 +33,21 @@ canvas {
   display: none !important;
 }
 
+/* Fade to black between the levels in the main-menu slideshow. */
+#menuFade {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: #000;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+
+#menuFade.on {
+  opacity: 1;
+}
+
 #ui {
   position: fixed;
   inset: 0;
@@ -162,6 +177,14 @@ canvas {
 
 .ticket .price {
   color: #15803d;
+  font-weight: 700;
+}
+
+/* Last 10 seconds of patience, beside the price. */
+.ticket .seconds {
+  margin-left: auto;
+  margin-right: 8px;
+  color: #dc2626;
   font-weight: 700;
 }
 
@@ -424,6 +447,15 @@ canvas {
   background: radial-gradient(circle at center, rgba(15, 23, 42, 0.35), rgba(15, 23, 42, 0.75));
   pointer-events: auto;
   overflow-y: auto;
+}
+
+#screen-start {
+  cursor: pointer;
+}
+
+.start-prompt {
+  font-weight: 600;
+  animation: pulse 1.1s ease-in-out infinite alternate;
 }
 
 #screen-menu {
