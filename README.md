@@ -16,7 +16,7 @@ In dev builds the game object is available in the browser console as `window.gam
 | Input | Action |
 | --- | --- |
 | Mouse drag | Drag and drop items: crate → grill → board → customer, drinks → board, anything → bin |
-| Mouse click | Start pouring a drink; click a customer to hear their order |
+| Mouse click | Start pouring a drink, pour a Mixology Bar shot or flip a steak on the Laser Searer; click a customer to hear their order |
 | A/D · W/S (or arrows) | Move the selection · switch between the back counter, front counter and customers |
 | Space / Enter | Use the selected station / serve the selected customer |
 | X | Throw away the held item |
@@ -50,7 +50,7 @@ Stars and trophies are saved in the browser's localStorage.
 | --- | --- | --- |
 | 1 Burger Truck | Daylight park | Core loop: grill → assemble → serve, plus drinks |
 | 2 Lantern Noodle Bar | Night, lanterns, fireflies | Boiling pot and broth, 3 customers at once, rush hour halfway through |
-| 3 Neon Diner | Cyberpunk city street at night, rain, bloom | **Molecular mixology**: a Mixology Bar with cyan, magenta and yellow syrup taps. Click taps to pour 4 shots (clicks queue up, the glass slides to each tap), then the magnetic stirrer blends them; the shot ratio decides the cocktail (Deep Space = 2 cyan + 2 magenta, Solar Flare = 1 magenta + 3 yellow, Toxic Lime = 2 cyan + 2 yellow, Ultraviolet = 1 cyan + 3 magenta), and the Neon Combo needs one too. Orders float over customers as **holograms** that turn red and glitch as patience runs out. Plus every station, fast, impatient customers, random "power surge" overclock events. The diner faces a road with live traffic (cars keep left), people walk past the shops across the road, and lit towers make up the skyline (`src/world/City.js`, `src/world/Traffic.js`) |
+| 3 Neon Diner | Cyberpunk city street at night, rain, bloom | **Molecular mixology**: a Mixology Bar with cyan, magenta and yellow syrup taps. Click taps to pour 4 shots (clicks queue up, the glass slides to each tap), then the magnetic stirrer blends them; the shot ratio decides the cocktail (Deep Space = 2 cyan + 2 magenta, Solar Flare = 1 magenta + 3 yellow, Toxic Lime = 2 cyan + 2 yellow, Ultraviolet = 1 cyan + 3 magenta), and the Neon Combo needs one too. **Laser-seared plasma steaks**: the Laser Searer (replacing the boiling pot) sears one side by itself, you click to flip the steak and it sears the other; leave a side on too long and it chars (Plasma Steak, and the Plasma Platter with fries and an Ultraviolet). Orders float over customers as **holograms** that turn red and glitch as patience runs out. Plus fast, impatient customers, random "power surge" overclock events. The diner faces a road with live traffic (cars keep left), people walk past the shops across the road, and lit towers make up the skyline (`src/world/City.js`, `src/world/Traffic.js`) |
 
 Each level is a plain config file in `src/levels/`: stations, recipes, timings, theme, lighting, post-processing and music.
 
