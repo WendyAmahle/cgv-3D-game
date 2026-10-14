@@ -335,6 +335,52 @@ function sakeBarrel(label, [x, y, z]) {
   return group;
 }
 
+// Stylised low-poly trees for the park edge, drawn with flat shading so each
+// facet of the jittered canopy catches the sun on its own. Instanced (one
+// draw call for all trunks, one for all canopies) and far cheaper than
+// scanned trees. Each entry: [x, z, height, rotation].
+function lowPolyTrees(trees) {
+  const canopyGeometry = new THREE.IcosahedronGeometry(1, 1);
+  // Push each vertex in or out by a hash of its position, so the copies of a
+  // shared corner in this non-indexed geometry move together and the canopy
+  // stays closed.
+  const position = canopyGeometry.attributes.position;
+  const point = new THREE.Vector3();
+  for (let i = 0; i < position.count; i += 1) {
+    point.fromBufferAttribute(position, i);
+    const hash = Math.abs(Math.sin(point.x * 12.9898 + point.y * 78.233 + point.z * 37.719) * 43758.5453) % 1;
+    point.multiplyScalar(0.82 + hash * 0.36);
+    position.setXYZ(i, point.x, point.y * 0.85, point.z);
+  }
+  canopyGeometry.computeVertexNormals();
+  const trunkGeometry = new THREE.CylinderGeometry(0.11, 0.17, 1, 6);
+  trunkGeometry.translate(0, 0.5, 0);
+
+  const canopies = new THREE.InstancedMesh(canopyGeometry, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, flatShading: true }), trees.length * 2);
+  const trunks = new THREE.InstancedMesh(trunkGeometry, new THREE.MeshStandardMaterial({ color: 0x6b4a32, roughness: 0.9, flatShading: true }), trees.length);
+  const matrix = new THREE.Matrix4();
+  const rotation = new THREE.Quaternion();
+  const up = new THREE.Vector3(0, 1, 0);
+  const greens = [0x4a7230, 0x587f34, 0x3f672c, 0x62863c];
+  trees.forEach(([x, z, height, turn], index) => {
+    rotation.setFromAxisAngle(up, turn);
+    const trunkHeight = height * 0.45;
+    trunks.setMatrixAt(index, matrix.compose(new THREE.Vector3(x, 0, z), rotation, new THREE.Vector3(1, trunkHeight, 1)));
+    const radius = height * 0.36;
+    // A main canopy and a smaller crown offset on top.
+    canopies.setMatrixAt(index * 2, matrix.compose(new THREE.Vector3(x, trunkHeight + radius * 0.7, z), rotation, new THREE.Vector3(radius, radius, radius)));
+    canopies.setMatrixAt(index * 2 + 1, matrix.compose(new THREE.Vector3(x + radius * 0.3, trunkHeight + radius * 1.5, z - radius * 0.2), rotation, new THREE.Vector3(radius * 0.6, radius * 0.6, radius * 0.6)));
+    const green = new THREE.Color(greens[index % greens.length]);
+    canopies.setColorAt(index * 2, green);
+    canopies.setColorAt(index * 2 + 1, green.clone().offsetHSL(0, 0, 0.04));
+  });
+  for (const mesh of [canopies, trunks]) {
+    mesh.castShadow = mesh.receiveShadow = true;
+    mesh.computeBoundingSphere();
+  }
+  return [trunks, canopies];
+}
+
 // Height map of raised diamond-plate tread (the anti-slip steel on food
 // trucks), drawn procedurally and used as a bump map: each tile holds two
 // domed lozenges at right angles, so the pattern alternates when tiled.
@@ -459,6 +505,12 @@ const DECOR = {
     // cross the overview camera's view of them.
     root.add(festoon([-3.3, 3.65, -3.35], [-10, 3.45, 4.5], 0.55));
     root.add(festoon([3.1, 3.65, -3.35], [10, 3.45, 4.5], 0.55));
+    // Low-poly trees around the park, behind the truck and out to the sides,
+    // clear of the camera's view of the stations.
+    root.add(...lowPolyTrees([
+      [-9.5, -8.5, 4.2, 0.3], [-4.5, -10.5, 3.6, 1.9], [2.5, -11, 4.6, 2.7], [8.5, -9, 3.9, 0.9],
+      [14, -4, 4.4, 1.4], [-14, -3.5, 4, 2.2], [-15, 6, 3.7, 0.5], [15, 7, 4.1, 2.9],
+    ]));
     place(root, 'planter', [-4.6, 0, 2.35]);
     place(root, 'planter', [4.6, 0, 2.35]);
 
