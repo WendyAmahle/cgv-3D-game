@@ -107,6 +107,13 @@ export const CREDITS = [
     use: 'Main menu music.',
   },
   {
+    name: 'Japanese Modern Loop',
+    author: 'F_kaiba (Zuki_desu), via OpenGameArt',
+    source: 'https://opengameart.org/content/japanese-modern-loop',
+    license: 'CC BY 4.0 (http://creativecommons.org/licenses/by/4.0/)',
+    use: 'Level 2 music. Made 7 dB louder and re-encoded to Ogg, otherwise unmodified.',
+  },
+  {
     name: 'Bouncer',
     author: 'Of Far Different Nature, via OpenGameArt',
     source: 'https://opengameart.org/content/bouncer-0',
@@ -139,7 +146,7 @@ export const TEAM = [
 export const ORIGINAL_WORK = [
   'Food, stations, serving counters, noodle bar and diner buildings are modelled procedurally by the team (the scanned bun is sliced in code).',
   'Animation retargeting from X Bot onto the other skeletons is our own code.',
-  'Level 1 and 2 music and the jingles (level complete, level failed, trophy) are synthesised at runtime with the Web Audio API; the sound mixing, seamless looping and 3D positioning of the recorded sounds are our own code.',
+  'Level 1 music and the jingles (level complete, level failed, trophy) are synthesised at runtime with the Web Audio API; the sound mixing, seamless looping and 3D positioning of the recorded sounds are our own code.',
   'Custom GLSL shaders: cooking (injected into the PBR material), liquid fill, molecular cocktail mixing, order holograms, steam, particles, sky and colour-grade/heat-haze.',
 ];
 
