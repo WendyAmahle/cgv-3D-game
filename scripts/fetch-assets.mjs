@@ -27,7 +27,7 @@ const MODELS = [
   'hamburger_buns', 'wooden_crate_02', 'wooden_cutting_board', 'CashRegister_01',
   'wooden_picnic_table', 'street_lamp_01', 'metal_trash_can', 'shrub_02', 'potted_plant_02',
   'wooden_lantern_01', 'chinese_stool', 'wine_barrel_01',
-  'utility_box_02', 'street_lamp_02', 'concrete_road_barrier', 'metal_stool_01', 'WetFloorSign_01',
+  'utility_box_02', 'street_lamp_02', 'concrete_road_barrier', 'metal_stool_01',
   'modular_urban_apartments_facade', 'exterior_aircon_unit',
   'standing_chalkboard_01', 'outdoor_table_chair_set_01', 'plastic_monobloc_chair_01', 'painted_wooden_bench', 'planter_box_01',
   'portable_generator', 'hand_truck', 'trashbag', 'water_manhole_cover', 'barrel_03',

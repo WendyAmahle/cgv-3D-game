@@ -539,7 +539,6 @@ const DECOR = {
     place(root, 'utilityBox', [-8.2, 0, 1.2], { rotation: Math.PI / 2 });
     place(root, 'utilityBox', [8.3, 0, -0.5], { rotation: -Math.PI / 2 });
     place(root, 'barrier', [-13, 0, 5.9], { rotation: 0.05 }); // along the kerb, clear of the customers' path
-    place(root, 'wetFloorSign', [3.2, 0, 4.6], { rotation: 0.6, scale: 1.3 });
     place(root, 'trashCan', [-8.4, 0, 4], { rotation: 0.8 });
     for (const x of [-6.2, 6.2]) place(root, 'metalStool', [x, 0, LAYOUT.customerZ]);
     place(root, 'wallLamp', [-7.35, 2.6, 0.5], { rotation: -Math.PI / 2, scale: 1.2 });

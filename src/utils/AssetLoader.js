@@ -52,7 +52,6 @@ const GROUPS = {
       wallLamp: 'street_lamp_02',
       barrier: 'concrete_road_barrier',
       metalStool: 'metal_stool_01',
-      wetFloorSign: 'WetFloorSign_01',
       facadeKit: 'modular_urban_apartments_facade',
       aircon: 'exterior_aircon_unit',
     },

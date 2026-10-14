@@ -61,7 +61,6 @@ export const CREDITS = [
   polyHaven('Street Lamp 02', 'Josh Dean', 'street_lamp_02', '3D model'),
   polyHaven('Concrete Road Barrier', 'Amal Kumar', 'concrete_road_barrier', '3D model'),
   polyHaven('Metal Stool 01', 'Ulan Cabanilla', 'metal_stool_01', '3D model'),
-  polyHaven('Wet Floor Sign 01', 'Fran Calvente', 'WetFloorSign_01', '3D model'),
   polyHaven('Modular Urban Apartments Facade', 'James Ray Cock', 'modular_urban_apartments_facade', '3D model (Level 3 street buildings)'),
   polyHaven('Exterior Aircon Unit', 'Monsta3D', 'exterior_aircon_unit', '3D model'),
   polyHaven('Standing Chalkboard 01', 'ParzivalCG', 'standing_chalkboard_01', '3D model (Burger Truck sidewalk menu sign)'),
