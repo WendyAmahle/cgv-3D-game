@@ -486,7 +486,9 @@ export class Game {
 
     if (!paused) {
       sharedUniforms.uTime.value = time;
-      this.world?.update(dt, time);
+      // Shift progress drives Level 1's time of day (world/Lighting.js).
+      const progress = this.gameplay ? Math.min(1, this.gameplay.elapsed / this.gameplay.level.duration) : 0;
+      this.world?.update(dt, time, progress);
       this.effects.update(dt, this.gameplay?.stations ?? []);
     }
 

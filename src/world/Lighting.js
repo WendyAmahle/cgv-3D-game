@@ -22,6 +22,14 @@ const PRESETS = {
     // than the other levels' interiors, so the default shadow frustum
     // clipped/popped shadows at the edges.
     shadowExtent: 20,
+    // Time of day moves with the shift: over its length the sun sinks from
+    // midday toward late afternoon, warming and dimming slightly, so shadows
+    // lengthen and the photographed sky takes on a golden tint.
+    cycle: {
+      key: { color: 0xffad66, intensity: 2.6, position: [10, 6.5, 8] },
+      sky: 0xffc794,
+      environmentIntensity: 0.68,
+    },
   },
   // Level 2's Tokyo street: cool moonlight, red glow from the paper
   // lanterns, warm white work lights over the counters and pink/cyan neon
@@ -58,6 +66,7 @@ export function applyLighting(presetName, scene, root, theme, themeName) {
   const preset = PRESETS[presetName];
   const [sky, ground, hemiIntensity] = preset.hemisphere;
   const hdri = assets.hdri(themeName);
+  let skybox = null;
 
   if (hdri) {
     scene.environment = hdri;
@@ -68,7 +77,7 @@ export function applyLighting(presetName, scene, root, theme, themeName) {
   if (hdri && theme.skybox) {
     scene.background = null;
     scene.fog = null;
-    const skybox = new GroundedSkybox(hdri, theme.skybox.height, theme.skybox.radius);
+    skybox = new GroundedSkybox(hdri, theme.skybox.height, theme.skybox.radius);
     skybox.position.y = theme.skybox.height - 0.01;
     skybox.material.fog = false;
     // Always drawn first: it doesn't write depth, so anything below its
@@ -106,15 +115,45 @@ export function applyLighting(presetName, scene, root, theme, themeName) {
     if (config.flicker) flickering.push({ light, base: config.intensity });
   }
 
-  sharedUniforms.uLightDir.value.set(...preset.key.position).normalize();
-  sharedUniforms.uLightColor.value.set(preset.key.color).multiplyScalar(Math.min(1.2, preset.key.intensity * 0.5 + 0.3));
+  const setShaderLight = (direction, color, intensity) => {
+    sharedUniforms.uLightDir.value.copy(direction).normalize();
+    sharedUniforms.uLightColor.value.copy(color).multiplyScalar(Math.min(1.2, intensity * 0.5 + 0.3));
+  };
+  setShaderLight(key.position, key.color, key.intensity);
   sharedUniforms.uAmbient.value.set(sky).multiplyScalar(preset.shaderAmbient);
 
+  // Start and end of the time-of-day cycle, interpolated by shift progress.
+  const cycle = preset.cycle && {
+    fromDirection: new THREE.Vector3(...preset.key.position),
+    toDirection: new THREE.Vector3(...preset.cycle.key.position),
+    distance: new THREE.Vector3(...preset.key.position).length(),
+    fromColor: new THREE.Color(preset.key.color),
+    toColor: new THREE.Color(preset.cycle.key.color),
+    toSky: new THREE.Color(preset.cycle.sky),
+    white: new THREE.Color(0xffffff),
+    lastProgress: -1,
+  };
+  if (cycle) {
+    cycle.fromDirection.normalize();
+    cycle.toDirection.normalize();
+  }
+
   return {
-    update(dt, time) {
+    // progress: 0 at the start of the shift, 1 at the end (0 on menus).
+    update(dt, time, progress = 0) {
       for (const { light, base } of flickering) {
         const glitch = Math.sin(time * 23) > 0.96 || Math.sin(time * 7.3) > 0.985;
         light.intensity = glitch ? base * 0.2 : base;
+      }
+      if (cycle && Math.abs(progress - cycle.lastProgress) > 0.001) {
+        cycle.lastProgress = progress;
+        const t = THREE.MathUtils.smoothstep(progress, 0, 1);
+        key.position.lerpVectors(cycle.fromDirection, cycle.toDirection, t).normalize().multiplyScalar(cycle.distance);
+        key.color.lerpColors(cycle.fromColor, cycle.toColor, t);
+        key.intensity = THREE.MathUtils.lerp(preset.key.intensity, preset.cycle.key.intensity, t);
+        if (hdri) scene.environmentIntensity = THREE.MathUtils.lerp(preset.environmentIntensity, preset.cycle.environmentIntensity, t);
+        skybox?.material.color.lerpColors(cycle.white, cycle.toSky, t);
+        setShaderLight(key.position, key.color, key.intensity);
       }
     },
   };
