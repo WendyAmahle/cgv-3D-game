@@ -475,19 +475,23 @@ function buildBowl(type) {
   return result;
 }
 
-// Level 3 molecular cocktail: a tall glass whose layered liquid is drawn by the
-// mix shader, with a glowing "molecular pearl" garnish once it's blended.
+// Level 3 molecular cocktail: a martini glass (foot, stem and V-shaped bowl)
+// whose layered liquid is drawn by the mix shader, with a glowing "molecular
+// pearl" garnish once it's blended. The liquid is an open cone inside the bowl;
+// the shader only works with height, so the layers follow the V.
 // Scene graph: glass group → liquid (mix shader), glass shell, garnish → stick + pearl.
 function buildCocktail() {
   const glass = new THREE.Mesh(
-    cached('cocktail-glass', () => lathe([[0, 0], [0.11, 0], [0.115, 0.015], [0.13, 0.46], [0.122, 0.46], [0.104, 0.03], [0, 0.03]], 40)),
+    cached('cocktail-glass', () =>
+      lathe([[0, 0], [0.1, 0], [0.1, 0.012], [0.016, 0.022], [0.011, 0.2], [0.17, 0.46], [0.162, 0.46], [0.011, 0.216], [0, 0.216]], 40)
+    ),
     surfaces.glass()
   );
   glass.castShadow = true;
 
-  const mixMaterial = createMixMaterial({ bottom: -0.2, top: 0.2 });
-  const liquid = new THREE.Mesh(cached('cocktail-liquid', () => new THREE.CylinderGeometry(0.118, 0.1, 0.4, 32, 1, true)), mixMaterial);
-  liquid.position.y = 0.235;
+  const mixMaterial = createMixMaterial({ bottom: -0.11, top: 0.11 });
+  const liquid = new THREE.Mesh(cached('cocktail-liquid', () => new THREE.CylinderGeometry(0.142, 0.012, 0.22, 32, 1, true)), mixMaterial);
+  liquid.position.y = 0.33;
 
   const garnish = new THREE.Group();
   const pearlMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0xffffff, emissiveIntensity: 1.8, roughness: 0.2 });
@@ -495,8 +499,8 @@ function buildCocktail() {
   pearl.position.y = 0.16;
   const stick = mesh(cached('cocktail-stick', () => new THREE.CylinderGeometry(0.006, 0.006, 0.26, 6)), surfaces.chrome(), [0, 0.06, 0]);
   garnish.add(stick, pearl);
-  garnish.position.set(0.04, 0.4, 0);
-  garnish.rotation.z = -0.25;
+  garnish.position.set(0.08, 0.4, 0); // resting against the rim
+  garnish.rotation.z = -0.55;
   garnish.userData.material = pearlMaterial;
   garnish.visible = false;
 
