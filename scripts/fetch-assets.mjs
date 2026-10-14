@@ -17,6 +17,8 @@
 // impactPlate_light_00(N-1), bounce = impactGeneric_light_000, metal =
 // impactMetal_light_001, click = click_002, error = error_006, pop = pluck_001,
 // confirm = confirmation_002, pickup = handleSmallLeather, coins = handleCoins2.
+// music/lofi-loop.ogg (main menu) is "Lofi Hip Hop Loop" by omfgdude (CC0,
+// https://opengameart.org/sites/default/files/LofiLoop_2.ogg), saved as-is.
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 

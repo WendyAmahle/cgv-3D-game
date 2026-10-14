@@ -100,6 +100,13 @@ export const CREDITS = [
       'Cooking, pouring, serving and street sounds and the level ambiences.',
   },
   {
+    name: 'Lofi Hip Hop Loop',
+    author: 'omfgdude, via OpenGameArt',
+    source: 'https://opengameart.org/content/lofi-hip-hop-loop',
+    license: 'CC0',
+    use: 'Main menu music.',
+  },
+  {
     name: 'Rain (loopable)',
     author: 'Ylmir, via OpenGameArt',
     source: 'https://opengameart.org/content/rain-loopable',
@@ -125,7 +132,7 @@ export const TEAM = [
 export const ORIGINAL_WORK = [
   'Food, stations, serving counters, noodle bar and diner buildings are modelled procedurally by the team (the scanned bun is sliced in code).',
   'Animation retargeting from X Bot onto the other skeletons is our own code.',
-  'Music and the jingles (level complete, level failed, trophy) are synthesised at runtime with the Web Audio API; the sound mixing, seamless looping and 3D positioning of the recorded sounds are our own code.',
+  'Level music and the jingles (level complete, level failed, trophy) are synthesised at runtime with the Web Audio API; the sound mixing, seamless looping and 3D positioning of the recorded sounds are our own code.',
   'Custom GLSL shaders: cooking (injected into the PBR material), liquid fill, molecular cocktail mixing, order holograms, steam, particles, sky and colour-grade/heat-haze.',
 ];
 

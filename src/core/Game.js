@@ -27,6 +27,8 @@ import { assets } from '../utils/AssetLoader.js';
 const CAMERA_KEYS = { Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4 };
 const SLIDE_SECONDS = 5; // how long each level is shown behind the main menu
 const SLIDE_FADE_MS = 450; // matches the #menuFade transition in style.css
+// Recorded track behind the main menu (credited in ui/Credits.js); levels keep their own music.
+const MENU_MUSIC = { file: 'music/lofi-loop', volume: 2 };
 
 // Owns the renderer and main loop, and moves between menu → intro → playing →
 // paused → complete / game over. Levels can be restarted without a page reload.
@@ -261,7 +263,7 @@ export class Game {
     else this.screens.show('menu', { returnTo: 'menu' });
     this.cameraController.autoOrbit = true;
     this.applyCutaway();
-    this.audio.startMusic(LEVELS[index].music);
+    this.audio.startMusic(MENU_MUSIC);
     this.audio.setLevelAudio(LEVELS[index]);
     this.slideshow.index = index;
     this.slideshow.next = this.timer.getElapsed() + SLIDE_SECONDS;
