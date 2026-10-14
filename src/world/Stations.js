@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { canvasTexture, mat, physical, surfaces, woodTexture } from '../graphics/Materials.js';
-import { ITEMS, SYRUPS, SYRUP_KEYS } from '../gameplay/Recipes.js';
+import { ITEMS, SYRUPS, SYRUP_KEYS, cookAmount } from '../gameplay/Recipes.js';
+import { createBoilMaterial, createPlumeMaterial } from '../graphics/Shaders.js';
 import { LAYOUT } from '../utils/Constants.js';
 import { assets } from '../utils/AssetLoader.js';
 import { createItemMesh } from './Models.js';
@@ -9,7 +10,10 @@ import { createItemMesh } from './Models.js';
 //   root   — group placed on the counter (raycast target)
 //   anchor — where items sit (gameplay parents items here)
 //   label  — display name
-//   parts  — named sub-objects effects may animate (parts.glow = heat material)
+//   parts  — named sub-objects effects may animate (parts.glow = heat material,
+//            parts.steam = the view's own steam, so Effects skips its column)
+//   update — optional (dt, station) hook, called each frame by graphics/Effects.js
+//            so a view can follow its station's gameplay state
 
 function box(w, h, d, material, [x, y, z] = [0, 0, 0]) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
@@ -202,7 +206,9 @@ const BUILDERS = {
     return result;
   },
 
-  pot() {
+  // `boil: true` (Level 2) swaps the flat water for the boiling-water shader
+  // and adds a steam plume, both following the noodles' real cooking state.
+  pot(config) {
     const glow = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, emissive: 0x3b82f6, emissiveIntensity: 0.25 });
     const result = view('Boiling Pot', 0.47, { glow });
     const steel = surfaces.steel();
@@ -216,9 +222,12 @@ const BUILDERS = {
       steel
     );
     result.root.add(pot);
-    const water = cylinder(0.37, 0.37, 0.01, physical(0x51646b, { roughness: 0.25, transparent: true, opacity: 0.75 }), [0, 0.45, 0], 40);
-    result.root.add(water);
-    result.parts.water = water;
+    if (config.boil) addBoilingWater(result);
+    else {
+      const water = cylinder(0.37, 0.37, 0.01, physical(0x51646b, { roughness: 0.25, transparent: true, opacity: 0.75 }), [0, 0.45, 0], 40);
+      result.root.add(water);
+      result.parts.water = water;
+    }
     for (const side of [-1, 1]) {
       const handle = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.014, 8, 16, Math.PI), steel);
       handle.position.set(side * 0.43, 0.55, 0);
@@ -407,6 +416,45 @@ const BUILDERS = {
   },
 };
 
+// Boiling water (vertex-displaced disc) and a steam plume for a pot view.
+// uBoil, uStarch and the plume's uIntensity ease towards targets computed from
+// the noodles' cook amount (0 raw → 1 cooked → 2 soggy), so nothing jumps.
+function addBoilingWater(result) {
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(0.74, 0.74, 40, 40), createBoilMaterial({ radius: 0.37 }));
+  water.rotation.x = -Math.PI / 2;
+  water.position.y = 0.45;
+  const plumeGeometry = new THREE.PlaneGeometry(0.8, 1.7, 1, 12);
+  plumeGeometry.translate(0, 0.85, 0); // grow upwards from the rim
+  const plume = new THREE.Mesh(plumeGeometry, createPlumeMaterial());
+  plume.position.y = 0.6;
+  plume.frustumCulled = false; // the vertex shader moves it beyond its plane bounds
+  plume.renderOrder = 1; // after the opaque food in the pot
+  // Not clickable: the raycaster only knows the unturned plane, an invisible
+  // card above the pot that would steal clicks meant for the crates behind it.
+  plume.raycast = () => {};
+  water.userData.noShadow = plume.userData.noShadow = true;
+  result.root.add(water, plume);
+  Object.assign(result.parts, { water, steam: plume });
+
+  const boil = water.material.uniforms;
+  const steam = plume.material.uniforms;
+  let starch = 0;
+  result.update = (dt, station) => {
+    const item = station.item;
+    const amount = item ? cookAmount(item.type, item.cookTime) : 0;
+    const targetBoil = item ? (amount < 1 ? 0.6 + 0.4 * amount : 1 + (amount - 1) * 0.5) : 0.15;
+    const targetSteam = item ? (amount < 1 ? 0.35 + 0.65 * amount : 1 + (amount - 1) * 0.4) : 0.15;
+    const ease = Math.min(1, dt * 2);
+    boil.uBoil.value += (targetBoil - boil.uBoil.value) * ease;
+    steam.uIntensity.value += (targetSteam - steam.uIntensity.value) * ease;
+    // Starch builds while noodles cook. Once they're taken out the water stays
+    // cloudy (never frothy, that's only for soggy noodles in the pot) and slowly clears.
+    const leftover = Math.max(0, Math.min(starch, 1) - dt * 0.08);
+    starch = item ? Math.max(amount, leftover) : leftover;
+    boil.uStarch.value = starch;
+  };
+}
+
 export function buildStationView(config, palette) {
   const builder = BUILDERS[config.type];
   if (!builder) throw new Error(`No station model for type: ${config.type}`);
@@ -423,7 +471,7 @@ export function buildStationView(config, palette) {
   result.root.name = `station-${config.type}`;
   result.root.traverse((object) => {
     if (object.isMesh) {
-      object.castShadow = !object.userData.noShadow; // light beams cast no shadow
+      object.castShadow = !object.userData.noShadow; // light beams and the steam plume cast no shadow
       object.receiveShadow = true;
     }
   });

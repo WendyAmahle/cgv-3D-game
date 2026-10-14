@@ -168,9 +168,12 @@ export class Effects {
       });
       [steam, smoke, sparks].forEach((emitter) => emitter.origin.copy(origin));
 
-      const column = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.28, 1.6, 20, 1, true), createSteamMaterial());
-      column.position.copy(origin).add(new THREE.Vector3(0, 0.9, 0));
-      this.levelGroup.add(column);
+      // A view with its own steam (Level 2's boiling pot) doesn't get a column too.
+      const column = view.parts.steam ? null : new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.28, 1.6, 20, 1, true), createSteamMaterial());
+      if (column) {
+        column.position.copy(origin).add(new THREE.Vector3(0, 0.9, 0));
+        this.levelGroup.add(column);
+      }
 
       this.stationFx.set(view, { type: config.type, origin, steam, smoke, sparks, column, glow: view.parts.glow, heat: 0 });
     }
@@ -212,6 +215,7 @@ export class Effects {
     this.sparkle.update(dt);
 
     for (const station of stations) {
+      station.view.update?.(dt, station);
       const fx = this.stationFx.get(station.view);
       if (!fx) continue;
       const stage = station.item?.stage;
@@ -221,7 +225,7 @@ export class Effects {
       fx.steam.rate = stage && stage !== 'burnt' ? (fx.type === 'pot' ? 12 : 10) : 0;
       fx.smoke.rate = stage === 'burnt' ? 18 : 0;
       fx.sparks.rate = overclocked ? 40 : station.firing ? 25 : 0; // power surge, or the Level 3 laser
-      fx.column.material.uniforms.uIntensity.value = fx.heat * (stage === 'burnt' ? 0.4 : 1);
+      if (fx.column) fx.column.material.uniforms.uIntensity.value = fx.heat * (stage === 'burnt' ? 0.4 : 1);
 
       if (fx.glow) {
         const flicker = overclocked ? 0.8 + 0.8 * Math.abs(Math.sin(this.time * 18)) : 0;

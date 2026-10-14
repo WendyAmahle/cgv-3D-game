@@ -34,7 +34,7 @@ export default {
     { type: 'crate', item: 'egg', row: 'back', x: -1.5 },
     { type: 'crate', item: 'pork', row: 'back', x: 1.5 },
     { type: 'crate', item: 'nori', row: 'back', x: 4.5 },
-    { type: 'pot', row: 'front', x: -5.3 },
+    { type: 'pot', row: 'front', x: -5.3, boil: true },
     { type: 'grill', row: 'front', x: -3.2, label: 'Chashu Searing Grill', plate: { text: 'CHASHU', background: '#991b1b', color: '#fff7ed', width: 0.6 } },
     { type: 'dispenser', item: 'broth', row: 'front', x: -1.05 },
     { type: 'board', row: 'front', x: 1.1, bowlFirst: true },
