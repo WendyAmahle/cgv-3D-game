@@ -6,6 +6,9 @@ import { CustomerManager } from './Customers.js';
 import { disposeItem, itemLabel, itemTags } from './Items.js';
 import { pick, randomRange } from '../utils/Constants.js';
 
+// The parts of a customer's order not served yet, e.g. 'Bun + Cooked Patty + Cola'.
+const stillWanted = (customer) => customer.parts.flat().map(tagLabel).join(' + ');
+
 // One shift in one level: stations, customers, timer, money and win/lose.
 // `world` comes from LevelManager.build(): { stations: [{config, view}], customerSlots }.
 // `physics` (Physics.js) takes over items that are thrown or dropped.
@@ -33,7 +36,7 @@ export class Gameplay {
     const trash = this.stations.find((station) => station.type === 'trash');
     // The bin's opening, for throws. Station roots sit directly under the level root at the origin.
     this.bin = trash && { rim: trash.view.root.position.clone().add({ x: 0, y: 0.98, z: 0 }), radius: 0.26 };
-    this.unsubscribe = events.on('order:missed', () => this.onMissed());
+    this.unsubscribe = events.on('order:missed', ({ customer }) => this.onMissed(customer));
   }
 
   // Everything the player can point at, for mouse picking and keyboard navigation.
@@ -62,7 +65,7 @@ export class Gameplay {
         const customer = slot.customer;
         if (!customer) return 'Nobody here yet';
         if (customer.state !== 'waiting') return customer.state === 'arriving' ? 'Arriving…' : 'Leaving';
-        return RECIPES[customer.recipeId].ingredients.map(tagLabel).join(' + ');
+        return stillWanted(customer);
       },
     }));
 
@@ -85,7 +88,7 @@ export class Gameplay {
 
     const recipe = RECIPES[customer.recipeId];
     if (this.player.isEmpty) {
-      say(`They want ${recipe.name}: ${recipe.ingredients.map(tagLabel).join(' + ')}`);
+      say(`They want ${recipe.name}: ${stillWanted(customer)}`);
       return;
     }
 
@@ -93,11 +96,18 @@ export class Gameplay {
     if (!outcome.ok) {
       this.stats.combo = 0;
       events.emit('order:wrong', { customer });
-      say(`"That's not what I ordered!" They want ${recipe.name}.`);
+      say(`"That's not what I ordered!" They still want ${stillWanted(customer)}.`);
       return;
     }
 
     disposeItem(this.player.release());
+
+    // Part of the order (a drink, or the food): they keep waiting for the rest.
+    if (!outcome.complete) {
+      events.emit('order:partial', { customer, delivered: outcome.delivered });
+      say(`${outcome.delivered.map(tagLabel).join(' + ')} delivered. Still waiting for ${stillWanted(customer)}.`);
+      return;
+    }
 
     const tip = Math.round(recipe.price * 0.5 * outcome.ratio);
     const reward = recipe.price + tip;
@@ -129,7 +139,7 @@ export class Gameplay {
   canDrop(target) {
     const item = this.player.held;
     if (!item || this.result || !target) return false;
-    if (target.kind === 'customer') return target.ref.customer?.state === 'waiting';
+    if (target.kind === 'customer') return this.customers.accepts(target.ref, itemTags(item));
     return target.ref.canAccept(item);
   }
 
@@ -183,10 +193,19 @@ export class Gameplay {
     this.binHeld();
   }
 
-  onMissed() {
+  // A customer walked out. If they'd already been handed part of their order
+  // (say, the drink), they pay that share of the price, without a tip.
+  onMissed(customer) {
     this.stats.missed += 1;
     this.stats.combo = 0;
-    say('A customer walked out!');
+    const recipe = RECIPES[customer.recipeId];
+    const paid = Math.round((recipe.price * customer.delivered.length) / recipe.ingredients.length);
+    if (paid > 0) {
+      this.stats.money += paid;
+      say(`A customer walked out, but paid $${paid} for what they got.`);
+    } else {
+      say('A customer walked out!');
+    }
     if (this.stats.missed >= this.level.maxMisses) this.finish(false, 'Too many customers walked out.');
   }
 

@@ -14,7 +14,7 @@ const COOKING = {
   pork: { raw: 0xeab0a6, cooked: 0xb87142, burnt: 0x2b1a12, marks: 1, roughness: [0.4, 0.5, 0.95] },
   potato: { raw: 0xf1e1b0, cooked: 0xdb9d36, burnt: 0x3c2410, marks: 0, roughness: [0.5, 0.55, 0.9] },
   noodles: { raw: 0xeadcae, cooked: 0xf2d67e, burnt: 0xcfc69c, marks: 0, roughness: [0.75, 0.3, 0.55] },
-  steak: { raw: 0xa36bff, cooked: 0x6a2f3c, burnt: 0x160c12, marks: 1, roughness: [0.3, 0.55, 0.95] },
+  steak: { raw: 0xb3404c, cooked: 0x5e3322, burnt: 0x1a1210, marks: 1, roughness: [0.3, 0.6, 0.95] },
 };
 
 // ------------------------------------------------------------------ helpers
@@ -280,9 +280,8 @@ function buildPatty() {
   );
 }
 
-// Level 3 plasma steak: the patty profile stretched into a thick oval slab,
-// glowing faintly violet (the plasma), with the cooking shader's marks as the
-// laser's sear lines.
+// Level 3 steak: the patty profile stretched into a thick oval slab, with the
+// cooking shader's marks as the laser's sear lines.
 function buildSteak() {
   return cookable(
     'steak',
@@ -290,12 +289,7 @@ function buildSteak() {
       const geometry = cached('steak', () => pattyGeometry().clone().scale(1.35, 1.35, 0.95));
       return group(0.135, mesh(geometry, material));
     },
-    {
-      emissive: 0x5b21b6,
-      emissiveIntensity: 0.45,
-      normalMap: noiseNormalMap('meat', { scale: 24, strength: 3 }),
-      normalScale: new THREE.Vector2(0.8, 0.8),
-    }
+    { normalMap: noiseNormalMap('meat', { scale: 24, strength: 3 }), normalScale: new THREE.Vector2(0.8, 0.8) }
   );
 }
 
@@ -481,19 +475,23 @@ function buildBowl(type) {
   return result;
 }
 
-// Level 3 molecular cocktail: a tall glass whose layered liquid is drawn by the
-// mix shader, with a glowing "molecular pearl" garnish once it's blended.
+// Level 3 molecular cocktail: a martini glass (foot, stem and V-shaped bowl)
+// whose layered liquid is drawn by the mix shader, with a glowing "molecular
+// pearl" garnish once it's blended. The liquid is an open cone inside the bowl;
+// the shader only works with height, so the layers follow the V.
 // Scene graph: glass group → liquid (mix shader), glass shell, garnish → stick + pearl.
 function buildCocktail() {
   const glass = new THREE.Mesh(
-    cached('cocktail-glass', () => lathe([[0, 0], [0.11, 0], [0.115, 0.015], [0.13, 0.46], [0.122, 0.46], [0.104, 0.03], [0, 0.03]], 40)),
+    cached('cocktail-glass', () =>
+      lathe([[0, 0], [0.1, 0], [0.1, 0.012], [0.016, 0.022], [0.011, 0.2], [0.17, 0.46], [0.162, 0.46], [0.011, 0.216], [0, 0.216]], 40)
+    ),
     surfaces.glass()
   );
   glass.castShadow = true;
 
-  const mixMaterial = createMixMaterial({ bottom: -0.2, top: 0.2 });
-  const liquid = new THREE.Mesh(cached('cocktail-liquid', () => new THREE.CylinderGeometry(0.118, 0.1, 0.4, 32, 1, true)), mixMaterial);
-  liquid.position.y = 0.235;
+  const mixMaterial = createMixMaterial({ bottom: -0.11, top: 0.11 });
+  const liquid = new THREE.Mesh(cached('cocktail-liquid', () => new THREE.CylinderGeometry(0.142, 0.012, 0.22, 32, 1, true)), mixMaterial);
+  liquid.position.y = 0.33;
 
   const garnish = new THREE.Group();
   const pearlMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0xffffff, emissiveIntensity: 1.8, roughness: 0.2 });
@@ -501,8 +499,8 @@ function buildCocktail() {
   pearl.position.y = 0.16;
   const stick = mesh(cached('cocktail-stick', () => new THREE.CylinderGeometry(0.006, 0.006, 0.26, 6)), surfaces.chrome(), [0, 0.06, 0]);
   garnish.add(stick, pearl);
-  garnish.position.set(0.04, 0.4, 0);
-  garnish.rotation.z = -0.25;
+  garnish.position.set(0.08, 0.4, 0); // resting against the rim
+  garnish.rotation.z = -0.55;
   garnish.userData.material = pearlMaterial;
   garnish.visible = false;
 

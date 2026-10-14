@@ -86,9 +86,6 @@ export function refreshItem(item) {
   if (def?.cook) {
     const amount = def.cook.sides ? searAmount(item.type, item.sides) : cookAmount(item.type, item.cookTime);
     setCookVisual(item.mesh, amount, item.heating ? 1 : 0);
-    // A plasma steak's violet glow dies down as it's seared.
-    const material = item.mesh.userData.cookMaterial;
-    if (def.cook.sides && material) material.emissiveIntensity = 0.45 * (1 - Math.min(1, amount));
   }
   if (def?.liquid) setLiquidFill(item.mesh, item.fill);
   if (def?.mix) setMixVisual(item.mesh, item);

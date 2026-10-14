@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { events } from '../core/Events.js';
-import { COCKTAILS, RECIPES, matchesRecipe, mixFormula, tagColor } from './Recipes.js';
+import { COCKTAILS, RECIPES, matchParts, matchesRecipe, mixFormula, orderParts, tagColor } from './Recipes.js';
 import { createOrderBubble, createOrderHologram } from '../world/Models.js';
 import { createCustomer } from '../world/Characters.js';
 import { disposeObject } from '../utils/Dispose.js';
-import { pick, randomRange } from '../utils/Constants.js';
+import { SERVE_DRINKS_SEPARATELY, pick, randomRange } from '../utils/Constants.js';
 
 const WALK_SPEED = 1.5; // m/s, matches the walk animation
 const ENTRY_DISTANCE = 7;
@@ -63,6 +63,8 @@ export class CustomerManager {
       id: nextCustomerId++,
       slot,
       recipeId,
+      parts: orderParts(RECIPES[recipeId].ingredients), // still to be served
+      delivered: [], // tags already handed over
       patience,
       maxPatience: patience,
       state: 'arriving',
@@ -139,21 +141,42 @@ export class CustomerManager {
     }
   }
 
-  // Returns { ok, recipe, ratio } or null if nobody is waiting in this slot.
+  // Indices of the customer's remaining order parts that `tags` would
+  // complete, or null if they wouldn't take it. With SERVE_DRINKS_SEPARATELY
+  // off, only the whole order at once is accepted.
+  partsFor(customer, tags) {
+    if (SERVE_DRINKS_SEPARATELY) return matchParts(customer.parts, tags);
+    return matchesRecipe(tags, customer.recipeId) ? customer.parts.map((_, index) => index) : null;
+  }
+
+  // Would the customer in `slot` take `tags` right now?
+  accepts(slot, tags) {
+    const customer = slot.customer;
+    return customer?.state === 'waiting' && this.partsFor(customer, tags) !== null;
+  }
+
+  // Returns { ok, recipe, complete, delivered, ratio } or null if nobody is
+  // waiting in this slot. `complete` is false while parts are still missing.
   serve(slot, tags) {
     const customer = slot.customer;
     if (!customer || customer.state !== 'waiting') return null;
 
     const recipe = RECIPES[customer.recipeId];
-    if (!matchesRecipe(tags, customer.recipeId)) {
+    const indices = this.partsFor(customer, tags);
+    if (!indices) {
       customer.patience = Math.max(0.5, customer.patience - (this.level.wrongOrderPenalty ?? WRONG_ORDER_PENALTY));
       customer.animator.play('headShake', { then: 'idle' });
       return { ok: false, recipe };
     }
 
+    const delivered = indices.flatMap((index) => customer.parts[index]);
+    customer.delivered.push(...delivered);
+    customer.parts = customer.parts.filter((_, index) => !indices.includes(index));
+    if (customer.parts.length) return { ok: true, recipe, complete: false, delivered };
+
     const ratio = customer.patience / customer.maxPatience;
     this.leave(slot, true);
-    return { ok: true, recipe, ratio };
+    return { ok: true, recipe, complete: true, delivered, ratio };
   }
 
   leave(slot, happy) {

@@ -103,17 +103,28 @@ export class HUD {
         element.querySelector('strong').textContent = recipe.name;
         element.querySelector('.price').textContent = `$${recipe.price}`;
         const chips = element.querySelector('.chips');
-        for (const tag of recipe.ingredients) {
+        const chipList = recipe.ingredients.map((tag) => {
           const chip = document.createElement('span');
           chip.className = 'chip';
           chip.textContent = tagLabel(tag);
           const swatch = tagColor(tag);
           if (swatch !== null) chip.style.boxShadow = `inset 6px 0 0 #${swatch.toString(16).padStart(6, '0')}`;
           chips.append(chip);
-        }
+          return { tag, element: chip };
+        });
         this.el.tickets.append(element);
-        ticket = { element, fill: element.querySelector('.meter-fill'), seconds: element.querySelector('.seconds') };
+        ticket = { element, fill: element.querySelector('.meter-fill'), seconds: element.querySelector('.seconds'), chips: chipList, delivered: 0 };
         this.tickets.set(customer.id, ticket);
+      }
+      // Tick off what's been handed over (a drink, or the plated food).
+      if (ticket.delivered !== customer.delivered.length) {
+        ticket.delivered = customer.delivered.length;
+        const left = [...customer.delivered];
+        for (const chip of ticket.chips) {
+          const index = left.indexOf(chip.tag);
+          chip.element.classList.toggle('done', index >= 0);
+          if (index >= 0) left.splice(index, 1);
+        }
       }
       const ratio = Math.max(0, customer.patience / customer.maxPatience);
       ticket.fill.style.width = `${ratio * 100}%`;
