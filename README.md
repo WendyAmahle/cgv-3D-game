@@ -44,6 +44,12 @@ Inspired by Cooking Fever, all in `src/ui/` and driven by the event bus, so no g
 
 Stars and trophies are saved in the browser's localStorage.
 
+## Serving
+
+Like Cooking Fever, an order is served in parts: each **drink** on its own, and all the **food** (fries included) together as one plate built on the board, in any order. Serving everything on one plate still works. Delivered items are ticked off the order card, and the customer pays (price + speed tip) once everything has arrived. A customer who walks out pays their share of the price for what they already got, without a tip. The serve ring only turns green when the customer will take what you're holding.
+
+The rules are `orderParts()` / `matchParts()` in `src/gameplay/Recipes.js`. Set `SERVE_DRINKS_SEPARATELY = false` in `src/utils/Constants.js` to go back to serving whole orders at once.
+
 ## Levels
 
 | Level | Theme | What it adds |
