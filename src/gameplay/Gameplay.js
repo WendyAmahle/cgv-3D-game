@@ -139,7 +139,7 @@ export class Gameplay {
   canDrop(target) {
     const item = this.player.held;
     if (!item || this.result || !target) return false;
-    if (target.kind === 'customer') return target.ref.customer?.state === 'waiting';
+    if (target.kind === 'customer') return this.customers.accepts(target.ref, itemTags(item));
     return target.ref.canAccept(item);
   }
 
