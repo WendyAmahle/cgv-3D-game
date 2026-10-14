@@ -15,8 +15,11 @@ export default {
   weather: 'none',
   ambience: { park: 0.8 }, // birds and people in the park (audio/AudioManager.js LOOPS)
   footsteps: 'concrete',
-  post: { bloom: 0.4, threshold: 0.95, bloomRadius: 0.45, saturation: 1.15, vignette: 0.35, tint: 0xfff3df },
-  exposure: 1.05,
+  // Bloom runs on the linear image before tone mapping, so a low threshold
+  // made every sunlit light surface glow. At 1.6 only real emitters (the
+  // festoon bulbs) bloom; sunlit whites keep their texture and shading.
+  post: { bloom: 0.12, threshold: 1.6, bloomRadius: 0.4, saturation: 1.08, vignette: 0.3, tint: 0xfff3df },
+  exposure: 0.9,
   // Recorded track, with the synth tune as a fallback if it fails to load.
   // Volume 2.4 brings its -15.3 dB mean level in line with the other tracks.
   music: { file: 'music/feel-good-island', volume: 2.4, tempo: 116, root: 60, scale: [0, 2, 4, 7, 9, 12], progression: [0, 5, 7, 5], wave: 'triangle' },
