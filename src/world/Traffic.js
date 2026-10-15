@@ -288,9 +288,12 @@ function person(seed, position, rotationY) {
 // the bus stop. Same animated bodies as the customers. Returns update(dt, time).
 export function buildPedestrians(parent, busStopX) {
   const walkers = [];
-  for (let index = 0; index < 8; index += 1) {
+  // Five walkers: each is a skinned character of several meshes, so every one
+  // adds draw calls and skinning work to the heaviest level.
+  const count = 5;
+  for (let index = 0; index < count; index += 1) {
     const way = STREET.walkways[index % 2];
-    const x = -WALK_EXTENT + (index + Math.random() * 0.6) * ((WALK_EXTENT * 2) / 8);
+    const x = -WALK_EXTENT + (index + Math.random() * 0.6) * ((WALK_EXTENT * 2) / count);
     const z = way.z + (Math.random() - 0.5) * 0.5;
     const walker = person(700 + index * 37, new THREE.Vector3(x, 0, z), way.direction > 0 ? Math.PI / 2 : -Math.PI / 2);
     const pace = 0.85 + Math.random() * 0.25;

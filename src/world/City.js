@@ -503,11 +503,13 @@ function buildSkyline(street) {
 
 // Street buildings from the facade kit. Across the road they are turned round
 // to face the diner, so each one runs from its origin towards -x.
+// Each kit piece is 4-9k triangles, so heights are kept low (the skyline
+// towers fill in above them): the street was most of Level 3's triangles.
 const ACROSS = [
-  { from: -37, modules: 7, floors: 5, seed: 21, tint: 0xa39e98 },
-  { from: -15.5, modules: 5, floors: 7, seed: 23, tint: 0x8d96a3 },
+  { from: -37, modules: 7, floors: 4, seed: 21, tint: 0xa39e98 },
+  { from: -15.5, modules: 5, floors: 5, seed: 23, tint: 0x8d96a3 },
   { from: 0.5, modules: 6, floors: 4, seed: 29, tint: 0xb3a596 },
-  { from: 19.5, modules: 5, floors: 6, seed: 31, tint: 0x9aa0a8 },
+  { from: 19.5, modules: 5, floors: 4, seed: 31, tint: 0x9aa0a8 },
 ];
 
 function buildFacades(street) {
@@ -519,9 +521,9 @@ function buildFacades(street) {
   };
 
   // Behind the diner, then its neighbours either side on this pavement.
-  place({ modules: 12, floors: 4, seed: 3, tint: 0x9a9aa6 }, [-18, 0, -7.5], 0);
+  place({ modules: 12, floors: 3, seed: 3, tint: 0x9a9aa6 }, [-18, 0, -7.5], 0);
   place({ modules: 6, floors: 4, seed: 7, tint: 0xb7a79a }, [-27.6, 0, 2.0], 0);
-  place({ modules: 6, floors: 5, seed: 11, tint: 0x8f9bab }, [9.6, 0, 2.0], 0);
+  place({ modules: 6, floors: 4, seed: 11, tint: 0x8f9bab }, [9.6, 0, 2.0], 0);
   for (const { from, modules, ...options } of ACROSS) place({ modules, ...options }, [from + modules * MODULE, 0, STREET.facadeZ], Math.PI);
 
   // Cables strung over the road between the two rows.
