@@ -107,31 +107,45 @@ export function createOrderBubble(text) {
 // bubble, plus update(dt) to animate and dismiss() to fizzle it out.
 //   swatch: a cocktail's colour (sRGB hex) or null; detail: a second line.
 export function createOrderHologram(text, { swatch = null, detail = '' } = {}) {
-  const width = 1.5;
-  const height = detail ? 0.56 : 0.4;
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = Math.round((512 * height) / width);
-  const ctx = canvas.getContext('2d');
+  // The panel is sized to its text (at most 1.5 wide) so it hides as little
+  // of the kitchen behind it as possible; 680 canvas pixels per world unit
+  // keeps the letters sharp.
+  const ppu = 680;
   const font = '"Segoe UI", Arial, sans-serif';
+  const titleFont = `800 ${detail ? 92 : 100}px ${font}`;
+  const detailFont = `600 58px ${font}`;
+  const title = text.toUpperCase();
+  const ctx = document.createElement('canvas').getContext('2d');
+  ctx.font = titleFont;
+  let textWidth = ctx.measureText(title).width;
+  ctx.font = detailFont;
+  const detailWidth = detail ? ctx.measureText(detail).width + (swatch === null ? 0 : 72) : 0;
+  textWidth = Math.max(textWidth, detailWidth);
+  const width = THREE.MathUtils.clamp((textWidth + 110) / ppu, 0.7, 1.5);
+  const height = detail ? 0.5 : 0.32;
+
+  const canvas = ctx.canvas;
+  canvas.width = Math.round(width * ppu);
+  canvas.height = Math.round(height * ppu);
+  const maxText = canvas.width - 90;
+  const middle = canvas.width / 2;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.shadowColor = 'rgba(255,255,255,0.8)';
-  ctx.shadowBlur = 8;
   ctx.fillStyle = '#ffffff';
-  ctx.font = `800 ${detail ? 50 : 56}px ${font}`;
-  ctx.fillText(text.toUpperCase(), 256, detail ? canvas.height * 0.36 : canvas.height / 2, 470);
+  ctx.font = titleFont;
+  ctx.fillText(title, middle, detail ? canvas.height * 0.36 : canvas.height / 2, maxText);
   if (detail) {
-    ctx.font = `600 30px ${font}`;
+    ctx.font = detailFont;
     const y = canvas.height * 0.72;
-    const textWidth = Math.min(ctx.measureText(detail).width, 380);
-    const x = swatch === null ? 256 : 256 + 22;
-    ctx.fillText(detail, x, y, 380);
+    const lineWidth = Math.min(ctx.measureText(detail).width, maxText - (swatch === null ? 0 : 72));
+    const x = swatch === null ? middle : middle + 36;
+    ctx.fillText(detail, x, y, lineWidth);
     if (swatch !== null) {
       ctx.shadowColor = `#${swatch.toString(16).padStart(6, '0')}`;
+      ctx.shadowBlur = 14;
       ctx.fillStyle = ctx.shadowColor;
       ctx.beginPath();
-      ctx.arc(x - textWidth / 2 - 26, y, 15, 0, Math.PI * 2);
+      ctx.arc(x - lineWidth / 2 - 44, y, 24, 0, Math.PI * 2);
       ctx.fill();
     }
   }
