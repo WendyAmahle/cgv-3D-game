@@ -125,7 +125,6 @@ export function createHologramMaterial(map, aspect) {
     fragmentShader: hologramFragment,
     transparent: true,
     depthWrite: false,
-    blending: THREE.AdditiveBlending,
     side: THREE.DoubleSide,
     toneMapped: false,
     fog: false,

@@ -1,13 +1,16 @@
 // Hologram order display — fragment stage (Level 3).
 // uMap holds the order drawn in white on a transparent canvas (plus a cocktail's
 // colour swatch). The shader turns it into a projected hologram:
-//   - white ink takes the hologram colour, coloured marks keep their colour;
-//   - scanlines, a bright band rolling up the panel and a flickering frame;
+//   - a dark, see-through plate behind the text keeps it readable over the neon
+//     scene, and the text stays below the bloom threshold so it doesn't smear;
+//   - white ink takes a pale hologram tint, coloured marks keep their colour;
+//   - scanlines and a band rolling up the plate, and a glowing frame;
 //   - uUrgency (1 - customer patience) shifts the colour teal → amber → red and
 //     adds glitches: bands of the panel jump sideways, the red and blue channels
-//     split apart and the whole panel drops out for a frame now and then;
+//     split apart and the panel dims for a frame now and then (all kept small
+//     so the order stays legible);
 //   - uFade dissolves it pixel block by pixel block as it appears or is served.
-// Additive blending, so it glows over the scene and the bloom pass catches it.
+// Normal alpha blending; only the frame is bright enough for the bloom pass.
 uniform sampler2D uMap;
 uniform float uTime;
 uniform float uUrgency; // 0 just arrived → 1 about to walk out
@@ -41,33 +44,35 @@ void main() {
   float tick = floor(t * 12.0);
   float jump = step(1.0 - 0.4 * glitch, hash(band * 7.13 + tick));
   vec2 uv = vUv;
-  uv.x += (hash(band + tick * 3.1) - 0.5) * 0.14 * jump * glitch;
+  uv.x += (hash(band + tick * 3.1) - 0.5) * 0.03 * jump * glitch;
 
   vec3 color = urgencyColor(uUrgency);
   vec4 ink = texture2D(uMap, uv);
   float saturation = max(ink.r, max(ink.g, ink.b)) - min(ink.r, min(ink.g, ink.b));
-  vec3 inkColor = mix(color * 1.9, ink.rgb * 1.7, step(0.15, saturation));
+  vec3 inkColor = mix(mix(vec3(1.0), color, 0.25), ink.rgb, step(0.15, saturation));
 
   // Chromatic split: the red and blue channels slide apart when glitching.
-  float split = 0.003 + 0.014 * glitch;
+  float split = 0.004 * glitch;
   float red = texture2D(uMap, uv + vec2(split, 0.0)).a;
   float blue = texture2D(uMap, uv - vec2(split, 0.0)).a;
-  vec3 fringe = vec3(max(red - ink.a, 0.0), 0.0, max(blue - ink.a, 0.0)) * (0.5 + glitch);
+  vec3 fringe = vec3(max(red - ink.a, 0.0), 0.0, max(blue - ink.a, 0.0)) * 0.6;
 
-  // Panel: faint fill and a glowing frame with rounded corners.
+  // Plate with rounded corners and a glowing frame round its edge.
   vec2 p = (vUv - 0.5) * vec2(uAspect, 1.0);
-  vec2 halfSize = vec2(uAspect, 1.0) * 0.5 - 0.06;
+  vec2 halfSize = vec2(uAspect, 1.0) * 0.5 - 0.04;
   float edge = length(max(abs(p) - halfSize + 0.08, 0.0)) - 0.08;
-  float frame = smoothstep(0.03, 0.0, abs(edge)) * 0.9;
-  float fill = step(edge, 0.0) * 0.1;
+  float frame = smoothstep(0.025, 0.0, abs(edge));
+  float plate = smoothstep(0.01, -0.01, edge);
 
-  float scan = 0.72 + 0.28 * sin(vUv.y * 150.0 - t * 7.0);
-  float roll = exp(-30.0 * pow(fract(vUv.y * 0.6 - t * 0.35) - 0.5, 2.0)) * 0.5;
-  float flicker = 0.9 + 0.1 * hash(floor(t * 24.0));
-  if (hash(floor(t * 9.0) + uSeed) < glitch * 0.18) flicker *= 0.25;
+  float scan = 0.75 + 0.25 * sin(vUv.y * 150.0 - t * 7.0);
+  float roll = exp(-30.0 * pow(fract(vUv.y * 0.6 - t * 0.35) - 0.5, 2.0));
+  float flicker = 0.94 + 0.06 * hash(floor(t * 24.0));
+  if (hash(floor(t * 9.0) + uSeed) < glitch * 0.18) flicker *= 0.6;
 
-  vec3 rgb = color * (fill + frame + roll * fill * 4.0) + inkColor * ink.a + fringe;
-  float alpha = clamp((fill + frame + ink.a + length(fringe)) * scan * flicker, 0.0, 1.0);
-  gl_FragColor = vec4(rgb * scan * flicker, alpha);
+  vec3 plateColor = color * (0.06 + roll * 0.1) * scan;
+  vec3 rgb = mix(plateColor, inkColor, ink.a) + fringe;
+  rgb = mix(rgb, color * 1.6, frame);
+  float alpha = max(max(plate * 0.65, ink.a), frame);
+  gl_FragColor = vec4(rgb * flicker, alpha);
   #include <colorspace_fragment>
 }
