@@ -116,3 +116,13 @@ Realistic props, textures, HDRI skies and characters live in `public/assets/` an
 ## Performance
 
 Pause → **Graphics: Low** turns off post-processing and shadows and renders at 1× pixel ratio, for weaker lab machines. Levels dispose their GPU resources when unloaded, so restarting repeatedly doesn't leak memory.
+
+Measured on an integrated GPU (Intel Iris Xe, Chrome), three things keep the game smooth (`src/core/Game.js`, `src/ui/Minimap.js`):
+
+- **Shaders are compiled while a level loads** ("Preparing the kitchen…"). Customers, order bubbles and food only appear once the shift starts, so a sample of each is compiled with the level and removed again. Before, each first appearance stalled the game while its shader compiled (up to 3.4 s at the start of Level 1).
+- **Adaptive edge smoothing**: if a shift runs below 28 fps, the game tries turning MSAA off (the costliest single setting, and switching it needs no shader recompiles) and keeps it off only if that is at least 15% faster, with a message saying so. Choosing Graphics in the pause menu turns this off. Tune it with `AUTO_AA` in `Game.js`.
+- **The minimap is redrawn 15 times a second** into its own small image instead of rendering the whole scene again every frame.
+
+Together these took the steady frame rate on that laptop from about 24 to 32 fps in Level 1, 31 to 45 in Level 2 and 15 to 23 in Level 3. Level 3 is still the heaviest (about 1.1 million triangles and 500 draw calls, with live traffic and pedestrians), so it is the place to look for more.
+
+On the dev server every level can be picked from Level select; the production build unlocks them in order (`UNLOCK_ALL_LEVELS` in `src/utils/Constants.js`). Delete the `bistro-rush-progress-v1` entry from the browser's localStorage to lock them again.
