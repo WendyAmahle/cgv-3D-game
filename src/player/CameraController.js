@@ -6,6 +6,7 @@ export const CAMERA_VIEWS = {
   2: 'Third person',
   3: 'Station focus',
   4: 'Top-down',
+  5: 'First person',
 };
 
 const PIVOT = new THREE.Vector3(0, 1.0, 1.0);
@@ -15,6 +16,7 @@ const PIVOT = new THREE.Vector3(0, 1.0, 1.0);
 //   2 Third person — over the chef avatar's shoulder, following them along the aisle
 //   3 Focus      — follows whatever is selected
 //   4 Top-down   — plan view of the whole kitchen
+//   5 First person — through the chef's eyes (Chef hides its body)
 export class CameraController {
   constructor(camera, dom) {
     this.camera = camera;
@@ -49,7 +51,7 @@ export class CameraController {
   }
 
   cycle() {
-    this.setMode((this.mode % 4) + 1);
+    this.setMode((this.mode % 5) + 1);
   }
 
   orbit(direction) {
@@ -106,6 +108,19 @@ export class CameraController {
           look.copy(this.focus).add({ x: 0, y: 0.3, z: 0 });
         }
         break;
+      case 5:
+        if (this.follow) {
+          // Eye height, looking where the chef faces and a little down at the counters.
+          const chef = this.follow;
+          const forwardX = Math.sin(chef.rotation.y);
+          const forwardZ = Math.cos(chef.rotation.y);
+          position.set(chef.position.x + forwardX * 0.12, 1.62, chef.position.z + forwardZ * 0.12);
+          look.set(chef.position.x + forwardX * 3, 0.95, chef.position.z + forwardZ * 3);
+          break;
+        }
+        position.set(0, 1.62, -1.2);
+        look.set(0, 0.95, 2.8);
+        break;
       case 4:
         position.set(0, 14, 2.6);
         look.set(0, 0, 1.2);
@@ -128,7 +143,7 @@ export class CameraController {
 
   update(dt, time) {
     this.computeDesired(time);
-    const blend = 1 - Math.exp(-dt * 4.5);
+    const blend = 1 - Math.exp(-dt * (this.mode === 5 ? 12 : 4.5)); // first person keeps up with the head
     this.camera.position.lerp(this.desiredPosition, blend);
     this.look.lerp(this.desiredLook, blend);
 

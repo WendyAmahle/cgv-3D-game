@@ -21,6 +21,7 @@ export class Chef {
     this.root = new THREE.Group();
     this.root.name = 'chef';
     this.root.add(body);
+    this.body = body;
     this.animator = animator;
 
     this.carry = new THREE.Group();
@@ -40,6 +41,10 @@ export class Chef {
 
     events.on('order:served', () => this.react('agree'));
     events.on('order:wrong', () => this.react('headShake'));
+    // First person: hide the body so the camera isn't inside the head; the held item stays.
+    events.on('camera:mode', ({ mode }) => {
+      this.body.visible = mode !== 5;
+    });
   }
 
   // New level: back to the middle of the aisle, keeping clear of the bin.

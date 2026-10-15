@@ -29,7 +29,7 @@ import { createOrderDisplay } from '../gameplay/Customers.js';
 import { createCustomer } from '../world/Characters.js';
 import { createItemMesh, createPlateMesh } from '../world/Models.js';
 
-const CAMERA_KEYS = { Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4 };
+const CAMERA_KEYS = { Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4, Digit5: 5 };
 const WARM_CUSTOMERS = 12; // sample customers whose shaders are compiled while a level loads
 // Adaptive antialiasing: below `minFps` (averaged over `window` seconds, after
 // `warmup` seconds), try rendering without MSAA and keep it only if that is at
