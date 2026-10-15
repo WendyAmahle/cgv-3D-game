@@ -45,6 +45,17 @@ export class PostProcessing {
     uniforms.uTint.value.set(post.tint ?? 0xffffff);
   }
 
+  // MSAA on the post-processing targets: the costliest single setting measured
+  // on integrated GPUs. Game.js turns it off on its own when that really helps.
+  setAntialias(on) {
+    const samples = on ? 4 : 0;
+    for (const target of [this.composer.renderTarget1, this.composer.renderTarget2]) {
+      if (target.samples === samples) continue;
+      target.samples = samples;
+      target.dispose(); // re-created with the new sample count on next use
+    }
+  }
+
   flash(amount = 1) {
     this.flashValue = Math.max(this.flashValue, amount);
   }

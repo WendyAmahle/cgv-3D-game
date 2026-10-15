@@ -21,10 +21,20 @@ import { Minimap } from '../ui/Minimap.js';
 import { StoryScreen } from '../ui/StoryScreen.js';
 import { StarRecord, rateShift } from '../ui/Stars.js';
 import { Achievements } from '../ui/Achievements.js';
-import { KEYS, matches } from '../utils/Constants.js';
+import { KEYS, LAYOUT, matches } from '../utils/Constants.js';
 import { assets } from '../utils/AssetLoader.js';
+import { disposeObject } from '../utils/Dispose.js';
+import { ITEMS, RECIPES } from '../gameplay/Recipes.js';
+import { createOrderDisplay } from '../gameplay/Customers.js';
+import { createCustomer } from '../world/Characters.js';
+import { createItemMesh, createPlateMesh } from '../world/Models.js';
 
 const CAMERA_KEYS = { Digit1: 1, Digit2: 2, Digit3: 3, Digit4: 4 };
+const WARM_CUSTOMERS = 12; // sample customers whose shaders are compiled while a level loads
+// Adaptive antialiasing: below `minFps` (averaged over `window` seconds, after
+// `warmup` seconds), try rendering without MSAA and keep it only if that is at
+// least `gain` times faster. Choosing Graphics in the pause menu turns it off.
+const AUTO_AA = { minFps: 28, warmup: 4, window: 5, gain: 1.15 };
 const SLIDE_SECONDS = 5; // how long each level is shown behind the main menu
 const SLIDE_FADE_MS = 450; // matches the #menuFade transition in style.css
 // Recorded track behind the main menu (credited in ui/Credits.js); each level sets its own music.
@@ -80,6 +90,7 @@ export class Game {
     this.afterStory = null; // where to go once the prologue ends
 
     this.quality = 'high';
+    this.autoAntialias = { enabled: true, trial: false, warm: AUTO_AA.warmup, time: 0, frames: 0, before: 0, tried: new Set() };
     this.levelIndex = 0;
     this.world = null;
     this.gameplay = null;
@@ -386,6 +397,8 @@ export class Game {
     const level = LEVELS[index];
     this.controller.enabled = false;
     if (!(await this.loadWorld(index, request))) return;
+    await this.warmShaders(level);
+    if (request !== this.request) return;
     this.gameplay = new Gameplay(level, this.world, this.player, this.physics);
     this.controller.setTargets(this.gameplay.targets);
     this.controller.enabled = false;
@@ -402,8 +415,49 @@ export class Game {
     this.audio.setLevelAudio(level);
   }
 
+  // Compiles the level's shaders behind the loading screen. Customers, order
+  // displays and food only appear once the shift is under way, so a sample of
+  // each is put in the scene while compiling and then removed; otherwise every
+  // first appearance stalls the game while its shader compiles (measured at up
+  // to 3.4 s on an integrated GPU). One render afterwards also prepares the
+  // shadow pass's shaders.
+  async warmShaders(level) {
+    this.screens.showLoading('Preparing the kitchen…', 1);
+    await new Promise((resolve) => requestAnimationFrame(resolve)); // let the loading screen paint
+    const samples = new THREE.Group();
+    for (let seed = 1; seed <= WARM_CUSTOMERS; seed += 1) {
+      const { root } = createCustomer(level.theme, seed);
+      root.position.set((seed - WARM_CUSTOMERS / 2) * 0.9, 0, LAYOUT.customerZ);
+      samples.add(root);
+    }
+    const recipes = [...new Set(level.recipes)].map((id) => RECIPES[id]);
+    const types = new Set(level.stations.map((station) => station.item).filter(Boolean));
+    recipes.forEach((recipe) => recipe.ingredients.forEach((tag) => types.add(tag.split(':')[0])));
+    [...types].filter((type) => ITEMS[type]).forEach((type, index) => {
+      const mesh = createItemMesh(type);
+      mesh.position.set(-5 + index * 0.7, LAYOUT.counterTopY, LAYOUT.frontRowZ);
+      samples.add(mesh);
+    });
+    samples.add(createPlateMesh());
+    recipes.forEach((recipe, index) => {
+      const display = createOrderDisplay(level, recipe);
+      display.position.set(-4 + index * 1.6, 2.4, LAYOUT.customerZ);
+      samples.add(display);
+    });
+    this.scene.add(samples);
+    this.renderer.setRenderTarget(this.post.enabled ? this.post.composer.renderTarget1 : null);
+    await this.renderer.compileAsync(this.scene, this.camera);
+    await this.renderer.compileAsync(this.scene, this.minimap.camera);
+    this.renderer.setRenderTarget(null);
+    this.post.render(0);
+    samples.removeFromParent();
+    disposeObject(samples);
+    this.screens.hideLoading();
+  }
+
   beginShift() {
     if (!this.state.is(STATES.INTRO)) return;
+    this.resetAutoAntialias();
     this.screens.hideAll();
     this.hud.show();
     this.minimap.invalidate();
@@ -424,6 +478,7 @@ export class Game {
 
   resume() {
     if (!this.state.is(STATES.PAUSED)) return;
+    this.resetAutoAntialias();
     this.screens.hideAll();
     this.controller.enabled = true;
     this.state.set(STATES.PLAYING);
@@ -458,8 +513,49 @@ export class Game {
 
   toggleQuality() {
     this.quality = this.quality === 'high' ? 'low' : 'high';
+    this.autoAntialias.enabled = false; // the player's own choice wins
+    if (this.quality === 'high') this.post.setAntialias(true);
     this.pauseMenu.setQuality(this.quality);
     this.applyQuality();
+  }
+
+  resetAutoAntialias() {
+    Object.assign(this.autoAntialias, { warm: AUTO_AA.warmup, time: 0, frames: 0 });
+  }
+
+  // Measures the frame rate during a shift; if it is low, tries antialiasing
+  // off and keeps that only if it helps (turning it off doesn't recompile any
+  // shaders, unlike switching to Graphics: Low mid-shift).
+  updateAutoAntialias(rawDt) {
+    const auto = this.autoAntialias;
+    if (!auto.enabled || this.quality !== 'high' || document.hidden) return;
+    if (rawDt > 0.5) {
+      this.resetAutoAntialias(); // a stall or a hidden tab, not the steady frame rate
+      return;
+    }
+    if (auto.warm > 0) {
+      auto.warm -= rawDt;
+      return;
+    }
+    auto.time += rawDt;
+    auto.frames += 1;
+    if (auto.time < AUTO_AA.window) return;
+    const fps = auto.frames / auto.time;
+    auto.time = auto.frames = 0;
+    if (!auto.trial) {
+      if (fps >= AUTO_AA.minFps || auto.tried.has(this.levelIndex)) return;
+      Object.assign(auto, { trial: true, before: fps, warm: 1 });
+      this.post.setAntialias(false);
+      return;
+    }
+    auto.trial = false;
+    auto.tried.add(this.levelIndex);
+    if (fps >= auto.before * AUTO_AA.gain) {
+      auto.enabled = false; // keep it off for the rest of the session
+      say(`Edge smoothing turned off for a smoother frame rate (${Math.round(auto.before)} → ${Math.round(fps)} fps). Pause → Graphics for more.`);
+    } else {
+      this.post.setAntialias(true);
+    }
   }
 
   // Low: no post-processing, 1× pixel ratio, no shadows — for weak lab machines.
@@ -492,7 +588,8 @@ export class Game {
 
   frame(timestamp) {
     this.timer.update(timestamp);
-    const dt = Math.min(this.timer.getDelta(), 0.1);
+    const rawDt = this.timer.getDelta();
+    const dt = Math.min(rawDt, 0.1);
     const time = this.timer.getElapsed();
     const paused = this.state.is(STATES.PAUSED);
     const playing = this.state.is(STATES.PLAYING);
@@ -512,6 +609,7 @@ export class Game {
     }
 
     if (playing && this.gameplay) {
+      this.updateAutoAntialias(rawDt);
       this.gameplay.update(dt);
       this.controller.update(dt, time);
       this.player.update(dt, time);
@@ -534,7 +632,7 @@ export class Game {
     this.post.setHeatSources(this.effects.heatSources());
     this.post.render(dt);
     if (this.gameplay && !this.hud.root.classList.contains('hidden')) {
-      this.minimap.render([...(this.world?.cutaway ?? []), this.player.hand]);
+      this.minimap.render([...(this.world?.cutaway ?? []), this.player.hand], dt);
     }
   }
 

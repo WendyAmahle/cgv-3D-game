@@ -218,7 +218,7 @@ export class CustomerManager {
 // What floats over a customer: a bubble, or in levels with
 // `orderDisplay: 'hologram'` (Level 3) a hologram that also shows a
 // cocktail's colour and recipe.
-function createOrderDisplay(level, recipe) {
+export function createOrderDisplay(level, recipe) {
   if (level.orderDisplay !== 'hologram') return createOrderBubble(recipe.name);
   const cocktail = recipe.ingredients.find((tag) => tagColor(tag) !== null);
   if (!cocktail) return createOrderHologram(recipe.name);
