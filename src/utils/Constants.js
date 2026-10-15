@@ -32,9 +32,9 @@ export const MINIMAP_LAYER = 1;
 
 export const STORAGE_KEY = 'bistro-rush-progress-v1';
 
-// While developing, every level is playable from Level select.
-// Set to false before the final submission so levels unlock in order.
-export const UNLOCK_ALL_LEVELS = true;
+// On the dev server every level is playable from Level select, so the team can
+// test any of them; the production build (what is submitted) unlocks them in order.
+export const UNLOCK_ALL_LEVELS = import.meta.env.DEV;
 
 // Serving (all levels): drinks can be handed over on their own and the food
 // as one plate, in any order; the customer pays once everything has arrived.
