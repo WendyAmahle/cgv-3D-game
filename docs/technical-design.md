@@ -81,7 +81,7 @@ Dropped items collide with the floor, kitchen counters, and back wall using axis
 
 ### Customers, scoring, and persistence
 
-CustomerManager controls spawning, patience, accepted order parts, walkouts, and order displays. A completed order produces base price, speed tip, and combo rewards. Stars, trophies, and career statistics are handled in src/ui/ and persisted with browser localStorage.
+CustomerManager controls spawning, patience, accepted order parts, walkouts, and order displays. A completed order produces base price, speed tip, and combo rewards. Stars, trophies, career statistics, and the buy-back fund are handled in src/ui/ and persisted with browser localStorage. CampaignFund records the best cleared earnings for each level; its $360 target equals the combined mandatory earnings targets and unlocks the final story sequence.
 
 ## 6. Rendering and scene composition
 

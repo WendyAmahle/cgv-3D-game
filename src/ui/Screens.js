@@ -1,6 +1,5 @@
 import { events } from '../core/Events.js';
 import { RECIPES } from '../gameplay/Recipes.js';
-import { EPILOGUE } from '../levels/Story.js';
 import { STAR_RULES, nextStarHint, starString, starTargets } from './Stars.js';
 
 const $ = (selector) => document.querySelector(selector);
@@ -90,10 +89,11 @@ export class Screens {
     this.show('intro');
   }
 
-  showComplete(level, stats, isLast, stars, newBest) {
+  showComplete(level, stats, isLast, stars, newBest, fund = null) {
     $('#completeTitle').textContent = isLast ? 'You conquered every kitchen!' : `${level.name} cleared!`;
-    // The last level's outro leads straight into the epilogue.
-    const lines = isLast ? [level.story.outro, ...EPILOGUE] : [level.story.outro];
+    const lines = isLast
+      ? [level.story.outro, `Your buy-back fund is $${fund?.total ?? 0} of $${fund?.goal ?? 360}. The Golden Ladle is waiting.`]
+      : [level.story.outro];
     $('#completeStory').replaceChildren(
       ...lines.map((line) => {
         const paragraph = document.createElement('p');
@@ -115,8 +115,9 @@ export class Screens {
     $('#completeStarNote').textContent = [newBest ? 'New best!' : '', hint ?? 'Perfect shift!'].filter(Boolean).join(' · ');
     renderStats($('#completeStats'), stats);
     const next = $('#nextButton');
-    next.textContent = isLast ? 'Credits' : 'Next level';
-    next.dataset.action = isLast ? 'credits' : 'next';
+    const fundReady = fund?.ratio >= 1;
+    next.textContent = isLast ? (fundReady ? 'See the finale' : 'Build the buy-back fund') : 'Next level';
+    next.dataset.action = isLast ? (fundReady ? 'finale' : 'menu') : 'next';
     this.show('complete', { returnTo: 'menu' });
   }
 

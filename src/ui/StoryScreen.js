@@ -6,25 +6,32 @@ const $ = (selector) => document.querySelector(selector);
 export class StoryScreen {
   constructor() {
     this.page = 0;
+    this.pages = PROLOGUE;
   }
 
   get isLastPage() {
-    return this.page === PROLOGUE.length - 1;
+    return this.page === this.pages.length - 1;
   }
 
   // Returns false once there are no more pages in that direction.
   go(step) {
     const next = this.page + step;
-    if (next < 0 || next >= PROLOGUE.length) return false;
+    if (next < 0 || next >= this.pages.length) return false;
     this.render(next);
     return true;
   }
 
+  open(pages = PROLOGUE) {
+    this.pages = pages;
+    this.render(0);
+  }
+
   render(page = 0) {
     this.page = page;
-    const { eyebrow, title, text } = PROLOGUE[page];
-    $('#storyEyebrow').textContent = `${eyebrow} · ${page + 1}/${PROLOGUE.length}`;
+    const { eyebrow, title, text, visual = '🍳' } = this.pages[page];
     $('#storyTitle').textContent = title;
+    $('#storyEyebrow').textContent = eyebrow + ' - ' + (page + 1) + '/' + this.pages.length;
+    $('#storyVisual').textContent = visual;
     $('#storyText').replaceChildren(
       ...text.map((line, index) => {
         const paragraph = document.createElement('p');
@@ -34,7 +41,7 @@ export class StoryScreen {
       })
     );
     $('#storyDots').replaceChildren(
-      ...PROLOGUE.map((_, index) => {
+      ...this.pages.map((_, index) => {
         const dot = document.createElement('span');
         if (index === page) dot.className = 'active';
         return dot;

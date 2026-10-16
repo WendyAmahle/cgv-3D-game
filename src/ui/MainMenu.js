@@ -28,4 +28,10 @@ export class MainMenu {
       })
     );
   }
+
+  renderFund(fund) {
+    $('#buybackAmount').textContent = '$' + fund.total + ' / $' + fund.goal;
+    $('#buybackFill').style.width = (fund.ratio * 100) + '%';
+    $('#buybackFund').classList.toggle('ready', fund.ratio >= 1);
+  }
 }

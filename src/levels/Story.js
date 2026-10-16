@@ -37,7 +37,35 @@ export const PROLOGUE = [
   },
 ];
 
-export const EPILOGUE = [
-  'The truck, the noodle bar and the diner are all packed every night, and MegaMunch has quietly pulled its kiosks out of Port Saffron.',
-  'With your savings you buy back The Golden Ladle. On opening night Gran Nandi takes the seat by the window, tastes the first plate and smiles: "Now that\'s a real kitchen."',
+// A proper ending, shown after the final level rather than compressed into
+// the score screen. The amount is supplied by CampaignFund.
+export const finale = (fund, cost) => [
+  {
+    eyebrow: 'Port Saffron - The fund is full',
+    title: 'You made it',
+    visual: '💰',
+    text: [
+      'Your best shifts raised $' + fund + ' for the buy-back fund. The Golden Ladle costs $' + cost + '.',
+      'The truck, the noodle bar and the diner are packed every night, and MegaMunch has quietly pulled its kiosks out of Port Saffron.',
+    ],
+  },
+  {
+    eyebrow: 'The Golden Ladle',
+    title: 'The keys are yours',
+    visual: '🔑',
+    text: [
+      'You sign the papers, lift the old padlock from the door and take the keys to the kitchen that started everything.',
+      'Gran Nandi puts her recipe book on the counter. This time, the restaurant belongs to your family again.',
+    ],
+  },
+  {
+    eyebrow: 'Opening night',
+    title: 'The Golden Ladle - Open Again',
+    visual: '🏪',
+    text: [
+      'The lights come on. The first customers fill the tables, and the smell of real food reaches the street.',
+      'Gran Nandi takes the seat by the window, tastes the first plate and smiles: "Now that is a real kitchen."',
+      'Three kitchens saved. One home restored.',
+    ],
+  },
 ];

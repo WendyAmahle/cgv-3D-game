@@ -31,7 +31,7 @@ MegaMunch Corp has pushed the little kitchens of Port Saffron out of business, i
 With her recipe book and apron, you save three failing kitchens one shift at a time to earn enough to buy The Golden Ladle back.
 
 A skippable prologue is the first screen after loading, before the main menu (rewatch it with **Story** on the menu).
-Each level opens with its chapter on the intro card and closes with an outro on the level-complete screen, and the epilogue follows the last level.
+Each level opens with its chapter on the intro card and closes with an outro on the level-complete screen. The level-select screen also shows a persistent **buy-back fund**: the best earnings from each cleared shift build towards the $360 cost of The Golden Ladle. Once the final shift fills the fund, its completion screen leads to a three-scene ending in which the chef buys the restaurant back and reopens it.
 The prologue and epilogue are in `src/levels/Story.js`, and each chapter is the `story` field in its level file.
 
 ## Stars, trophies and rewards

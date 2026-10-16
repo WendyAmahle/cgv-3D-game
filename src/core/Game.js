@@ -21,6 +21,8 @@ import { Minimap } from '../ui/Minimap.js';
 import { StoryScreen } from '../ui/StoryScreen.js';
 import { StarRecord, rateShift } from '../ui/Stars.js';
 import { Achievements } from '../ui/Achievements.js';
+import { CampaignFund } from '../ui/CampaignFund.js';
+import { finale } from '../levels/Story.js';
 import { KEYS, LAYOUT, matches } from '../utils/Constants.js';
 import { assets } from '../utils/AssetLoader.js';
 import { disposeObject } from '../utils/Dispose.js';
@@ -87,6 +89,7 @@ export class Game {
     this.story = new StoryScreen();
     this.stars = new StarRecord();
     this.achievements = new Achievements();
+    this.fund = new CampaignFund();
     this.afterStory = null; // where to go once the prologue ends
 
     this.quality = 'high';
@@ -139,6 +142,7 @@ export class Game {
     on('ui:play', () => this.openLevel(this.levels.highestUnlocked));
     on('ui:levels', () => {
       this.menu.renderLevelCards(LEVELS, (index) => this.levels.isUnlocked(index), (level) => this.stars.get(level.id));
+      this.menu.renderFund(this.fund);
       this.screens.show('levels', { returnTo: 'menu' });
     });
     on('ui:trophies', () => {
@@ -150,6 +154,7 @@ export class Game {
     on('ui:story-prev', () => this.story.go(-1) || this.finishStory());
     on('ui:story-next', () => this.story.go(1) || this.finishStory());
     on('ui:story-skip', () => this.finishStory());
+    on('ui:finale', () => this.showFinale());
     on('ui:select-level', ({ level }) => this.openLevel(Number(level)));
     on('ui:howto', () => this.screens.show('howto', { returnTo: this.state.is(STATES.PAUSED) ? 'pause' : 'menu' }));
     on('ui:credits', () => this.screens.show('credits', { returnTo: this.state.is(STATES.MENU) ? 'menu' : this.screens.current }));
@@ -387,7 +392,18 @@ export class Game {
   showStory(then) {
     this.afterStory = then;
     this.screens.show('story', { returnTo: 'menu' });
-    this.story.render(0);
+    this.story.open();
+  }
+
+  showFinale() {
+    if (this.fund.ratio < 1) {
+      this.hud.toast('Earn $' + (this.fund.goal - this.fund.total) + ' more to buy back The Golden Ladle.');
+      this.showMenu();
+      return;
+    }
+    this.afterStory = () => this.showMenu();
+    this.screens.show('story', { returnTo: 'menu' });
+    this.story.open(finale(this.fund.total, this.fund.goal));
   }
 
   finishStory() {
@@ -500,7 +516,8 @@ export class Game {
     const level = LEVELS[this.levelIndex];
     const stars = rateShift(level, this.gameplay.stats);
     const newBest = this.stars.record(level.id, stars);
-    this.screens.showComplete(level, this.gameplay.stats, isLast, stars, newBest);
+    this.fund.record(level.id, this.gameplay.stats.money);
+    this.screens.showComplete(level, this.gameplay.stats, isLast, stars, newBest, this.fund);
   }
 
   onLevelFailed(reason) {

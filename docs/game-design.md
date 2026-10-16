@@ -18,7 +18,7 @@ The game combines the clear, short feedback loop of a cooking game with a fully 
 
 MegaMunch Corp has forced the independent kitchens of Port Saffron out of business, including the player character's family restaurant, The Golden Ladle. The player inherits Gran Nandi's recipe book and apron and works through three struggling venues to earn enough money to buy the restaurant back.
 
-A skippable prologue establishes the story before the main menu. Each level has a chapter card before the shift and an outro after completion. Finishing the final level leads to the epilogue.
+A skippable prologue establishes the story before the main menu. Each level has a chapter card before the shift and an outro after completion. Best earnings from cleared shifts accumulate in a $360 buy-back fund, visible on level select. When the final shift completes the fund, a three-scene ending shows the chef buying The Golden Ladle back, receiving its keys, and reopening it with Gran Nandi.
 
 ## 4. Core gameplay loop
 

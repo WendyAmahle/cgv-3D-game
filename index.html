@@ -117,6 +117,7 @@
         <div class="card story-card">
           <p class="eyebrow" id="storyEyebrow">Prologue</p>
           <h2 id="storyTitle"></h2>
+          <div id="storyVisual" class="story-visual" aria-hidden="true">CHEF</div>
           <div id="storyText" class="story-text"></div>
           <div id="storyDots" class="story-dots"></div>
           <div class="buttons">
@@ -130,6 +131,11 @@
       <section id="screen-levels" class="screen hidden">
         <div class="card">
           <h2>Choose a shift</h2>
+          <div id="buybackFund" class="buyback-fund">
+            <span class="label">Buy back The Golden Ladle</span>
+            <strong id="buybackAmount">$0 / $360</strong>
+            <div class="meter"><div class="meter-fill" id="buybackFill"></div></div>
+          </div>
           <div id="levelCards" class="level-cards"></div>
           <div class="buttons"><button data-action="back">Back</button></div>
         </div>
