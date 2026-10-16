@@ -130,7 +130,10 @@ export class HUD {
       ticket.fill.style.width = `${ratio * 100}%`;
       ticket.fill.style.background = `hsl(${ratio * 120}, 80%, 50%)`;
       ticket.element.classList.toggle('urgent', ratio < 0.3);
-      ticket.seconds.textContent = customer.patience < 10 ? `${Math.ceil(customer.patience)}s` : '';
+      // A bar alone is hard to judge from the third-person camera. Keep the
+      // exact serving time visible for every active order, not only at the
+      // last-ten-seconds warning point.
+      ticket.seconds.textContent = String(Math.max(0, Math.ceil(customer.patience))) + 's';
     }
   }
 

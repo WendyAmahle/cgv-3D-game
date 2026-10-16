@@ -180,12 +180,16 @@ canvas {
   font-weight: 700;
 }
 
-/* Last 10 seconds of patience, beside the price. */
+/* Remaining serving time, beside the price. */
 .ticket .seconds {
   margin-left: auto;
   margin-right: 8px;
-  color: #dc2626;
   font-weight: 700;
+  color: #b45309;
+}
+
+.ticket.urgent .seconds {
+  color: #dc2626;
 }
 
 .chips {
