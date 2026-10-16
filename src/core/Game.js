@@ -162,6 +162,12 @@ export class Game {
     on('ui:menu', () => this.showMenu());
     on('ui:quality', () => this.toggleQuality());
     on('ui:mute', () => this.toggleMute());
+    on('ui:camera-cycle', () => {
+      if (this.state.is(STATES.PLAYING)) this.cameraController.cycle();
+    });
+    on('ui:discard', () => {
+      if (this.state.is(STATES.PLAYING)) this.gameplay?.discardHeld();
+    });
 
     on('level:complete', () => this.onLevelComplete());
     on('level:failed', ({ reason }) => this.onLevelFailed(reason));

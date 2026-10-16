@@ -52,7 +52,9 @@ export class PlayerController {
   // ------------------------------------------------------------------ mouse
 
   onPointerDown(event) {
-    if (!this.enabled || event.button !== 0) return;
+    if (!this.enabled || !event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    // Stop long presses and drags from becoming browser gestures on a phone.
+    if (event.pointerType === 'touch') event.preventDefault();
     this.setPointer(event);
     const target = this.pick();
     if (!target) return;
@@ -62,6 +64,7 @@ export class PlayerController {
   }
 
   onPointerMove(event) {
+    if (event.pointerType === 'touch' && this.press) event.preventDefault();
     this.setPointer(event);
     this.pointerMoved = true;
     const press = this.press;
@@ -72,6 +75,7 @@ export class PlayerController {
   }
 
   onPointerUp(event) {
+    if (event.pointerType === 'touch' && this.press) event.preventDefault();
     const press = this.press;
     this.press = null;
     this.dom.releasePointerCapture?.(event.pointerId);
