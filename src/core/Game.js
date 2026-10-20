@@ -99,6 +99,7 @@ export class Game {
     this.gameplay = null;
     this.focusPoint = new THREE.Vector3();
     this.chefTarget = new THREE.Vector3();
+    this.chefMoveKeys = new Set();
     this.request = 0; // guards against overlapping async level loads
     this.slideshow = { index: 0, next: 0, swapping: false }; // main-menu background tour
     this.menuWorlds = new Map(); // level index → hidden place kept built during the slideshow
@@ -135,8 +136,11 @@ export class Game {
     window.addEventListener('pointerdown', () => this.audio.unlock(), true);
     window.addEventListener('keydown', (event) => {
       this.audio.unlock();
+      if (this.handleChefMovement(event, true)) return;
       this.onKey(event);
     });
+    window.addEventListener('keyup', (event) => this.handleChefMovement(event, false));
+    window.addEventListener('blur', () => this.clearChefMovement());
 
     const on = (name, handler) => events.on(name, handler);
     on('ui:play', () => this.openLevel(this.levels.highestUnlocked));
@@ -238,8 +242,55 @@ export class Game {
     else if (matches(code, KEYS.cycleCamera)) this.cameraController.cycle();
     else if (matches(code, KEYS.orbitLeft)) this.cameraController.orbit(-1);
     else if (matches(code, KEYS.orbitRight)) this.cameraController.orbit(1);
+    else if (matches(code, KEYS.recenterCamera)) this.cameraController.recenter();
     else if (matches(code, KEYS.discard)) this.gameplay.discardHeld();
     else if (this.controller.handleKey(code)) event.preventDefault();
+  }
+
+  // Shift + WASD/arrows moves the visible chef. Plain WASD/arrows deliberately
+  // keep their original station-selection behaviour, so keyboard cooking stays
+  // fast. The chef is limited to the service aisle by Chef.js.
+  handleChefMovement(event, pressed) {
+    const directions = {
+      KeyA: [-1, 0], ArrowLeft: [-1, 0],
+      KeyD: [1, 0], ArrowRight: [1, 0],
+      KeyW: [0, -1], ArrowUp: [0, -1],
+      KeyS: [0, 1], ArrowDown: [0, 1],
+    };
+    if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
+      if (!pressed) this.clearChefMovement();
+      return false;
+    }
+    if (!directions[event.code]) return false;
+    if (!pressed) {
+      this.chefMoveKeys.delete(event.code);
+      this.updateChefMovement();
+      return this.state.is(STATES.PLAYING);
+    }
+    if (!event.shiftKey || !this.state.is(STATES.PLAYING)) return false;
+    this.chefMoveKeys.add(event.code);
+    this.updateChefMovement();
+    event.preventDefault();
+    return true;
+  }
+
+  updateChefMovement() {
+    const directions = {
+      KeyA: [-1, 0], ArrowLeft: [-1, 0], KeyD: [1, 0], ArrowRight: [1, 0],
+      KeyW: [0, -1], ArrowUp: [0, -1], KeyS: [0, 1], ArrowDown: [0, 1],
+    };
+    let x = 0;
+    let z = 0;
+    this.chefMoveKeys.forEach((code) => {
+      x += directions[code][0];
+      z += directions[code][1];
+    });
+    this.chef?.setManualInput(x, z);
+  }
+
+  clearChefMovement() {
+    this.chefMoveKeys.clear();
+    this.chef?.setManualInput(0, 0);
   }
 
   // ------------------------------------------------------------------ flow
@@ -273,6 +324,7 @@ export class Game {
   }
 
   teardownGameplay() {
+    this.clearChefMovement();
     if (!this.gameplay) return;
     this.gameplay.dispose();
     this.gameplay = null;

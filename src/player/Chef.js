@@ -7,6 +7,7 @@ const AISLE_Z = (LAYOUT.frontRowZ + LAYOUT.backRowZ) / 2;
 const SIDE_STEP = 0.55; // stand beside a station, not in front of it
 const WALK_SPEED = 3.2;
 const LIMIT_X = LAYOUT.counterLength / 2 - 0.6;
+const AISLE_HALF_WIDTH = 0.55;
 
 // The player's avatar. Walks the aisle between the counters to whatever is
 // selected (or being dragged), turns to face it and reacts to orders.
@@ -37,6 +38,7 @@ export class Chef {
     this.busy = 0; // seconds left of a one-shot reaction
     this.binX = Infinity;
     this.goal = new THREE.Vector3();
+    this.manualInput = new THREE.Vector2();
     this.animator.play('idle', { fade: 0 });
 
     events.on('order:served', () => this.react('agree'));
@@ -56,7 +58,14 @@ export class Chef {
     this.root.rotation.y = 0;
     this.speed = 0;
     this.busy = 0;
+    this.manualInput.set(0, 0);
     this.animator.play('idle', { fade: 0 });
+  }
+
+  // Direct movement is constrained to the aisle, keeping the chef clear of
+  // counters and customers while still making the avatar player-controlled.
+  setManualInput(x, z) {
+    this.manualInput.set(x, z).clampLength(0, 1);
   }
 
   react(clip) {
@@ -67,31 +76,46 @@ export class Chef {
   // `target`: world point the chef is working on, or null to stay put.
   update(dt, target) {
     const position = this.root.position;
-    let goalX = position.x;
-    if (target) {
-      goalX = target.x + (target.x > position.x ? -SIDE_STEP : SIDE_STEP);
-      if (Math.abs(goalX - target.x) < SIDE_STEP * 0.5) goalX = target.x + SIDE_STEP;
-    }
-    goalX = THREE.MathUtils.clamp(goalX, -LIMIT_X, LIMIT_X);
-    if (goalX > this.binX - 0.75) goalX = this.binX - 0.75;
+    if (this.manualInput.lengthSq() > 0) {
+      const step = WALK_SPEED * dt;
+      position.x = THREE.MathUtils.clamp(position.x + this.manualInput.x * step, -LIMIT_X, LIMIT_X);
+      position.z = THREE.MathUtils.clamp(position.z + this.manualInput.y * step, AISLE_Z - AISLE_HALF_WIDTH, AISLE_Z + AISLE_HALF_WIDTH);
+      if (position.x > this.binX - 0.75) position.x = this.binX - 0.75;
+      this.stride += step;
+      this.speed = WALK_SPEED;
 
-    const distance = goalX - position.x;
-    const step = Math.sign(distance) * Math.min(Math.abs(distance), WALK_SPEED * dt, Math.abs(distance) * dt * 6);
-    position.x += step;
-    this.stride += Math.abs(step);
+      const facing = Math.atan2(this.manualInput.x, this.manualInput.y);
+      const turn = Math.atan2(Math.sin(facing - this.yaw), Math.cos(facing - this.yaw));
+      this.yaw += turn * (1 - Math.exp(-dt * 14));
+      this.root.rotation.y = this.yaw;
+    } else {
+      let goalX = position.x;
+      if (target) {
+        goalX = target.x + (target.x > position.x ? -SIDE_STEP : SIDE_STEP);
+        if (Math.abs(goalX - target.x) < SIDE_STEP * 0.5) goalX = target.x + SIDE_STEP;
+      }
+      goalX = THREE.MathUtils.clamp(goalX, -LIMIT_X, LIMIT_X);
+      if (goalX > this.binX - 0.75) goalX = this.binX - 0.75;
+
+      const distance = goalX - position.x;
+      const step = Math.sign(distance) * Math.min(Math.abs(distance), WALK_SPEED * dt, Math.abs(distance) * dt * 6);
+      position.x += step;
+      this.stride += Math.abs(step);
+      this.speed = THREE.MathUtils.lerp(this.speed, Math.abs(step) / Math.max(dt, 1e-4), 1 - Math.exp(-dt * 10));
+
+      // Face the target, or the direction of travel while walking.
+      let facing = this.yaw;
+      if (this.speed > 0.6) facing = Math.sign(distance) * Math.PI / 2;
+      else if (target) facing = Math.atan2(target.x - position.x, target.z - position.z);
+      const turn = Math.atan2(Math.sin(facing - this.yaw), Math.cos(facing - this.yaw));
+      this.yaw += turn * (1 - Math.exp(-dt * 10));
+      this.root.rotation.y = this.yaw;
+    }
+
     if (this.stride > 0.65) {
       this.stride = 0;
       events.emit('chef:step');
     }
-    this.speed = THREE.MathUtils.lerp(this.speed, Math.abs(step) / Math.max(dt, 1e-4), 1 - Math.exp(-dt * 10));
-
-    // Face the target, or the direction of travel while walking.
-    let facing = this.yaw;
-    if (this.speed > 0.6) facing = Math.sign(distance) * Math.PI / 2;
-    else if (target) facing = Math.atan2(target.x - position.x, target.z - position.z);
-    const turn = Math.atan2(Math.sin(facing - this.yaw), Math.cos(facing - this.yaw));
-    this.yaw += turn * (1 - Math.exp(-dt * 10));
-    this.root.rotation.y = this.yaw;
 
     this.busy = Math.max(0, this.busy - dt);
     if (!this.busy) {

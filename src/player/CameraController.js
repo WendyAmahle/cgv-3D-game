@@ -20,9 +20,12 @@ const PIVOT = new THREE.Vector3(0, 1.0, 1.0);
 export class CameraController {
   constructor(camera, dom) {
     this.camera = camera;
+    this.dom = dom;
     this.mode = 1;
     this.yaw = 0;
     this.distance = 10;
+    this.firstPersonYaw = 0;
+    this.firstPersonPitch = -0.18;
     this.autoOrbit = false; // used behind the main menu
     this.shakeAmount = 0;
     this.follow = null; // the chef, for the third-person view
@@ -32,6 +35,7 @@ export class CameraController {
     this.desiredPosition = new THREE.Vector3();
     this.desiredLook = new THREE.Vector3();
     this.look = new THREE.Vector3().copy(PIVOT);
+    this.lookDrag = null;
 
     dom.addEventListener(
       'wheel',
@@ -42,6 +46,41 @@ export class CameraController {
       },
       { passive: true }
     );
+
+    // Left drag is reserved for moving food. Use the middle or right mouse
+    // button to look around without accidentally picking up an ingredient.
+    dom.addEventListener('contextmenu', (event) => event.preventDefault());
+    dom.addEventListener('pointerdown', (event) => {
+      if (this.autoOrbit || (event.button !== 1 && event.button !== 2)) return;
+      this.lookDrag = { x: event.clientX, y: event.clientY, pointerId: event.pointerId };
+      dom.setPointerCapture?.(event.pointerId);
+      event.preventDefault();
+    });
+    dom.addEventListener('pointermove', (event) => this.dragLook(event));
+    dom.addEventListener('pointerup', (event) => this.endLookDrag(event));
+    dom.addEventListener('pointercancel', (event) => this.endLookDrag(event));
+  }
+
+  dragLook(event) {
+    if (!this.lookDrag || event.pointerId !== this.lookDrag.pointerId) return;
+    const dx = event.clientX - this.lookDrag.x;
+    const dy = event.clientY - this.lookDrag.y;
+    this.lookDrag.x = event.clientX;
+    this.lookDrag.y = event.clientY;
+
+    if (this.mode === 1) {
+      this.yaw = THREE.MathUtils.clamp(this.yaw - dx * 0.008, -1.2, 1.2);
+    } else if (this.mode === 5) {
+      this.firstPersonYaw = THREE.MathUtils.clamp(this.firstPersonYaw - dx * 0.008, -1.35, 1.35);
+      this.firstPersonPitch = THREE.MathUtils.clamp(this.firstPersonPitch - dy * 0.006, -0.7, 0.45);
+    }
+    event.preventDefault();
+  }
+
+  endLookDrag(event) {
+    if (!this.lookDrag || event.pointerId !== this.lookDrag.pointerId) return;
+    this.dom.releasePointerCapture?.(event.pointerId);
+    this.lookDrag = null;
   }
 
   setMode(mode) {
@@ -71,7 +110,17 @@ export class CameraController {
   reset() {
     this.yaw = 0;
     this.distance = 10;
+    this.firstPersonYaw = 0;
+    this.firstPersonPitch = -0.18;
     this.setMode(1);
+  }
+
+  recenter() {
+    if (this.mode === 1) this.yaw = 0;
+    if (this.mode === 5) {
+      this.firstPersonYaw = 0;
+      this.firstPersonPitch = -0.18;
+    }
   }
 
   computeDesired(time) {
@@ -88,11 +137,13 @@ export class CameraController {
     switch (this.mode) {
       case 2:
         if (this.follow) {
-          // Stays behind the chef (on the back-wall side) rather than swinging
-          // round every time they turn between the two counters.
-          const chef = this.follow.position;
-          position.set(chef.x * 0.9, 4.1, chef.z - 3.3);
-          look.set(chef.x, 0.9, chef.z + 2.8);
+          // A genuine shoulder camera: it follows the chef's facing direction
+          // rather than staying at a fixed world position as the chef moves.
+          const chef = this.follow;
+          const forwardX = Math.sin(chef.rotation.y);
+          const forwardZ = Math.cos(chef.rotation.y);
+          position.set(chef.position.x - forwardX * 3.4, chef.position.y + 2.25, chef.position.z - forwardZ * 3.4);
+          look.set(chef.position.x + forwardX * 1.35, chef.position.y + 1.15, chef.position.z + forwardZ * 1.35);
         } else {
           position.set(0, 3.0, -3.4);
           look.set(0, 1.2, 2.8);
@@ -110,12 +161,19 @@ export class CameraController {
         break;
       case 5:
         if (this.follow) {
-          // Eye height, looking where the chef faces and a little down at the counters.
+          // Eye height. Right/middle mouse drag looks independently of the
+          // chef, which makes this a usable first-person inspection view.
           const chef = this.follow;
-          const forwardX = Math.sin(chef.rotation.y);
-          const forwardZ = Math.cos(chef.rotation.y);
-          position.set(chef.position.x + forwardX * 0.12, 1.62, chef.position.z + forwardZ * 0.12);
-          look.set(chef.position.x + forwardX * 3, 0.95, chef.position.z + forwardZ * 3);
+          const yaw = chef.rotation.y + this.firstPersonYaw;
+          const forwardX = Math.sin(yaw);
+          const forwardZ = Math.cos(yaw);
+          const horizontal = Math.cos(this.firstPersonPitch);
+          position.set(chef.position.x, chef.position.y + 1.62, chef.position.z);
+          look.set(
+            position.x + forwardX * horizontal * 3,
+            position.y + Math.sin(this.firstPersonPitch) * 3,
+            position.z + forwardZ * horizontal * 3
+          );
           break;
         }
         position.set(0, 1.62, -1.2);

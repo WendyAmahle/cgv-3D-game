@@ -53,6 +53,7 @@ export const KEYS = {
   mute: ['KeyM'],
   orbitLeft: ['KeyQ'],
   orbitRight: ['KeyE'],
+  recenterCamera: ['KeyR'],
   cycleCamera: ['KeyC'],
   minimap: ['KeyN'],
 };
