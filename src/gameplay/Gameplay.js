@@ -13,12 +13,22 @@ const stillWanted = (customer) => customer.parts.flat().map(tagLabel).join(' + '
 // `world` comes from LevelManager.build(): { stations: [{config, view}], customerSlots }.
 // `physics` (Physics.js) takes over items that are thrown or dropped.
 export class Gameplay {
-  constructor(level, world, player, physics) {
+  constructor(level, world, player, physics, upgrades = {}) {
     this.level = level;
     this.player = player;
     this.physics = physics;
     this.stations = world.stations.map(({ config, view }) => createStation(config, view));
-    this.customers = new CustomerManager(level, world.customerSlots);
+    this.upgrades = {
+      cookSpeed: upgrades.cookSpeed ?? 1,
+      pourSpeed: upgrades.pourSpeed ?? 1,
+      patience: upgrades.patience ?? 1,
+      tipMultiplier: upgrades.tipMultiplier ?? 1,
+    };
+    this.stations.forEach((station) => {
+      if (station instanceof CookerStation) station.cookSpeed = this.upgrades.cookSpeed;
+      if (station.type === 'dispenser') station.pourSpeed = this.upgrades.pourSpeed;
+    });
+    this.customers = new CustomerManager(level, world.customerSlots, this.upgrades.patience);
     this.stats = {
       money: 0,
       score: 0,
@@ -109,7 +119,7 @@ export class Gameplay {
       return;
     }
 
-    const tip = Math.round(recipe.price * 0.5 * outcome.ratio);
+    const tip = Math.round(recipe.price * 0.5 * outcome.ratio * this.upgrades.tipMultiplier);
     const reward = recipe.price + tip;
     const stats = this.stats;
     stats.combo += 1;

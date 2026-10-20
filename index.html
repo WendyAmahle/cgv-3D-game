@@ -104,6 +104,7 @@
           <div class="buttons vertical">
             <button class="primary" data-action="play" id="playButton">Play</button>
             <button data-action="levels">Level select</button>
+            <button data-action="shop">Kitchen upgrades</button>
             <button data-action="story">Story</button>
             <button data-action="trophies">Trophies</button>
             <button data-action="howto">How to play</button>
@@ -136,8 +137,20 @@
             <span class="label">Buy back The Golden Ladle</span>
             <strong id="buybackAmount">$0 / $360</strong>
             <div class="meter"><div class="meter-fill" id="buybackFill"></div></div>
+            <span class="sub" id="buybackStatus">Clear each shift to add its best earnings to the fund.</span>
           </div>
           <div id="levelCards" class="level-cards"></div>
+          <div class="buttons"><button data-action="back">Back</button></div>
+        </div>
+      </section>
+
+      <section id="screen-shop" class="screen hidden">
+        <div class="card">
+          <p class="eyebrow">Kitchen upgrades</p>
+          <h2>Invest in your crew</h2>
+          <p class="muted" id="upgradeStars">0 stars available</p>
+          <p class="shop-status" id="upgradeStatus">Earn stars by improving your best rating in each shift.</p>
+          <div class="upgrade-list" id="upgradeList"></div>
           <div class="buttons"><button data-action="back">Back</button></div>
         </div>
       </section>
@@ -242,6 +255,25 @@
             <button class="primary" data-action="next" id="nextButton">Next level</button>
             <button data-action="restart">Replay</button>
             <button data-action="menu">Menu</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-purchase" class="screen hidden">
+        <div class="card narrow purchase-card">
+          <p class="eyebrow">The Golden Ladle</p>
+          <div class="purchase-key" aria-hidden="true">KEYS</div>
+          <h2>Buy back the kitchen</h2>
+          <p>Your three shifts have rebuilt the family buy-back fund. The bank is ready to hand over the keys.</p>
+          <div class="purchase-ledger">
+            <div><span>Raised</span><strong id="purchaseRaised">$0</strong></div>
+            <div><span>Asking price</span><strong id="purchaseCost">$360</strong></div>
+            <div><span>Fund surplus</span><strong id="purchaseRemaining">$0</strong></div>
+          </div>
+          <p class="muted">This purchase is saved, so The Golden Ladle stays yours when you return.</p>
+          <div class="buttons">
+            <button class="primary" data-action="finale">Sign papers and take the keys</button>
+            <button data-action="back">Not yet</button>
           </div>
         </div>
       </section>

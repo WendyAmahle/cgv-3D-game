@@ -615,6 +615,141 @@ button:disabled {
   color: #86efac;
 }
 
+.buyback-fund .sub {
+  display: block;
+  margin-top: 7px;
+}
+
+.shop-status {
+  min-height: 1.4em;
+  margin: 6px 0 14px;
+  color: #bbf7d0;
+}
+
+.upgrade-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.upgrade-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(120, 53, 15, 0.18), rgba(30, 41, 59, 0.35));
+}
+
+.upgrade-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.upgrade-heading,
+.upgrade-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.upgrade-heading {
+  justify-content: flex-start;
+}
+
+.upgrade-heading strong,
+.upgrade-heading span {
+  display: block;
+}
+
+.upgrade-heading span {
+  margin-top: 2px;
+  color: var(--accent);
+  font-size: 0.78rem;
+}
+
+.upgrade-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(253, 230, 138, 0.55);
+  border-radius: 10px;
+  background: rgba(251, 191, 36, 0.12);
+  color: #fde68a;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.upgrade-footer {
+  margin-top: auto;
+}
+
+.upgrade-footer > span {
+  color: #fde68a;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.purchase-card {
+  text-align: center;
+}
+
+.purchase-card > p {
+  line-height: 1.5;
+}
+
+.purchase-key {
+  display: grid;
+  place-items: center;
+  width: 82px;
+  height: 82px;
+  margin: 8px auto 14px;
+  border: 2px solid #fcd34d;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff7c2, #b45309 68%);
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.42);
+  color: #422006;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  transform: rotate(-12deg);
+}
+
+.purchase-ledger {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.purchase-ledger div {
+  padding: 10px 6px;
+  border: 1px solid rgba(251, 191, 36, 0.28);
+  border-radius: 10px;
+  background: rgba(120, 53, 15, 0.13);
+}
+
+.purchase-ledger span,
+.purchase-ledger strong {
+  display: block;
+}
+
+.purchase-ledger span {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.purchase-ledger strong {
+  margin-top: 4px;
+  color: #fde68a;
+}
+
 .level-card {
   display: flex;
   flex-direction: column;

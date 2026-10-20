@@ -33,5 +33,10 @@ export class MainMenu {
     $('#buybackAmount').textContent = '$' + fund.total + ' / $' + fund.goal;
     $('#buybackFill').style.width = (fund.ratio * 100) + '%';
     $('#buybackFund').classList.toggle('ready', fund.ratio >= 1);
+    $('#buybackStatus').textContent = fund.purchased
+      ? 'The Golden Ladle is open again.'
+      : fund.canBuy
+        ? 'Fund complete - finish the purchase after your final shift.'
+        : 'Clear each shift to add its best earnings to the fund.';
   }
 }

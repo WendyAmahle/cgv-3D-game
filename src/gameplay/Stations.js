@@ -106,6 +106,7 @@ export class CookerStation extends Station {
   constructor(config, view) {
     super(config, view);
     this.overclock = 0; // seconds of Level 3 power surge left
+    this.cookSpeed = 1;
   }
 
   accepts(item) {
@@ -159,7 +160,7 @@ export class CookerStation extends Station {
     }
     if (!this.item) return;
 
-    const speed = this.overclock > 0 ? 2.2 : 1;
+    const speed = (this.overclock > 0 ? 2.2 : 1) * this.cookSpeed;
     this.cook(dt * speed);
   }
 
@@ -287,6 +288,7 @@ export class DispenserStation extends Station {
   constructor(config, view) {
     super(config, view);
     this.pouring = false;
+    this.pourSpeed = 1;
   }
 
   get liquid() {
@@ -320,7 +322,7 @@ export class DispenserStation extends Station {
 
   update(dt) {
     if (!this.pouring) return;
-    this.item.fill = Math.min(1, this.item.fill + dt / this.liquid.pourTime);
+    this.item.fill = Math.min(1, this.item.fill + (dt * this.pourSpeed) / this.liquid.pourTime);
     refreshItem(this.item);
     if (this.item.fill >= 1) {
       this.pouring = false;

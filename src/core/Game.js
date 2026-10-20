@@ -22,6 +22,7 @@ import { StoryScreen } from '../ui/StoryScreen.js';
 import { StarRecord, rateShift } from '../ui/Stars.js';
 import { Achievements } from '../ui/Achievements.js';
 import { CampaignFund } from '../ui/CampaignFund.js';
+import { KitchenUpgrades, UpgradeShop } from '../ui/UpgradeShop.js';
 import { finale } from '../levels/Story.js';
 import { KEYS, LAYOUT, matches } from '../utils/Constants.js';
 import { assets } from '../utils/AssetLoader.js';
@@ -90,6 +91,8 @@ export class Game {
     this.stars = new StarRecord();
     this.achievements = new Achievements();
     this.fund = new CampaignFund();
+    this.upgrades = new KitchenUpgrades();
+    this.shop = new UpgradeShop();
     this.afterStory = null; // where to go once the prologue ends
 
     this.quality = 'high';
@@ -153,11 +156,20 @@ export class Game {
       this.achievements.render(this.stars.total, LEVELS.length * 3);
       this.screens.show('trophies', { returnTo: 'menu' });
     });
+    on('ui:shop', () => {
+      this.shop.render(this.upgrades, this.stars.total);
+      this.screens.show('shop', { returnTo: 'menu' });
+    });
+    on('ui:buy-upgrade', ({ upgrade }) => {
+      const result = this.upgrades.buy(upgrade, this.stars.total);
+      this.shop.render(this.upgrades, this.stars.total, result.message);
+    });
     on('ui:begin', () => this.begin());
     on('ui:story',() => this.showStory(() => this.screens.show('menu')));
     on('ui:story-prev', () => this.story.go(-1) || this.finishStory());
     on('ui:story-next', () => this.story.go(1) || this.finishStory());
     on('ui:story-skip', () => this.finishStory());
+    on('ui:purchase', () => this.showPurchase());
     on('ui:finale', () => this.showFinale());
     on('ui:select-level', ({ level }) => this.openLevel(Number(level)));
     on('ui:howto', () => this.screens.show('howto', { returnTo: this.state.is(STATES.PAUSED) ? 'pause' : 'menu' }));
@@ -453,9 +465,23 @@ export class Game {
       this.showMenu();
       return;
     }
+    if (!this.fund.purchase()) {
+      this.hud.toast('The buy-back fund is not ready yet.');
+      this.showMenu();
+      return;
+    }
     this.afterStory = () => this.showMenu();
     this.screens.show('story', { returnTo: 'menu' });
     this.story.open(finale(this.fund.total, this.fund.goal));
+  }
+
+  showPurchase() {
+    if (!this.fund.canBuy) {
+      this.hud.toast(this.fund.purchased ? 'The Golden Ladle is already yours.' : 'Keep earning to complete the buy-back fund.');
+      this.showMenu();
+      return;
+    }
+    this.screens.showPurchase(this.fund);
   }
 
   finishStory() {
@@ -473,7 +499,7 @@ export class Game {
     if (!(await this.loadWorld(index, request))) return;
     await this.warmShaders(level);
     if (request !== this.request) return;
-    this.gameplay = new Gameplay(level, this.world, this.player, this.physics);
+    this.gameplay = new Gameplay(level, this.world, this.player, this.physics, this.upgrades.effects);
     this.controller.setTargets(this.gameplay.targets);
     this.controller.enabled = false;
 

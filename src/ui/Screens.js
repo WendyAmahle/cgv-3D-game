@@ -4,7 +4,7 @@ import { STAR_RULES, nextStarHint, starString, starTargets } from './Stars.js';
 
 const $ = (selector) => document.querySelector(selector);
 
-const SCREENS = ['start', 'menu', 'story', 'levels', 'trophies', 'howto', 'intro', 'pause', 'complete', 'gameover', 'credits'];
+const SCREENS = ['start', 'menu', 'story', 'levels', 'shop', 'trophies', 'howto', 'intro', 'pause', 'complete', 'purchase', 'gameover', 'credits'];
 
 function renderStats(container, stats) {
   const rows = [
@@ -115,10 +115,27 @@ export class Screens {
     $('#completeStarNote').textContent = [newBest ? 'New best!' : '', hint ?? 'Perfect shift!'].filter(Boolean).join(' · ');
     renderStats($('#completeStats'), stats);
     const next = $('#nextButton');
-    const fundReady = fund?.ratio >= 1;
-    next.textContent = isLast ? (fundReady ? 'See the finale' : 'Build the buy-back fund') : 'Next level';
-    next.dataset.action = isLast ? (fundReady ? 'finale' : 'menu') : 'next';
+    if (!isLast) {
+      next.textContent = 'Next level';
+      next.dataset.action = 'next';
+    } else if (fund?.purchased) {
+      next.textContent = 'Visit The Golden Ladle';
+      next.dataset.action = 'finale';
+    } else if (fund?.canBuy) {
+      next.textContent = 'Buy back The Golden Ladle';
+      next.dataset.action = 'purchase';
+    } else {
+      next.textContent = 'Build the buy-back fund';
+      next.dataset.action = 'menu';
+    }
     this.show('complete', { returnTo: 'menu' });
+  }
+
+  showPurchase(fund) {
+    $('#purchaseRaised').textContent = '$' + fund.total;
+    $('#purchaseCost').textContent = '$' + fund.goal;
+    $('#purchaseRemaining').textContent = '$' + Math.max(0, fund.total - fund.goal);
+    this.show('purchase', { returnTo: 'menu' });
   }
 
   showGameOver(stats, reason) {

@@ -45,7 +45,7 @@ export const finale = (fund, cost) => [
     title: 'You made it',
     visual: '💰',
     text: [
-      'Your best shifts raised $' + fund + ' for the buy-back fund. The Golden Ladle costs $' + cost + '.',
+      'Your best shifts raised $' + fund + ' for the buy-back fund. You pay the $' + cost + ' asking price and sign the kitchen back into your family name.',
       'The truck, the noodle bar and the diner are packed every night, and MegaMunch has quietly pulled its kiosks out of Port Saffron.',
     ],
   },

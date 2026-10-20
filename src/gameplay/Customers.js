@@ -18,8 +18,9 @@ let nextCustomerId = 1;
 // States: arriving → waiting → (thanking →) leaving.
 // Slot views come from world/Environment.js: { root, focus, position }.
 export class CustomerManager {
-  constructor(level, slotViews) {
+  constructor(level, slotViews, patienceMultiplier = 1) {
     this.level = level;
+    this.patienceMultiplier = patienceMultiplier;
     this.slots = slotViews.map((view, index) => ({ index, view, customer: null }));
     this.spawnTimer = 1.5;
     this.spawnScale = 1; // < 1 spawns faster (Level 2 rush hour)
@@ -47,7 +48,7 @@ export class CustomerManager {
 
     const slot = pick(free);
     const recipeId = pick(this.level.recipes);
-    const patience = randomRange(this.level.patience);
+    const patience = randomRange(this.level.patience) * this.patienceMultiplier;
     const side = slot.view.position.x < 0 ? -1 : 1;
 
     const { root, animator, height } = createCustomer(this.level.theme, nextCustomerId);
